@@ -151,7 +151,8 @@ function parseMediaKeys(
       case "audio":
         return { fileKey: parsed.file_key };
       case "video":
-        // Video has both file_key (video) and image_key (thumbnail)
+      case "media":
+        // Video/media has both file_key (video) and image_key (thumbnail)
         return { fileKey: parsed.file_key, imageKey: parsed.image_key };
       case "sticker":
         return { fileKey: parsed.file_key };
@@ -228,6 +229,7 @@ function inferPlaceholder(messageType: string): string {
     case "audio":
       return "<media:audio>";
     case "video":
+    case "media":
       return "<media:video>";
     case "sticker":
       return "<media:sticker>";
@@ -251,7 +253,7 @@ async function resolveFeishuMediaList(params: {
   const { cfg, messageId, messageType, content, maxBytes, log } = params;
 
   // Only process media message types (including post for embedded images)
-  const mediaTypes = ["image", "file", "audio", "video", "sticker", "post"];
+  const mediaTypes = ["image", "file", "audio", "video", "media", "sticker", "post"];
   if (!mediaTypes.includes(messageType)) {
     return [];
   }
@@ -427,7 +429,7 @@ async function resolveFeishuMediaList(params: {
       errAny?.response?.status === 400 ||
       errStr.includes("status code 400");
 
-    if (isOversized && (messageType === "video" || messageType === "audio")) {
+    if (isOversized && (messageType === "video" || messageType === "media" || messageType === "audio")) {
       log?.(`feishu: ${messageType} media likely exceeds download limit (~25MB), marking as oversized`);
       out.push({
         path: "",
@@ -611,6 +613,7 @@ export async function handleFeishuMessage(params: {
           maxBytes: mediaMaxBytes,
           log,
         });
+    log(`feishu: resolveFeishuMediaList returned ${mediaList.length} items for type=${event.message.message_type}`);
 
     // Fetch quoted/replied message content if parentId exists
     // (moved before media cost confirmation so quoted audio/video is also intercepted)
@@ -670,7 +673,7 @@ export async function handleFeishuMessage(params: {
       // Determine if there are any audio/video media items that need confirmation
       const hasAudioVideo = mediaList.some(
         (m) => m.contentType?.startsWith("audio/") || m.contentType?.startsWith("video/")
-      ) || event.message.message_type === "audio" || event.message.message_type === "video";
+      ) || event.message.message_type === "audio" || event.message.message_type === "video" || event.message.message_type === "media";
 
       if (hasAudioVideo) {
         // Check if there are oversized videos that couldn't be downloaded
@@ -730,6 +733,7 @@ export async function handleFeishuMessage(params: {
           // Determine media type for display
           const detectedMediaType: "audio" | "video" =
             event.message.message_type === "video" ||
+            event.message.message_type === "media" ||
             mediaList.some((m) => m.contentType?.startsWith("video/"))
               ? "video"
               : "audio";
