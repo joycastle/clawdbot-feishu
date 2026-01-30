@@ -7,6 +7,9 @@ import { handleFeishuMessage, type FeishuMessageEvent, type FeishuBotAddedEvent 
 import { handleMediaCardAction, isMediaConfirmAction, type CardActionEvent } from "./media-confirm.js";
 import { handleModelSwitchCardAction, isModelSwitchAction } from "./model-switch.js";
 import { probeFeishu } from "./probe.js";
+import { analyzeVideo } from "./video-analyze.js";
+import { sendCardFeishu, updateCardFeishu } from "./send.js";
+import { formatFileSize } from "./cost-estimator.js";
 
 export type MonitorFeishuOpts = {
   config?: ClawdbotConfig;
@@ -140,18 +143,152 @@ async function monitorWebSocket(params: {
           });
 
           if (confirmed) {
-            // User confirmed media processing — resume handleFeishuMessage
-            // with skipMediaConfirm=true and pre-resolved media
-            log(`feishu: resuming media processing after confirmation (pendingId=${confirmed.id})`);
-            await handleFeishuMessage({
-              cfg,
-              event: confirmed.event,
-              botOpenId,
-              runtime,
-              chatHistories,
-              skipMediaConfirm: true,
-              preResolvedMediaList: confirmed.mediaList,
-            });
+            // Check if this is a video that should be auto-analyzed with Gemini
+            const hasVideo = confirmed.mediaType === "video" ||
+              confirmed.mediaList.some((m) => m.contentType?.startsWith("video/"));
+
+            if (hasVideo) {
+              // Auto-analyze video with Gemini — send result directly to chat
+              log(`feishu: auto-analyzing video with Gemini (pendingId=${confirmed.id})`);
+              try {
+                const videoMedia = confirmed.mediaList.find(
+                  (m) => m.contentType?.startsWith("video/") && m.path,
+                );
+                if (videoMedia) {
+                  const result = await analyzeVideo(videoMedia.path, { log });
+
+                  // Build result card
+                  const costStr = result.estimatedCostUsd != null
+                    ? `$${result.estimatedCostUsd.toFixed(4)}`
+                    : "未知";
+                  const durationStr = `${(result.durationMs / 1000).toFixed(1)}s`;
+                  const tokensStr = result.usage
+                    ? `${result.usage.promptTokens} → ${result.usage.completionTokens}`
+                    : "未知";
+
+                  const target = confirmed.event.message.chat_type === "p2p"
+                    ? `user:${confirmed.senderOpenId}`
+                    : `chat:${confirmed.chatId}`;
+
+                  await sendCardFeishu({
+                    cfg,
+                    to: target,
+                    card: {
+                      config: { wide_screen_mode: true },
+                      header: {
+                        title: { tag: "plain_text", content: "🎬 视频分析完成" },
+                        template: "green",
+                      },
+                      elements: [
+                        {
+                          tag: "markdown",
+                          content: result.text,
+                        },
+                        { tag: "hr" },
+                        {
+                          tag: "note",
+                          elements: [
+                            {
+                              tag: "plain_text",
+                              content: `模型: ${result.model} | 耗时: ${durationStr} | Tokens: ${tokensStr} | 成本: ${costStr}`,
+                            },
+                          ],
+                        },
+                      ],
+                    },
+                    replyToMessageId: confirmed.event.message.message_id,
+                  });
+
+                  // Update the confirmation card to show completion
+                  try {
+                    await updateCardFeishu({
+                      cfg,
+                      messageId: confirmed.cardMessageId,
+                      card: {
+                        config: { wide_screen_mode: true },
+                        header: {
+                          title: { tag: "plain_text", content: "🎬 视频消息 — 分析完成" },
+                          template: "green",
+                        },
+                        elements: [
+                          {
+                            tag: "markdown",
+                            content: `✅ 分析完成（${durationStr}，${costStr}）`,
+                          },
+                        ],
+                      },
+                    });
+                  } catch (updateErr) {
+                    log(`feishu: failed to update confirmation card: ${String(updateErr)}`);
+                  }
+
+                  log(`feishu: video analysis sent to chat (pendingId=${confirmed.id})`);
+                } else {
+                  log(`feishu: no valid video file found in media list, falling back to agent dispatch`);
+                  // Fall back to agent dispatch
+                  await handleFeishuMessage({
+                    cfg,
+                    event: confirmed.event,
+                    botOpenId,
+                    runtime,
+                    chatHistories,
+                    skipMediaConfirm: true,
+                    preResolvedMediaList: confirmed.mediaList,
+                  });
+                }
+              } catch (analyzeErr) {
+                error(`feishu: video analysis failed: ${String(analyzeErr)}`);
+                // Send error card
+                const target = confirmed.event.message.chat_type === "p2p"
+                  ? `user:${confirmed.senderOpenId}`
+                  : `chat:${confirmed.chatId}`;
+                try {
+                  await sendCardFeishu({
+                    cfg,
+                    to: target,
+                    card: {
+                      config: { wide_screen_mode: true },
+                      header: {
+                        title: { tag: "plain_text", content: "🎬 视频分析失败" },
+                        template: "red",
+                      },
+                      elements: [
+                        {
+                          tag: "markdown",
+                          content: `分析过程中出现错误：\n\n${String(analyzeErr)}`,
+                        },
+                      ],
+                    },
+                    replyToMessageId: confirmed.event.message.message_id,
+                  });
+                } catch {
+                  // Ignore card send errors
+                }
+
+                // Fall back to normal agent dispatch
+                await handleFeishuMessage({
+                  cfg,
+                  event: confirmed.event,
+                  botOpenId,
+                  runtime,
+                  chatHistories,
+                  skipMediaConfirm: true,
+                  preResolvedMediaList: confirmed.mediaList,
+                });
+              }
+            } else {
+              // Non-video media (audio, etc.) — resume normal agent dispatch
+              log(`feishu: resuming media processing after confirmation (pendingId=${confirmed.id})`);
+              await handleFeishuMessage({
+                cfg,
+                event: confirmed.event,
+                botOpenId,
+                runtime,
+                chatHistories,
+                skipMediaConfirm: true,
+                preResolvedMediaList: confirmed.mediaList,
+              });
+            }
           }
           return;
         }

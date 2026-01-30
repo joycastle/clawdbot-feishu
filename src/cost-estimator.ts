@@ -29,12 +29,16 @@ const VIDEO_BITRATE_BPS = 500_000; // ~4Mbps typical mobile video
 // Whisper pricing (for Claude pipeline)
 const WHISPER_COST_PER_MINUTE_USD = 0.006;
 
-// Gemini audio: ~32 tokens per second of audio
-const GEMINI_AUDIO_TOKENS_PER_SEC = 32;
-// Gemini video: ~258 tokens per second of video
+// Gemini audio: ~25 tokens per second of audio
+const GEMINI_AUDIO_TOKENS_PER_SEC = 25;
+// Gemini video: ~258 tokens per second of video (1 fps sample rate)
 const GEMINI_VIDEO_TOKENS_PER_SEC = 258;
 // Gemini pricing per million tokens (input) - Gemini 2.0 Flash
-const GEMINI_INPUT_PRICE_PER_M_TOKENS = 0.075;
+const GEMINI_INPUT_PRICE_PER_M_TOKENS = 0.15;
+// Output pricing (for cost estimate display)
+const GEMINI_OUTPUT_PRICE_PER_M_TOKENS = 0.60;
+// Estimated output tokens for a video analysis (~2000 tokens)
+const GEMINI_ESTIMATED_OUTPUT_TOKENS = 2000;
 
 /**
  * Detect if the current runtime is using a Gemini model.
@@ -77,10 +81,12 @@ export function estimateMediaCost(params: {
     // Gemini native audio/video processing
     const tokensPerSec =
       mediaType === "audio" ? GEMINI_AUDIO_TOKENS_PER_SEC : GEMINI_VIDEO_TOKENS_PER_SEC;
-    const totalTokens = estimatedDurationSec * tokensPerSec;
-    estimatedCostUsd = (totalTokens / 1_000_000) * GEMINI_INPUT_PRICE_PER_M_TOKENS;
-    pricingBasis = `Gemini (${tokensPerSec} tok/s × $${GEMINI_INPUT_PRICE_PER_M_TOKENS}/M)`;
-    modelName = modelHint || "gemini";
+    const totalInputTokens = estimatedDurationSec * tokensPerSec;
+    const inputCost = (totalInputTokens / 1_000_000) * GEMINI_INPUT_PRICE_PER_M_TOKENS;
+    const outputCost = (GEMINI_ESTIMATED_OUTPUT_TOKENS / 1_000_000) * GEMINI_OUTPUT_PRICE_PER_M_TOKENS;
+    estimatedCostUsd = inputCost + outputCost;
+    pricingBasis = `Gemini 2.0 Flash ($${GEMINI_INPUT_PRICE_PER_M_TOKENS}/M input + $${GEMINI_OUTPUT_PRICE_PER_M_TOKENS}/M output)`;
+    modelName = modelHint || "gemini-2.0-flash";
   } else {
     // Claude mode: uses Whisper for transcription
     const durationMin = estimatedDurationSec / 60;

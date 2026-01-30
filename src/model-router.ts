@@ -1,79 +1,56 @@
 /**
- * Model Router — Intent detection for dynamic model switching.
+ * Model Router — Explicit model switch detection.
  *
- * Detects whether a user message is a "dev/tech/code" request
- * and recommends switching to a more capable model (e.g., Claude Opus).
+ * Only switches to dev model (Claude Opus) when the user explicitly requests it.
+ * Default behavior: all messages use the default model (Gemini).
  *
- * Default behavior:
- * - Normal chat → uses default model (e.g., Gemini)
- * - Dev/tech/code request → prompt user to confirm switching to dev model (e.g., Opus)
+ * Triggers on explicit requests like:
+ * - "切换到claude" / "用claude" / "换opus"
+ * - "开发模式" / "开发"（单独发送时）
+ * - "switch to claude" / "use opus"
  */
 
 import type { ModelRouterConfig } from "./types.js";
 
-// ─── Default Keywords ────────────────────────────────────────────────────────
+// ─── Explicit Switch Patterns ────────────────────────────────────────────────
 
 /**
- * Default keywords that indicate a dev/tech/code request.
- * These are checked case-insensitively against the message text.
+ * Patterns that explicitly request switching to the dev model.
+ * Only these will trigger a model switch — no general keyword detection.
  */
-const DEFAULT_DEV_KEYWORDS: string[] = [
-  // Chinese keywords
-  "开发", "代码", "编程", "编码", "写代码", "改代码", "看代码",
-  "bug", "修复", "修bug", "调试", "debug",
-  "功能开发", "新功能", "实现功能", "加功能",
-  "接口", "API", "api",
-  "数据库", "SQL", "sql", "查询",
-  "部署", "deploy", "发布", "上线",
-  "重构", "refactor", "优化代码",
-  "脚本", "script", "自动化",
-  "配置", "config", "环境",
-  "git", "提交", "commit", "push", "pull", "merge", "分支", "branch",
-  "测试", "test", "单元测试",
-  "架构", "设计模式", "技术方案",
-  "报错", "错误", "异常", "error", "exception", "crash",
-  "日志", "log", "监控",
-  "服务器", "server", "nginx", "docker", "k8s",
-  "前端", "后端", "frontend", "backend",
-  "TypeScript", "typescript", "JavaScript", "javascript",
-  "Python", "python", "Java", "java", "C#", "c#",
-  "React", "Vue", "Node", "node",
-  "npm", "yarn", "pnpm", "pip",
-  "算法", "数据结构",
-  "正则", "regex",
-  "加密", "安全", "认证", "鉴权",
-  "webhook", "websocket", "socket",
-  "SDK", "sdk", "插件", "plugin", "extension",
-  // English keywords
-  "implement", "develop", "code", "coding", "programming",
-  "function", "method", "class", "module",
-  "fix", "patch", "hotfix",
-  "build", "compile", "lint",
-  "review", "PR", "pull request", "code review",
+const SWITCH_TO_DEV_PATTERNS: RegExp[] = [
+  // Chinese - explicit switch requests
+  /^开发$/,                           // Just "开发" alone
+  /^开发模式$/,                        // "开发模式"
+  /切换(到|成)?.*?(claude|opus|开发)/i,  // "切换到claude" / "切换opus" / "切换到开发"
+  /换(到|成)?.*?(claude|opus|开发模式)/i, // "换到claude" / "换成opus"
+  /用.*?(claude|opus)/i,               // "用claude" / "用opus"
+  /改(成|用|为).*?(claude|opus)/i,      // "改成claude" / "改用opus"
+  /模型.*?(切换|换|改|用).*?(claude|opus)/i, // "模型切换到claude"
+
+  // English - explicit switch requests
+  /switch\s+(to\s+)?(claude|opus)/i,
+  /use\s+(claude|opus)/i,
+  /change\s+(to\s+)?(claude|opus)/i,
 ];
 
 /**
- * Patterns that strongly indicate dev intent (regex).
- * These provide higher confidence detection.
+ * Patterns that explicitly request switching back to default model.
+ * These will clear the model override.
  */
-const DEV_PATTERNS: RegExp[] = [
-  // Explicit dev requests
-  /帮我(写|改|看|修|实现|开发|调试)/,
-  /写[一个]*\s*(脚本|代码|函数|接口|功能|模块|组件|页面)/,
-  /开发[一个]*\s*(功能|模块|接口|插件|系统|页面|组件)/,
-  /实现[一个]*\s*(功能|需求|接口|逻辑|算法)/,
-  // Code-related queries
-  /怎么(写|实现|调用|配置|部署|解决)/,
-  /如何(实现|开发|配置|处理|解析|优化)/,
-  // Error/debug patterns
-  /(报错|出错|异常|crash|崩溃).*?(怎么|如何|帮)/,
-  /看[一下看]*这[个段]*\s*(代码|报错|日志|错误)/,
-  // Code blocks in message
-  /```[\s\S]*```/,
-  // File paths
-  /\.(ts|js|py|java|go|rs|cpp|c|h|cs|rb|php|swift|kt)\b/,
-  // Tech stack mentions
-  /(src|dist|node_modules|package\.json|tsconfig|webpack|vite)\b/,
+const SWITCH_TO_DEFAULT_PATTERNS: RegExp[] = [
+  /^聊天$/,                             // Just "聊天" alone
+  /^聊天模式$/,                          // "聊天模式"
+  /切换(到|成)?.*?(gemini|默认|聊天)/i,   // "切换到gemini" / "切换默认" / "切换聊天"
+  /换(到|成)?.*?(gemini|默认|聊天模式)/i,  // "换到gemini" / "换成默认"
+  /用.*?gemini/i,                        // "用gemini"
+  /退出.*?(开发|claude|opus)/i,           // "退出开发" / "退出claude"
+  /关闭.*?(开发|claude|opus)/i,           // "关闭开发模式"
+
+  // English
+  /switch\s+(to\s+)?(gemini|default|chat)/i,
+  /use\s+(gemini|default)/i,
+  /exit\s+(dev|claude|opus)/i,
 ];
 
 // ─── Intent Detection ────────────────────────────────────────────────────────
@@ -81,6 +58,8 @@ const DEV_PATTERNS: RegExp[] = [
 export interface ModelRouteResult {
   /** Whether a model switch is recommended */
   shouldSwitch: boolean;
+  /** Whether to switch back to default */
+  shouldSwitchToDefault: boolean;
   /** The recommended model to switch to (null if no switch needed) */
   targetModel: string | null;
   /** Confidence level of the detection */
@@ -90,50 +69,44 @@ export interface ModelRouteResult {
 }
 
 /**
- * Detect whether a message text indicates a dev/tech/code request.
+ * Detect whether a message explicitly requests a model switch.
+ * Only triggers on clear, intentional switch requests — not general dev keywords.
  */
 export function detectDevIntent(
   text: string,
-  customKeywords?: string[],
-): { isDevRequest: boolean; confidence: "high" | "medium" | "low"; matchedHints: string[] } {
+  _customKeywords?: string[],
+): { isDevRequest: boolean; isDefaultRequest: boolean; confidence: "high" | "medium" | "low"; matchedHints: string[] } {
   if (!text || text.trim().length === 0) {
-    return { isDevRequest: false, confidence: "low", matchedHints: [] };
+    return { isDevRequest: false, isDefaultRequest: false, confidence: "low", matchedHints: [] };
   }
 
-  const lowerText = text.toLowerCase();
-  const matchedHints: string[] = [];
+  const trimmed = text.trim();
 
-  // Check regex patterns first (higher confidence)
-  for (const pattern of DEV_PATTERNS) {
-    if (pattern.test(text)) {
-      matchedHints.push(`pattern:${pattern.source.slice(0, 30)}`);
+  // Check switch-to-default patterns first
+  for (const pattern of SWITCH_TO_DEFAULT_PATTERNS) {
+    if (pattern.test(trimmed)) {
+      return {
+        isDevRequest: false,
+        isDefaultRequest: true,
+        confidence: "high",
+        matchedHints: [`default:${pattern.source.slice(0, 30)}`],
+      };
     }
   }
 
-  if (matchedHints.length > 0) {
-    return { isDevRequest: true, confidence: "high", matchedHints };
-  }
-
-  // Check keywords
-  const keywords = customKeywords ?? DEFAULT_DEV_KEYWORDS;
-  const matched: string[] = [];
-
-  for (const keyword of keywords) {
-    if (lowerText.includes(keyword.toLowerCase())) {
-      matched.push(keyword);
+  // Check switch-to-dev patterns
+  for (const pattern of SWITCH_TO_DEV_PATTERNS) {
+    if (pattern.test(trimmed)) {
+      return {
+        isDevRequest: true,
+        isDefaultRequest: false,
+        confidence: "high",
+        matchedHints: [`switch:${pattern.source.slice(0, 30)}`],
+      };
     }
   }
 
-  if (matched.length >= 2) {
-    return { isDevRequest: true, confidence: "high", matchedHints: matched };
-  }
-
-  if (matched.length === 1) {
-    // Single keyword match — medium confidence, might be a casual mention
-    return { isDevRequest: true, confidence: "medium", matchedHints: matched };
-  }
-
-  return { isDevRequest: false, confidence: "low", matchedHints: [] };
+  return { isDevRequest: false, isDefaultRequest: false, confidence: "low", matchedHints: [] };
 }
 
 /**
@@ -146,29 +119,42 @@ export function resolveModelForMessage(
   if (!config.enabled) {
     return {
       shouldSwitch: false,
+      shouldSwitchToDefault: false,
       targetModel: null,
       confidence: "low",
       matchedHints: [],
     };
   }
 
-  const { isDevRequest, confidence, matchedHints } = detectDevIntent(
+  const { isDevRequest, isDefaultRequest, confidence, matchedHints } = detectDevIntent(
     text,
     config.keywords,
   );
 
-  if (!isDevRequest) {
+  if (isDefaultRequest) {
     return {
       shouldSwitch: false,
-      targetModel: null,
+      shouldSwitchToDefault: true,
+      targetModel: config.defaultModel,
+      confidence,
+      matchedHints,
+    };
+  }
+
+  if (isDevRequest) {
+    return {
+      shouldSwitch: true,
+      shouldSwitchToDefault: false,
+      targetModel: config.devModel,
       confidence,
       matchedHints,
     };
   }
 
   return {
-    shouldSwitch: true,
-    targetModel: config.devModel,
+    shouldSwitch: false,
+    shouldSwitchToDefault: false,
+    targetModel: null,
     confidence,
     matchedHints,
   };

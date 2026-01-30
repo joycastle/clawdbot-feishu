@@ -640,44 +640,30 @@ export async function handleFeishuMessage(params: {
       contextKey: `feishu:message:${ctx.chatId}:${ctx.messageId}`,
     });
 
-    // --- Model routing: detect dev/code intent and switch model if needed ---
+    // --- Model routing: explicit model switch detection ---
     if (!skipModelSwitch && ctx.contentType === "text") {
       const modelRouterCfg = resolveModelRouterConfig(feishuCfg);
       if (modelRouterCfg.enabled && modelRouterCfg.devModel) {
         const routeResult = resolveModelForMessage(ctx.content, modelRouterCfg);
-        if (routeResult.shouldSwitch) {
-          log(`feishu: dev intent detected (confidence=${routeResult.confidence}, hints=${routeResult.matchedHints.join(",")})`);
 
-          if (modelRouterCfg.autoConfirm) {
-            // Auto-confirm: apply model override directly, no card needed
-            await applyModelOverride({
-              cfg,
-              sessionKey: isolatedSessionKey,
-              model: modelRouterCfg.devModel,
-              log,
-            });
-            log(`feishu: auto-switched to ${modelRouterCfg.devModel}`);
-          } else {
-            // Send confirmation card and wait for user response
-            try {
-              await sendModelSwitchCard({
-                cfg,
-                event,
-                targetModel: modelRouterCfg.devModel,
-                defaultModel: modelRouterCfg.defaultModel,
-                sessionKey: isolatedSessionKey,
-                routeResult,
-                botOpenId,
-                runtime: runtime as RuntimeEnv,
-                chatHistories,
-                log,
-              });
-              log(`feishu: model switch confirmation card sent, awaiting response`);
-              return; // Stop processing — will resume when user confirms/skips
-            } catch (err) {
-              log(`feishu: failed to send model switch card (continuing with default model): ${String(err)}`);
-            }
-          }
+        if (routeResult.shouldSwitch) {
+          // User explicitly requested dev model (e.g., "开发", "切换到claude")
+          await applyModelOverride({
+            cfg,
+            sessionKey: isolatedSessionKey,
+            model: modelRouterCfg.devModel,
+            log,
+          });
+          log(`feishu: switched to dev model ${modelRouterCfg.devModel} (hints=${routeResult.matchedHints.join(",")})`);
+        } else if (routeResult.shouldSwitchToDefault) {
+          // User explicitly requested default model (e.g., "聊天", "切换到gemini")
+          await applyModelOverride({
+            cfg,
+            sessionKey: isolatedSessionKey,
+            model: null, // clear override → use default
+            log,
+          });
+          log(`feishu: switched back to default model (hints=${routeResult.matchedHints.join(",")})`);
         }
       }
     }
