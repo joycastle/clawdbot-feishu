@@ -170,6 +170,7 @@ function parseMediaKeys(
 function parsePostContent(content: string): {
   textContent: string;
   imageKeys: string[];
+  mediaKeys: { fileKey: string; imageKey?: string }[];
 } {
   try {
     const parsed = JSON.parse(content);
@@ -177,6 +178,7 @@ function parsePostContent(content: string): {
     const contentBlocks = parsed.content || [];
     let textContent = title ? `${title}\n\n` : "";
     const imageKeys: string[] = [];
+    const mediaKeys: { fileKey: string; imageKey?: string }[] = [];
 
     for (const paragraph of contentBlocks) {
       if (Array.isArray(paragraph)) {
@@ -192,6 +194,12 @@ function parsePostContent(content: string): {
           } else if (element.tag === "img" && element.image_key) {
             // Embedded image
             imageKeys.push(element.image_key);
+          } else if (element.tag === "media" && element.file_key) {
+            // Embedded video/media
+            mediaKeys.push({
+              fileKey: element.file_key,
+              imageKey: element.image_key, // thumbnail
+            });
           }
         }
         textContent += "\n";
@@ -201,9 +209,10 @@ function parsePostContent(content: string): {
     return {
       textContent: textContent.trim() || "[富文本消息]",
       imageKeys,
+      mediaKeys,
     };
   } catch {
-    return { textContent: "[富文本消息]", imageKeys: [] };
+    return { textContent: "[富文本消息]", imageKeys: [], mediaKeys: [] };
   }
 }
 
@@ -252,12 +261,18 @@ async function resolveFeishuMediaList(params: {
 
   // Handle post (rich text) messages with embedded images
   if (messageType === "post") {
-    const { imageKeys } = parsePostContent(content);
-    if (imageKeys.length === 0) {
+    const { imageKeys, mediaKeys } = parsePostContent(content);
+    const hasMedia = imageKeys.length > 0 || mediaKeys.length > 0;
+    if (!hasMedia) {
       return [];
     }
 
-    log?.(`feishu: post message contains ${imageKeys.length} embedded image(s)`);
+    if (imageKeys.length > 0) {
+      log?.(`feishu: post message contains ${imageKeys.length} embedded image(s)`);
+    }
+    if (mediaKeys.length > 0) {
+      log?.(`feishu: post message contains ${mediaKeys.length} embedded video/media`);
+    }
 
     for (const imageKey of imageKeys) {
       try {
@@ -290,6 +305,44 @@ async function resolveFeishuMediaList(params: {
         log?.(`feishu: downloaded embedded image ${imageKey}, saved to ${saved.path}`);
       } catch (err) {
         log?.(`feishu: failed to download embedded image ${imageKey}: ${String(err)}`);
+      }
+    }
+
+    // Download embedded videos from post
+    for (const media of mediaKeys) {
+      try {
+        const result = await downloadMessageResourceFeishu({
+          cfg,
+          messageId,
+          fileKey: media.fileKey,
+          type: "file", // videos use file type for download
+        });
+
+        let contentType = result.contentType;
+        if (!contentType) {
+          contentType = await core.media.detectMime({ buffer: result.buffer });
+        }
+        // Default to video/mp4 if detection fails
+        if (!contentType || contentType === "application/octet-stream") {
+          contentType = "video/mp4";
+        }
+
+        const saved = await core.channel.media.saveMediaBuffer(
+          result.buffer,
+          contentType,
+          "inbound",
+          maxBytes,
+        );
+
+        out.push({
+          path: saved.path,
+          contentType: saved.contentType,
+          placeholder: "<media:video>",
+        });
+
+        log?.(`feishu: downloaded embedded video ${media.fileKey}, saved to ${saved.path}`);
+      } catch (err) {
+        log?.(`feishu: failed to download embedded video ${media.fileKey}: ${String(err)}`);
       }
     }
 
