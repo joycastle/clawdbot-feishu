@@ -182,7 +182,7 @@ export async function analyzeVideo(
   // Load credentials and get access token
   const credentials = loadCredentials();
   const projectId = credentials.project_id || process.env.GOOGLE_CLOUD_PROJECT;
-  const location = process.env.GOOGLE_CLOUD_LOCATION || "us-central1";
+  const location = process.env.GOOGLE_CLOUD_LOCATION || "global";
 
   if (!projectId) {
     throw new Error("Google Cloud project ID not found in credentials or environment");
@@ -208,8 +208,11 @@ export async function analyzeVideo(
   log(`video-analyze: authenticating with Vertex AI...`);
   const accessToken = await getAccessToken(credentials);
 
-  // Build request
-  const apiUrl = `https://${location}-aiplatform.googleapis.com/v1/projects/${projectId}/locations/${location}/publishers/google/models/${model}:generateContent`;
+  // Build request — handle "global" location specially (no region prefix on hostname)
+  const apiHost = location === "global"
+    ? "aiplatform.googleapis.com"
+    : `${location}-aiplatform.googleapis.com`;
+  const apiUrl = `https://${apiHost}/v1/projects/${projectId}/locations/${location}/publishers/google/models/${model}:generateContent`;
 
   const requestBody = {
     contents: [

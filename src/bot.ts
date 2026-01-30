@@ -551,7 +551,9 @@ export async function handleFeishuMessage(params: {
       groupConfig,
     });
 
-    if (requireMention && !ctx.mentionedBot) {
+    // Allow video/media messages through without @mention — users can't @mention in media messages
+    const isMediaMessage = ["video", "media", "audio", "image", "file"].includes(ctx.contentType);
+    if (requireMention && !ctx.mentionedBot && !isMediaMessage) {
       log(`feishu: message in group ${ctx.chatId} did not mention bot, recording to history`);
       if (chatHistories) {
         // Thread-aware history key: messages in a topic get their own history
