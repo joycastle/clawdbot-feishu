@@ -343,8 +343,16 @@ async function resolveFeishuMediaList(params: {
         log?.(`feishu: downloaded embedded video ${media.fileKey}, saved to ${saved.path}`);
       } catch (err) {
         const errStr = String(err);
-        if (errStr.includes("234037") || errStr.includes("file size exceeds")) {
-          log?.(`feishu: embedded video ${media.fileKey} exceeds download limit (~25MB), skipping`);
+        const errAny = err as any;
+        // Detect oversized files: Feishu returns 400 with code 234037 for large files.
+        // The Axios error may only show "status code 400", so also check response data.
+        const isOversized =
+          errStr.includes("234037") ||
+          errStr.includes("file size exceeds") ||
+          errAny?.response?.status === 400 ||
+          errStr.includes("status code 400");
+        if (isOversized) {
+          log?.(`feishu: embedded video ${media.fileKey} likely exceeds download limit (~25MB), skipping`);
           // Mark as oversized so we can inform the user
           out.push({
             path: "",
