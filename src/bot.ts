@@ -523,50 +523,10 @@ export async function handleFeishuMessage(params: {
           log,
         });
 
-    // --- Media cost confirmation interception ---
-    // When confirmMediaCost is enabled, intercept audio/video messages to show
-    // a cost estimate card. Processing resumes only after user confirms.
-    if (
-      !skipMediaConfirm &&
-      feishuCfg?.confirmMediaCost &&
-      (event.message.message_type === "audio" || event.message.message_type === "video") &&
-      mediaList.length > 0
-    ) {
-      let totalFileSize = 0;
-      for (const media of mediaList) {
-        try {
-          const stat = fs.statSync(media.path);
-          totalFileSize += stat.size;
-        } catch {
-          // Ignore stat errors — file may have been cleaned up
-        }
-      }
-
-      if (totalFileSize > 0) {
-        try {
-          await sendMediaConfirmCard({
-            cfg,
-            event,
-            mediaType: event.message.message_type as "audio" | "video",
-            fileSizeBytes: totalFileSize,
-            mediaList,
-            botOpenId,
-            runtime,
-            chatHistories,
-            log,
-          });
-          log(`feishu: media cost confirmation card sent, awaiting user response`);
-          return; // Stop processing — will resume when user confirms via card action
-        } catch (err) {
-          // If sending confirmation card fails, fall through to normal processing
-          log(`feishu: failed to send media confirmation card (continuing with dispatch): ${String(err)}`);
-        }
-      }
-    }
-
     // Fetch quoted/replied message content if parentId exists
+    // (moved before media cost confirmation so quoted audio/video is also intercepted)
     let quotedContent: string | undefined;
-    if (ctx.parentId) {
+    if (ctx.parentId && !skipMediaConfirm) {
       try {
         const quotedMsg = await getMessageFeishu({ cfg, messageId: ctx.parentId });
         if (quotedMsg) {
@@ -596,6 +556,71 @@ export async function handleFeishuMessage(params: {
         }
       } catch (err) {
         log(`feishu: failed to fetch quoted message: ${String(err)}`);
+      }
+    } else if (ctx.parentId && skipMediaConfirm) {
+      // When resuming from cost confirmation, still fetch quoted content for context
+      try {
+        const quotedMsg = await getMessageFeishu({ cfg, messageId: ctx.parentId });
+        if (quotedMsg) {
+          quotedContent = formatQuotedContent(quotedMsg.content, quotedMsg.contentType);
+          log(`feishu: fetched quoted message (type=${quotedMsg.contentType}): ${quotedContent?.slice(0, 100)}`);
+        }
+      } catch (err) {
+        log(`feishu: failed to fetch quoted message: ${String(err)}`);
+      }
+    }
+
+    // --- Media cost confirmation interception ---
+    // When confirmMediaCost is enabled, intercept audio/video messages (including
+    // quoted audio/video) to show a cost estimate card before processing.
+    if (
+      !skipMediaConfirm &&
+      feishuCfg?.confirmMediaCost &&
+      mediaList.length > 0
+    ) {
+      // Determine if there are any audio/video media items that need confirmation
+      const hasAudioVideo = mediaList.some(
+        (m) => m.contentType?.startsWith("audio/") || m.contentType?.startsWith("video/")
+      ) || event.message.message_type === "audio" || event.message.message_type === "video";
+
+      if (hasAudioVideo) {
+        let totalFileSize = 0;
+        for (const media of mediaList) {
+          try {
+            const stat = fs.statSync(media.path);
+            totalFileSize += stat.size;
+          } catch {
+            // Ignore stat errors — file may have been cleaned up
+          }
+        }
+
+        if (totalFileSize > 0) {
+          // Determine media type for display
+          const detectedMediaType: "audio" | "video" =
+            event.message.message_type === "video" ||
+            mediaList.some((m) => m.contentType?.startsWith("video/"))
+              ? "video"
+              : "audio";
+
+          try {
+            await sendMediaConfirmCard({
+              cfg,
+              event,
+              mediaType: detectedMediaType,
+              fileSizeBytes: totalFileSize,
+              mediaList,
+              botOpenId,
+              runtime,
+              chatHistories,
+              log,
+            });
+            log(`feishu: media cost confirmation card sent, awaiting user response`);
+            return; // Stop processing — will resume when user confirms via card action
+          } catch (err) {
+            // If sending confirmation card fails, fall through to normal processing
+            log(`feishu: failed to send media confirmation card (continuing with dispatch): ${String(err)}`);
+          }
+        }
       }
     }
 
