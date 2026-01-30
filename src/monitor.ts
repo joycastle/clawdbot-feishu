@@ -4,6 +4,7 @@ import type { FeishuConfig } from "./types.js";
 import { createFeishuWSClient, createEventDispatcher } from "./client.js";
 import { resolveFeishuCredentials } from "./accounts.js";
 import { handleFeishuMessage, type FeishuMessageEvent, type FeishuBotAddedEvent } from "./bot.js";
+import { handleMediaCardAction, type CardActionEvent } from "./media-confirm.js";
 import { probeFeishu } from "./probe.js";
 
 export type MonitorFeishuOpts = {
@@ -105,6 +106,34 @@ async function monitorWebSocket(params: {
         log(`feishu: bot removed from chat ${event.chat_id}`);
       } catch (err) {
         error(`feishu: error handling bot removed event: ${String(err)}`);
+      }
+    },
+    "card.action.trigger": async (data) => {
+      try {
+        const actionData = data as unknown as CardActionEvent;
+        log(`feishu: received card action callback`);
+
+        const confirmed = await handleMediaCardAction({
+          actionData,
+          log,
+        });
+
+        if (confirmed) {
+          // User confirmed media processing — resume handleFeishuMessage
+          // with skipMediaConfirm=true and pre-resolved media
+          log(`feishu: resuming media processing after confirmation (pendingId=${confirmed.id})`);
+          await handleFeishuMessage({
+            cfg,
+            event: confirmed.event,
+            botOpenId,
+            runtime,
+            chatHistories,
+            skipMediaConfirm: true,
+            preResolvedMediaList: confirmed.mediaList,
+          });
+        }
+      } catch (err) {
+        error(`feishu: error handling card action: ${String(err)}`);
       }
     },
   });

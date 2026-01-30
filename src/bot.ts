@@ -18,6 +18,8 @@ import {
 import { createFeishuReplyDispatcher } from "./reply-dispatcher.js";
 import { getMessageFeishu } from "./send.js";
 import { downloadImageFeishu, downloadMessageResourceFeishu } from "./media.js";
+import { sendMediaConfirmCard } from "./media-confirm.js";
+import fs from "fs";
 
 export type FeishuMessageEvent = {
   sender: {
@@ -406,8 +408,12 @@ export async function handleFeishuMessage(params: {
   botOpenId?: string;
   runtime?: RuntimeEnv;
   chatHistories?: Map<string, HistoryEntry[]>;
+  /** Skip media cost confirmation (set when resuming after user confirms) */
+  skipMediaConfirm?: boolean;
+  /** Pre-resolved media list (passed from confirmation flow to avoid re-downloading) */
+  preResolvedMediaList?: FeishuMediaInfo[];
 }): Promise<void> {
-  const { cfg, event, botOpenId, runtime, chatHistories } = params;
+  const { cfg, event, botOpenId, runtime, chatHistories, skipMediaConfirm, preResolvedMediaList } = params;
   const feishuCfg = cfg.channels?.feishu as FeishuConfig | undefined;
   const log = runtime?.log ?? console.log;
   const error = runtime?.error ?? console.error;
@@ -504,16 +510,59 @@ export async function handleFeishuMessage(params: {
       contextKey: `feishu:message:${ctx.chatId}:${ctx.messageId}`,
     });
 
-    // Resolve media from message
+    // Resolve media from message (use pre-resolved list if resuming from cost confirmation)
     const mediaMaxBytes = (feishuCfg?.mediaMaxMb ?? 30) * 1024 * 1024; // 30MB default
-    const mediaList = await resolveFeishuMediaList({
-      cfg,
-      messageId: ctx.messageId,
-      messageType: event.message.message_type,
-      content: event.message.content,
-      maxBytes: mediaMaxBytes,
-      log,
-    });
+    const mediaList = (skipMediaConfirm && preResolvedMediaList)
+      ? preResolvedMediaList
+      : await resolveFeishuMediaList({
+          cfg,
+          messageId: ctx.messageId,
+          messageType: event.message.message_type,
+          content: event.message.content,
+          maxBytes: mediaMaxBytes,
+          log,
+        });
+
+    // --- Media cost confirmation interception ---
+    // When confirmMediaCost is enabled, intercept audio/video messages to show
+    // a cost estimate card. Processing resumes only after user confirms.
+    if (
+      !skipMediaConfirm &&
+      feishuCfg?.confirmMediaCost &&
+      (event.message.message_type === "audio" || event.message.message_type === "video") &&
+      mediaList.length > 0
+    ) {
+      let totalFileSize = 0;
+      for (const media of mediaList) {
+        try {
+          const stat = fs.statSync(media.path);
+          totalFileSize += stat.size;
+        } catch {
+          // Ignore stat errors — file may have been cleaned up
+        }
+      }
+
+      if (totalFileSize > 0) {
+        try {
+          await sendMediaConfirmCard({
+            cfg,
+            event,
+            mediaType: event.message.message_type as "audio" | "video",
+            fileSizeBytes: totalFileSize,
+            mediaList,
+            botOpenId,
+            runtime,
+            chatHistories,
+            log,
+          });
+          log(`feishu: media cost confirmation card sent, awaiting user response`);
+          return; // Stop processing — will resume when user confirms via card action
+        } catch (err) {
+          // If sending confirmation card fails, fall through to normal processing
+          log(`feishu: failed to send media confirmation card (continuing with dispatch): ${String(err)}`);
+        }
+      }
+    }
 
     // Fetch quoted/replied message content if parentId exists
     let quotedContent: string | undefined;
