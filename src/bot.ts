@@ -546,9 +546,14 @@ export async function handleFeishuMessage(params: {
     if (requireMention && !ctx.mentionedBot) {
       log(`feishu: message in group ${ctx.chatId} did not mention bot, recording to history`);
       if (chatHistories) {
+        // Thread-aware history key: messages in a topic get their own history
+        const contextIsolationEnabled = feishuCfg?.contextIsolation !== false;
+        const earlyHistoryKey = contextIsolationEnabled && ctx.rootId
+          ? `${ctx.chatId}:thread:${ctx.rootId}`
+          : ctx.chatId;
         recordPendingHistoryEntryIfEnabled({
           historyMap: chatHistories,
-          historyKey: ctx.chatId,
+          historyKey: earlyHistoryKey,
           limit: historyLimit,
           entry: {
             sender: ctx.senderOpenId,
@@ -579,7 +584,6 @@ export async function handleFeishuMessage(params: {
   try {
     const core = getFeishuRuntime();
 
-    const feishuFrom = isGroup ? `feishu:group:${ctx.chatId}` : `feishu:${ctx.senderOpenId}`;
     const feishuTo = isGroup ? `chat:${ctx.chatId}` : `user:${ctx.senderOpenId}`;
 
     const route = core.channel.routing.resolveAgentRoute({
@@ -591,13 +595,40 @@ export async function handleFeishuMessage(params: {
       },
     });
 
+    // --- Context isolation: per-user, per-group, per-topic ---
+    // When enabled (default), each user DM and each group topic gets its own session.
+    const contextIsolation = feishuCfg?.contextIsolation !== false; // default: true
+    let isolatedSessionKey = route.sessionKey;
+
+    if (contextIsolation) {
+      // Force per-user session for DMs (bypass dmScope="main" which collapses all DMs)
+      if (!isGroup) {
+        isolatedSessionKey = `agent:${route.agentId}:feishu:dm:${ctx.senderOpenId.toLowerCase()}`;
+      }
+      // Thread/topic isolation: messages with root_id go to a thread-specific session
+      if (ctx.rootId) {
+        isolatedSessionKey = `${isolatedSessionKey}:thread:${ctx.rootId.toLowerCase()}`;
+      }
+    }
+
+    log(`feishu: context isolation=${contextIsolation}, sessionKey=${isolatedSessionKey}${ctx.rootId ? ` (topic=${ctx.rootId})` : ""}`);
+
+    // Build From label with topic context
+    let feishuFrom = isGroup ? `feishu:group:${ctx.chatId}` : `feishu:${ctx.senderOpenId}`;
+    if (isGroup && ctx.rootId && contextIsolation) {
+      feishuFrom = `feishu:group:${ctx.chatId}:topic:${ctx.rootId}`;
+    }
+
     const preview = ctx.content.replace(/\s+/g, " ").slice(0, 160);
-    const inboundLabel = isGroup
+    let inboundLabel = isGroup
       ? `Feishu message in group ${ctx.chatId}`
       : `Feishu DM from ${ctx.senderOpenId}`;
+    if (isGroup && ctx.rootId && contextIsolation) {
+      inboundLabel = `Feishu message in group ${ctx.chatId} (topic ${ctx.rootId})`;
+    }
 
     core.system.enqueueSystemEvent(`${inboundLabel}: ${preview}`, {
-      sessionKey: route.sessionKey,
+      sessionKey: isolatedSessionKey,
       contextKey: `feishu:message:${ctx.chatId}:${ctx.messageId}`,
     });
 
@@ -795,7 +826,10 @@ export async function handleFeishuMessage(params: {
     });
 
     let combinedBody = body;
-    const historyKey = isGroup ? ctx.chatId : undefined;
+    // Thread-aware history key: messages in a topic get their own history
+    const historyKey = isGroup
+      ? (contextIsolation && ctx.rootId ? `${ctx.chatId}:thread:${ctx.rootId}` : ctx.chatId)
+      : undefined;
 
     if (isGroup && historyKey && chatHistories) {
       combinedBody = buildPendingHistoryContextFromMap({
@@ -820,7 +854,7 @@ export async function handleFeishuMessage(params: {
       CommandBody: ctx.content,
       From: feishuFrom,
       To: feishuTo,
-      SessionKey: route.sessionKey,
+      SessionKey: isolatedSessionKey,
       AccountId: route.accountId,
       ChatType: isGroup ? "group" : "direct",
       GroupSubject: isGroup ? ctx.chatId : undefined,
@@ -845,7 +879,7 @@ export async function handleFeishuMessage(params: {
       replyToMessageId: ctx.messageId,
     });
 
-    log(`feishu: dispatching to agent (session=${route.sessionKey})`);
+    log(`feishu: dispatching to agent (session=${isolatedSessionKey})`);
 
     const { queuedFinal, counts } = await core.channel.reply.dispatchReplyFromConfig({
       ctx: ctxPayload,

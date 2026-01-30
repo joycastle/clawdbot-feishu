@@ -91,6 +91,7 @@ export const FeishuConfigSchema = z
     heartbeat: ChannelHeartbeatVisibilitySchema,
     renderMode: RenderModeSchema, // raw = plain text (default), card = interactive card with markdown
     confirmMediaCost: z.boolean().optional(), // prompt user to confirm cost before processing audio/video
+    contextIsolation: z.boolean().optional(), // per-user, per-group, per-topic context isolation (default: true)
   })
   .strict()
   .superRefine((value, ctx) => {
