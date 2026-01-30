@@ -419,7 +419,24 @@ async function resolveFeishuMediaList(params: {
 
     log?.(`feishu: downloaded ${messageType} media, saved to ${saved.path}`);
   } catch (err) {
-    log?.(`feishu: failed to download ${messageType} media: ${String(err)}`);
+    const errStr = String(err);
+    const errAny = err as any;
+    const isOversized =
+      errStr.includes("234037") ||
+      errStr.includes("file size exceeds") ||
+      errAny?.response?.status === 400 ||
+      errStr.includes("status code 400");
+
+    if (isOversized && (messageType === "video" || messageType === "audio")) {
+      log?.(`feishu: ${messageType} media likely exceeds download limit (~25MB), marking as oversized`);
+      out.push({
+        path: "",
+        contentType: `${messageType}/oversized`,
+        placeholder: `<media:${messageType}:oversized>`,
+      });
+    } else {
+      log?.(`feishu: failed to download ${messageType} media: ${errStr}`);
+    }
   }
 
   return out;
@@ -657,7 +674,7 @@ export async function handleFeishuMessage(params: {
 
       if (hasAudioVideo) {
         // Check if there are oversized videos that couldn't be downloaded
-        const hasOversized = mediaList.some((m) => m.contentType === "video/oversized");
+        const hasOversized = mediaList.some((m) => m.contentType?.endsWith("/oversized"));
         if (hasOversized) {
           // Notify user about oversized video limitation
           const chatId = event.message.chat_id;
@@ -691,7 +708,7 @@ export async function handleFeishuMessage(params: {
           });
           log(`feishu: notified user about oversized video (file exceeds ~25MB API limit)`);
           // Remove oversized markers from mediaList and continue if there are other valid media
-          const validMedia = mediaList.filter((m) => m.contentType !== "video/oversized");
+          const validMedia = mediaList.filter((m) => !m.contentType?.endsWith("/oversized"));
           mediaList.length = 0;
           mediaList.push(...validMedia);
           if (mediaList.length === 0) {
