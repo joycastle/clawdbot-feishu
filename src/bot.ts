@@ -342,7 +342,18 @@ async function resolveFeishuMediaList(params: {
 
         log?.(`feishu: downloaded embedded video ${media.fileKey}, saved to ${saved.path}`);
       } catch (err) {
-        log?.(`feishu: failed to download embedded video ${media.fileKey}: ${String(err)}`);
+        const errStr = String(err);
+        if (errStr.includes("234037") || errStr.includes("file size exceeds")) {
+          log?.(`feishu: embedded video ${media.fileKey} exceeds download limit (~25MB), skipping`);
+          // Mark as oversized so we can inform the user
+          out.push({
+            path: "",
+            contentType: "video/oversized",
+            placeholder: "<media:video:oversized>",
+          });
+        } else {
+          log?.(`feishu: failed to download embedded video ${media.fileKey}: ${errStr}`);
+        }
       }
     }
 
@@ -637,6 +648,49 @@ export async function handleFeishuMessage(params: {
       ) || event.message.message_type === "audio" || event.message.message_type === "video";
 
       if (hasAudioVideo) {
+        // Check if there are oversized videos that couldn't be downloaded
+        const hasOversized = mediaList.some((m) => m.contentType === "video/oversized");
+        if (hasOversized) {
+          // Notify user about oversized video limitation
+          const chatId = event.message.chat_id;
+          const senderOpenId = event.sender?.sender_id?.open_id || "";
+          const target = event.message.chat_type === "p2p" ? `user:${senderOpenId}` : `chat:${chatId}`;
+          const { sendCardFeishu } = await import("./send.js");
+          await sendCardFeishu({
+            cfg,
+            to: target,
+            card: {
+              config: { wide_screen_mode: true },
+              header: {
+                title: { tag: "plain_text", content: "🎬 视频文件过大" },
+                template: "orange",
+              },
+              elements: [
+                {
+                  tag: "markdown",
+                  content: [
+                    "检测到视频文件，但**超出飞书 API 下载限制（约 25MB）**，无法处理。",
+                    "",
+                    "**建议：**",
+                    "• 压缩视频后重新发送",
+                    "• 发送较短的视频片段",
+                    "• 将视频上传到网盘并分享链接",
+                  ].join("\n"),
+                },
+              ],
+            },
+            replyToMessageId: event.message.message_id,
+          });
+          log(`feishu: notified user about oversized video (file exceeds ~25MB API limit)`);
+          // Remove oversized markers from mediaList and continue if there are other valid media
+          const validMedia = mediaList.filter((m) => m.contentType !== "video/oversized");
+          mediaList.length = 0;
+          mediaList.push(...validMedia);
+          if (mediaList.length === 0) {
+            return; // No processable media left
+          }
+        }
+
         let totalFileSize = 0;
         for (const media of mediaList) {
           try {
