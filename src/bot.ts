@@ -19,6 +19,12 @@ import { createFeishuReplyDispatcher } from "./reply-dispatcher.js";
 import { getMessageFeishu } from "./send.js";
 import { downloadImageFeishu, downloadMessageResourceFeishu } from "./media.js";
 import { sendMediaConfirmCard } from "./media-confirm.js";
+import { resolveModelForMessage } from "./model-router.js";
+import {
+  resolveModelRouterConfig,
+  sendModelSwitchCard,
+  applyModelOverride,
+} from "./model-switch.js";
 import fs from "fs";
 
 export type FeishuMessageEvent = {
@@ -503,8 +509,10 @@ export async function handleFeishuMessage(params: {
   skipMediaConfirm?: boolean;
   /** Pre-resolved media list (passed from confirmation flow to avoid re-downloading) */
   preResolvedMediaList?: FeishuMediaInfo[];
+  /** Skip model switch confirmation (set when resuming after user confirms/skips) */
+  skipModelSwitch?: boolean;
 }): Promise<void> {
-  const { cfg, event, botOpenId, runtime, chatHistories, skipMediaConfirm, preResolvedMediaList } = params;
+  const { cfg, event, botOpenId, runtime, chatHistories, skipMediaConfirm, preResolvedMediaList, skipModelSwitch } = params;
   const feishuCfg = cfg.channels?.feishu as FeishuConfig | undefined;
   const log = runtime?.log ?? console.log;
   const error = runtime?.error ?? console.error;
@@ -631,6 +639,48 @@ export async function handleFeishuMessage(params: {
       sessionKey: isolatedSessionKey,
       contextKey: `feishu:message:${ctx.chatId}:${ctx.messageId}`,
     });
+
+    // --- Model routing: detect dev/code intent and switch model if needed ---
+    if (!skipModelSwitch && ctx.contentType === "text") {
+      const modelRouterCfg = resolveModelRouterConfig(feishuCfg);
+      if (modelRouterCfg.enabled && modelRouterCfg.devModel) {
+        const routeResult = resolveModelForMessage(ctx.content, modelRouterCfg);
+        if (routeResult.shouldSwitch) {
+          log(`feishu: dev intent detected (confidence=${routeResult.confidence}, hints=${routeResult.matchedHints.join(",")})`);
+
+          if (modelRouterCfg.autoConfirm) {
+            // Auto-confirm: apply model override directly, no card needed
+            await applyModelOverride({
+              cfg,
+              sessionKey: isolatedSessionKey,
+              model: modelRouterCfg.devModel,
+              log,
+            });
+            log(`feishu: auto-switched to ${modelRouterCfg.devModel}`);
+          } else {
+            // Send confirmation card and wait for user response
+            try {
+              await sendModelSwitchCard({
+                cfg,
+                event,
+                targetModel: modelRouterCfg.devModel,
+                defaultModel: modelRouterCfg.defaultModel,
+                sessionKey: isolatedSessionKey,
+                routeResult,
+                botOpenId,
+                runtime: runtime as RuntimeEnv,
+                chatHistories,
+                log,
+              });
+              log(`feishu: model switch confirmation card sent, awaiting response`);
+              return; // Stop processing — will resume when user confirms/skips
+            } catch (err) {
+              log(`feishu: failed to send model switch card (continuing with default model): ${String(err)}`);
+            }
+          }
+        }
+      }
+    }
 
     // Resolve media from message (use pre-resolved list if resuming from cost confirmation)
     const mediaMaxBytes = (feishuCfg?.mediaMaxMb ?? 30) * 1024 * 1024; // 30MB default

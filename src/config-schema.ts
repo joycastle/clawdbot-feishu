@@ -33,6 +33,18 @@ const MarkdownConfigSchema = z
 // Message render mode: auto (default) = detect markdown, raw = plain text, card = always card
 const RenderModeSchema = z.enum(["auto", "raw", "card"]).optional();
 
+// Model router: dynamic model switching based on message intent
+const ModelRouterSchema = z
+  .object({
+    enabled: z.boolean().optional(),
+    defaultModel: z.string().optional(),
+    devModel: z.string().optional(),
+    keywords: z.array(z.string()).optional(),
+    autoConfirm: z.boolean().optional(), // true = skip confirmation card, switch automatically
+  })
+  .strict()
+  .optional();
+
 const BlockStreamingCoalesceSchema = z
   .object({
     enabled: z.boolean().optional(),
@@ -92,6 +104,7 @@ export const FeishuConfigSchema = z
     renderMode: RenderModeSchema, // raw = plain text (default), card = interactive card with markdown
     confirmMediaCost: z.boolean().optional(), // prompt user to confirm cost before processing audio/video
     contextIsolation: z.boolean().optional(), // per-user, per-group, per-topic context isolation (default: true)
+    modelRouter: ModelRouterSchema, // dynamic model switching based on message intent
   })
   .strict()
   .superRefine((value, ctx) => {
