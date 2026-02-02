@@ -57,6 +57,9 @@ export const feishuPlugin: ChannelPlugin<ResolvedFeishuAccount> = {
       "- Feishu supports interactive cards for rich messages.",
     ],
   },
+  actions: {
+    listActions: () => ["poll"],
+  },
   groups: {
     resolveToolPolicy: resolveFeishuGroupToolPolicy,
   },

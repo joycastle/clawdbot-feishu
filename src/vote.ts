@@ -20,6 +20,12 @@ import { loadVoteData, saveVoteData, withLock } from "./vote-store.js";
 import { buildVoteCard, resolveNames } from "./vote-card.js";
 import { sendCardFeishu, updateCardFeishu } from "./send.js";
 
+// ─── Debounce ────────────────────────────────────────────────────────────────
+
+/** Per-poll debounce timers for delayed PATCH calls. */
+const patchTimers = new Map<string, ReturnType<typeof setTimeout>>();
+const PATCH_DELAY_MS = 40;
+
 // Re-exports for external consumers
 export type { VoteData } from "./vote-store.js";
 export { cleanupOldPolls } from "./vote-store.js";
@@ -99,6 +105,8 @@ export async function createPoll(params: CreatePollParams): Promise<{
 
 /**
  * Handle a vote card action (toggle vote or close poll).
+ * Returns a toast response for immediate user feedback, plus schedules
+ * a debounced PATCH to update the card after the callback completes.
  */
 export async function handleVoteCardAction(params: {
   actionData: {
@@ -108,11 +116,11 @@ export async function handleVoteCardAction(params: {
   };
   cfg: ClawdbotConfig;
   log?: (msg: string) => void;
-}): Promise<boolean> {
+}): Promise<Record<string, unknown> | null> {
   const { actionData, cfg, log } = params;
 
   const actionValue = actionData.action?.value as Record<string, unknown> | undefined;
-  if (!actionValue) return false;
+  if (!actionValue) return null;
 
   const action = actionValue.action as string;
   const pollId = actionValue.pollId as string;
@@ -120,8 +128,11 @@ export async function handleVoteCardAction(params: {
 
   if (!pollId) {
     log?.(`vote: missing pollId`);
-    return false;
+    return null;
   }
+
+  // Holds the updated card to return as websocket callback response
+  let responseCard: Record<string, unknown> | null = null;
 
   // Serialize updates per poll
   await withLock(pollId, async () => {
@@ -206,20 +217,36 @@ export async function handleVoteCardAction(params: {
       }
     }
 
-    // 4. Rebuild card and update
+    // 4. Rebuild card
     const updatedCard = buildVoteCard(voteData, namesMap);
-    try {
-      await updateCardFeishu({ cfg, messageId, card: updatedCard });
-      log?.(`vote: card updated (pollId=${pollId}, messageId=${messageId})`);
-    } catch (err) {
-      log?.(`vote: card update failed: ${String(err)}`);
-    }
 
     // 5. Save state to file
     await saveVoteData(voteData);
+
+    // 6. Debounced delayed PATCH — cancel any pending PATCH for this poll,
+    //    then schedule a new one. This batches rapid consecutive clicks
+    //    into a single PATCH with the latest state.
+    const prevTimer = patchTimers.get(pollId);
+    if (prevTimer) {
+      clearTimeout(prevTimer);
+      log?.(`vote: debounce — cancelled pending PATCH (pollId=${pollId})`);
+    }
+    const capturedMessageId = messageId;
+    const capturedCard = updatedCard;
+    const timer = setTimeout(async () => {
+      patchTimers.delete(pollId);
+      try {
+        await updateCardFeishu({ cfg, messageId: capturedMessageId, card: capturedCard });
+        log?.(`vote: debounced PATCH sent (pollId=${pollId})`);
+      } catch (err) {
+        log?.(`vote: debounced PATCH failed: ${String(err)}`);
+      }
+    }, PATCH_DELAY_MS);
+    patchTimers.set(pollId, timer);
   });
 
-  return true;
+  // Return toast for immediate user feedback (click registered).
+  return { toast: { type: "success" as const, content: "已投票" } };
 }
 
 /**

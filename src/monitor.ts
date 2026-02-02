@@ -295,8 +295,9 @@ async function monitorWebSocket(params: {
         }
 
         if (isVoteAction(actionValue)) {
-          await handleVoteCardAction({ actionData, cfg, log });
-          return;
+          const response = await handleVoteCardAction({ actionData, cfg, log });
+          // Return toast for immediate feedback; debounced PATCH updates the card.
+          return response ?? undefined;
         }
 
         // Unknown card action — try media confirm as fallback (backward compat)
