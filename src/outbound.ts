@@ -2,6 +2,7 @@ import type { ChannelOutboundAdapter } from "clawdbot/plugin-sdk";
 import { getFeishuRuntime } from "./runtime.js";
 import { sendMessageFeishu, sendPostFeishu } from "./send.js";
 import { sendMediaFeishu } from "./media.js";
+import { createPoll } from "./vote.js";
 
 /** Check if text contains fenced code blocks */
 function hasCodeBlocks(text: string): boolean {
@@ -47,5 +48,21 @@ export const feishuOutbound: ChannelOutboundAdapter = {
     // No media URL, just return text result
     const result = await sendMessageFeishu({ cfg, to, text: text ?? "" });
     return { channel: "feishu", ...result };
+  },
+  pollMaxOptions: 20,
+  sendPoll: async ({ cfg, to, poll }) => {
+    const multiSelect = (poll.maxSelections ?? 1) > 1;
+    const pollResult = await createPoll({
+      cfg,
+      to,
+      question: poll.question,
+      options: poll.options,
+      multiSelect,
+    });
+    return {
+      channel: "feishu",
+      messageId: pollResult.cardMessageId,
+      pollId: pollResult.id,
+    };
   },
 };

@@ -44,7 +44,7 @@ export const feishuPlugin: ChannelPlugin<ResolvedFeishuAccount> = {
   },
   capabilities: {
     chatTypes: ["direct", "channel"],
-    polls: false,
+    polls: true,
     threads: true,
     media: true,
     reactions: true,

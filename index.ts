@@ -27,6 +27,7 @@ export {
   FeishuEmoji,
 } from "./src/reactions.js";
 export { feishuPlugin } from "./src/channel.js";
+export { createPoll, handleVoteCardAction, isVoteAction, getPoll, cleanupOldPolls } from "./src/vote.js";
 
 const plugin = {
   id: "feishu",

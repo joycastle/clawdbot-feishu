@@ -6,6 +6,7 @@ import { resolveFeishuCredentials } from "./accounts.js";
 import { handleFeishuMessage, type FeishuMessageEvent, type FeishuBotAddedEvent } from "./bot.js";
 import { handleMediaCardAction, isMediaConfirmAction, type CardActionEvent } from "./media-confirm.js";
 import { handleModelSwitchCardAction, isModelSwitchAction } from "./model-switch.js";
+import { handleVoteCardAction, isVoteAction } from "./vote.js";
 import { probeFeishu } from "./probe.js";
 import { analyzeVideo } from "./video-analyze.js";
 import { sendCardFeishu, updateCardFeishu } from "./send.js";
@@ -290,6 +291,11 @@ async function monitorWebSocket(params: {
               });
             }
           }
+          return;
+        }
+
+        if (isVoteAction(actionValue)) {
+          await handleVoteCardAction({ actionData, cfg, log });
           return;
         }
 
