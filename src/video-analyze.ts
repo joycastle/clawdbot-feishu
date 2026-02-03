@@ -63,15 +63,15 @@ export interface VideoAnalysisResult {
 
 // ─── Configuration ───────────────────────────────────────────────────────────
 
-const DEFAULT_MODEL = "gemini-3-pro-preview";
+const DEFAULT_MODEL = "gemini-3-flash-preview";
 const VERTEX_AI_SCOPE = "https://www.googleapis.com/auth/cloud-platform";
 const MAX_VIDEO_SIZE_MB = 20;
 
-// Pricing per million tokens
+// Pricing per million tokens (official Google pricing, ≤200K input tokens tier)
 const PRICING = {
-  "gemini-3-flash": { input: 0.15, output: 0.60 },
-  "gemini-3-flash-preview": { input: 0.15, output: 0.60 },
-  "gemini-3-pro-preview": { input: 1.25, output: 10.00 },
+  "gemini-3-flash": { input: 0.50, output: 3.00 },
+  "gemini-3-flash-preview": { input: 0.50, output: 3.00 },
+  "gemini-3-pro-preview": { input: 2.00, output: 12.00 },
   "gemini-2.0-flash-001": { input: 0.15, output: 0.60 },
   "gemini-2.5-flash-preview-05-20": { input: 0.30, output: 2.50 },
 } as Record<string, { input: number; output: number }>;
