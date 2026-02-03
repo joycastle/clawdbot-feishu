@@ -82,7 +82,7 @@ async function monitorWebSocket(params: {
   // ─── Message deduplication ─────────────────────────────────────────────────
   // Feishu WebSocket may re-deliver events on reconnect (even hours later).
   // Persist recent message_ids to disk so restarts don't lose dedup state.
-  const DEDUP_TTL_MS = 2 * 60 * 60 * 1000; // 2 hours
+  const DEDUP_TTL_MS = 24 * 60 * 60 * 1000; // 24 hours
   const DEDUP_FILE = path.join(
     process.env.CLAWDBOT_DATA_DIR || path.join(os.homedir(), ".clawdbot"),
     "feishu-dedup.json",
