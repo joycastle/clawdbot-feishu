@@ -76,12 +76,34 @@ async function monitorWebSocket(params: {
 
   const chatHistories = new Map<string, HistoryEntry[]>();
 
+  // ─── Message deduplication ─────────────────────────────────────────────────
+  // Feishu WebSocket may deliver the same event multiple times (reconnect/retry).
+  // Track recently seen message_ids to avoid duplicate processing.
+  const recentMessageIds = new Map<string, number>(); // message_id → timestamp
+  const DEDUP_TTL_MS = 60_000; // keep ids for 60s
+
+  function isDuplicateMessage(messageId: string): boolean {
+    const now = Date.now();
+    // Purge expired entries
+    for (const [id, ts] of recentMessageIds) {
+      if (now - ts > DEDUP_TTL_MS) recentMessageIds.delete(id);
+    }
+    if (recentMessageIds.has(messageId)) return true;
+    recentMessageIds.set(messageId, now);
+    return false;
+  }
+
   const eventDispatcher = createEventDispatcher(feishuCfg);
 
   eventDispatcher.register({
     "im.message.receive_v1": async (data) => {
       try {
         const event = data as unknown as FeishuMessageEvent;
+        const messageId = event.message?.message_id;
+        if (messageId && isDuplicateMessage(messageId)) {
+          log(`feishu: skipping duplicate message (id=${messageId})`);
+          return;
+        }
         await handleFeishuMessage({
           cfg,
           event,
