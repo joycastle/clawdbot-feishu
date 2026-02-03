@@ -48,11 +48,3 @@ export type FeishuMediaInfo = {
   contentType?: string;
   placeholder: string;
 };
-
-export type ModelRouterConfig = {
-  enabled: boolean;
-  defaultModel: string;
-  devModel: string;
-  keywords?: string[];
-  autoConfirm?: boolean;
-};

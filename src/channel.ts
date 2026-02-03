@@ -91,16 +91,6 @@ export const feishuPlugin: ChannelPlugin<ResolvedFeishuAccount> = {
         renderMode: { type: "string", enum: ["auto", "raw", "card"] },
         confirmMediaCost: { type: "boolean" },
         contextIsolation: { type: "boolean" },
-        modelRouter: {
-          type: "object",
-          properties: {
-            enabled: { type: "boolean" },
-            defaultModel: { type: "string" },
-            devModel: { type: "string" },
-            keywords: { type: "array", items: { type: "string" } },
-            autoConfirm: { type: "boolean" },
-          },
-        },
       },
     },
   },

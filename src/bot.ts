@@ -19,12 +19,6 @@ import { createFeishuReplyDispatcher } from "./reply-dispatcher.js";
 import { getMessageFeishu } from "./send.js";
 import { downloadImageFeishu, downloadMessageResourceFeishu } from "./media.js";
 import { sendMediaConfirmCard } from "./media-confirm.js";
-import { resolveModelForMessage } from "./model-router.js";
-import {
-  resolveModelRouterConfig,
-  sendModelSwitchCard,
-  applyModelOverride,
-} from "./model-switch.js";
 import fs from "fs";
 
 export type FeishuMessageEvent = {
@@ -509,10 +503,8 @@ export async function handleFeishuMessage(params: {
   skipMediaConfirm?: boolean;
   /** Pre-resolved media list (passed from confirmation flow to avoid re-downloading) */
   preResolvedMediaList?: FeishuMediaInfo[];
-  /** Skip model switch confirmation (set when resuming after user confirms/skips) */
-  skipModelSwitch?: boolean;
 }): Promise<void> {
-  const { cfg, event, botOpenId, runtime, chatHistories, skipMediaConfirm, preResolvedMediaList, skipModelSwitch } = params;
+  const { cfg, event, botOpenId, runtime, chatHistories, skipMediaConfirm, preResolvedMediaList } = params;
   const feishuCfg = cfg.channels?.feishu as FeishuConfig | undefined;
   const log = runtime?.log ?? console.log;
   const error = runtime?.error ?? console.error;
@@ -641,34 +633,6 @@ export async function handleFeishuMessage(params: {
       sessionKey: isolatedSessionKey,
       contextKey: `feishu:message:${ctx.chatId}:${ctx.messageId}`,
     });
-
-    // --- Model routing: explicit model switch detection ---
-    if (!skipModelSwitch && ctx.contentType === "text") {
-      const modelRouterCfg = resolveModelRouterConfig(feishuCfg);
-      if (modelRouterCfg.enabled && modelRouterCfg.devModel) {
-        const routeResult = resolveModelForMessage(ctx.content, modelRouterCfg);
-
-        if (routeResult.shouldSwitch) {
-          // User explicitly requested dev model (e.g., "开发", "切换到claude")
-          await applyModelOverride({
-            cfg,
-            sessionKey: isolatedSessionKey,
-            model: modelRouterCfg.devModel,
-            log,
-          });
-          log(`feishu: switched to dev model ${modelRouterCfg.devModel} (hints=${routeResult.matchedHints.join(",")})`);
-        } else if (routeResult.shouldSwitchToDefault) {
-          // User explicitly requested default model (e.g., "聊天", "切换到gemini")
-          await applyModelOverride({
-            cfg,
-            sessionKey: isolatedSessionKey,
-            model: null, // clear override → use default
-            log,
-          });
-          log(`feishu: switched back to default model (hints=${routeResult.matchedHints.join(",")})`);
-        }
-      }
-    }
 
     // Resolve media from message (use pre-resolved list if resuming from cost confirmation)
     const mediaMaxBytes = (feishuCfg?.mediaMaxMb ?? 30) * 1024 * 1024; // 30MB default
