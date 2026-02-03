@@ -31,8 +31,9 @@ const WHISPER_COST_PER_MINUTE_USD = 0.006;
 
 // Gemini audio: ~25 tokens per second of audio
 const GEMINI_AUDIO_TOKENS_PER_SEC = 25;
-// Gemini video: ~258 tokens per second of video (1 fps sample rate)
-const GEMINI_VIDEO_TOKENS_PER_SEC = 258;
+// Gemini video: ~263 tokens per second (258 per frame @1fps + 32 audio - overlap)
+// Ref: https://ai.google.dev/gemini-api/docs/tokens
+const GEMINI_VIDEO_TOKENS_PER_SEC = 263;
 
 // Gemini 3 Flash pricing per million tokens (used for video, ≤200K tier)
 const GEMINI3_FLASH_INPUT_PRICE_PER_M_TOKENS = 0.50;
