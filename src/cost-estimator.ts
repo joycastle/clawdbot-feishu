@@ -88,7 +88,7 @@ export function estimateMediaCost(params: {
     const outputCost = (GEMINI_ESTIMATED_OUTPUT_TOKENS / 1_000_000) * GEMINI3_FLASH_OUTPUT_PRICE_PER_M_TOKENS;
     estimatedCostUsd = inputCost + outputCost;
     pricingBasis = `Gemini 3 Flash ($${GEMINI3_FLASH_INPUT_PRICE_PER_M_TOKENS}/M input + $${GEMINI3_FLASH_OUTPUT_PRICE_PER_M_TOKENS}/M output)`;
-    modelName = "gemini-3-flash-preview";
+    modelName = "gemini-3-flash";
   } else if (isGemini) {
     // Gemini native audio processing
     const tokensPerSec = GEMINI_AUDIO_TOKENS_PER_SEC;
