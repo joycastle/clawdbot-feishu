@@ -777,6 +777,15 @@ export async function handleFeishuMessage(params: {
               ? "video"
               : "audio";
 
+          // Extract actual duration from message content if available
+          let mediaDurationMs: number | undefined;
+          try {
+            const parsed = JSON.parse(event.message.content);
+            if (parsed.duration && typeof parsed.duration === "number") {
+              mediaDurationMs = parsed.duration;
+            }
+          } catch { /* ignore parse errors */ }
+
           try {
             await sendMediaConfirmCard({
               cfg,
@@ -784,6 +793,7 @@ export async function handleFeishuMessage(params: {
               mediaType: detectedMediaType,
               fileSizeBytes: totalFileSize,
               mediaList,
+              durationMs: mediaDurationMs,
               botOpenId,
               runtime,
               chatHistories,

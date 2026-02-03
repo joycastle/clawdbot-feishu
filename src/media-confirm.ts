@@ -256,6 +256,8 @@ export async function sendMediaConfirmCard(params: {
   fileSizeBytes: number;
   mediaList: FeishuMediaInfo[];
   modelHint?: string;
+  /** Actual duration in milliseconds (from Feishu message metadata) */
+  durationMs?: number;
   botOpenId?: string;
   runtime?: unknown;
   chatHistories?: Map<string, HistoryEntry[]>;
@@ -268,6 +270,7 @@ export async function sendMediaConfirmCard(params: {
     fileSizeBytes,
     mediaList,
     modelHint,
+    durationMs,
     botOpenId,
     runtime,
     chatHistories,
@@ -278,6 +281,7 @@ export async function sendMediaConfirmCard(params: {
     fileSizeBytes,
     mediaType,
     modelHint,
+    durationMs,
   });
 
   const pendingId = generatePendingId();

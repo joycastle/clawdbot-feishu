@@ -34,9 +34,9 @@ const GEMINI_AUDIO_TOKENS_PER_SEC = 25;
 // Gemini video: ~258 tokens per second of video (1 fps sample rate)
 const GEMINI_VIDEO_TOKENS_PER_SEC = 258;
 
-// Gemini 3 Flash pricing per million tokens (used for video)
-const GEMINI3_FLASH_INPUT_PRICE_PER_M_TOKENS = 0.15;
-const GEMINI3_FLASH_OUTPUT_PRICE_PER_M_TOKENS = 0.60;
+// Gemini 3 Pro pricing per million tokens (used for video)
+const GEMINI3_PRO_INPUT_PRICE_PER_M_TOKENS = 1.25;
+const GEMINI3_PRO_OUTPUT_PRICE_PER_M_TOKENS = 10.00;
 // Gemini 2.0 Flash pricing (fallback for audio/non-video)
 const GEMINI2_INPUT_PRICE_PER_M_TOKENS = 0.15;
 const GEMINI2_OUTPUT_PRICE_PER_M_TOKENS = 0.60;
@@ -67,12 +67,19 @@ export function estimateMediaCost(params: {
   fileSizeBytes: number;
   mediaType: "audio" | "video";
   modelHint?: string;
+  /** Actual duration in milliseconds (from Feishu message metadata) */
+  durationMs?: number;
 }): CostEstimate {
-  const { fileSizeBytes, mediaType, modelHint } = params;
+  const { fileSizeBytes, mediaType, modelHint, durationMs } = params;
 
-  // Estimate duration from file size
-  const bitrate = mediaType === "audio" ? AUDIO_BITRATE_BPS : VIDEO_BITRATE_BPS;
-  const estimatedDurationSec = Math.max(1, Math.round(fileSizeBytes / bitrate));
+  // Use actual duration if available, otherwise estimate from file size
+  let estimatedDurationSec: number;
+  if (durationMs && durationMs > 0) {
+    estimatedDurationSec = Math.max(1, Math.round(durationMs / 1000));
+  } else {
+    const bitrate = mediaType === "audio" ? AUDIO_BITRATE_BPS : VIDEO_BITRATE_BPS;
+    estimatedDurationSec = Math.max(1, Math.round(fileSizeBytes / bitrate));
+  }
 
   const isGemini = detectIsGeminiModel(modelHint);
 
@@ -84,11 +91,11 @@ export function estimateMediaCost(params: {
     // Video always uses Gemini 3 Flash for analysis
     const tokensPerSec = GEMINI_VIDEO_TOKENS_PER_SEC;
     const totalInputTokens = estimatedDurationSec * tokensPerSec;
-    const inputCost = (totalInputTokens / 1_000_000) * GEMINI3_FLASH_INPUT_PRICE_PER_M_TOKENS;
-    const outputCost = (GEMINI_ESTIMATED_OUTPUT_TOKENS / 1_000_000) * GEMINI3_FLASH_OUTPUT_PRICE_PER_M_TOKENS;
+    const inputCost = (totalInputTokens / 1_000_000) * GEMINI3_PRO_INPUT_PRICE_PER_M_TOKENS;
+    const outputCost = (GEMINI_ESTIMATED_OUTPUT_TOKENS / 1_000_000) * GEMINI3_PRO_OUTPUT_PRICE_PER_M_TOKENS;
     estimatedCostUsd = inputCost + outputCost;
-    pricingBasis = `Gemini 3 Flash ($${GEMINI3_FLASH_INPUT_PRICE_PER_M_TOKENS}/M input + $${GEMINI3_FLASH_OUTPUT_PRICE_PER_M_TOKENS}/M output)`;
-    modelName = "gemini-3-flash";
+    pricingBasis = `Gemini 3 Pro ($${GEMINI3_PRO_INPUT_PRICE_PER_M_TOKENS}/M input + $${GEMINI3_PRO_OUTPUT_PRICE_PER_M_TOKENS}/M output)`;
+    modelName = "gemini-3-pro-preview";
   } else if (isGemini) {
     // Gemini native audio processing
     const tokensPerSec = GEMINI_AUDIO_TOKENS_PER_SEC;

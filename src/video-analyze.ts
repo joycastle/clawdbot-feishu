@@ -63,7 +63,7 @@ export interface VideoAnalysisResult {
 
 // ─── Configuration ───────────────────────────────────────────────────────────
 
-const DEFAULT_MODEL = "gemini-3-flash-preview";
+const DEFAULT_MODEL = "gemini-3-pro-preview";
 const VERTEX_AI_SCOPE = "https://www.googleapis.com/auth/cloud-platform";
 const MAX_VIDEO_SIZE_MB = 20;
 
