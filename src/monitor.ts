@@ -1,3 +1,6 @@
+import * as fs from "node:fs";
+import * as path from "node:path";
+import * as os from "node:os";
 import * as Lark from "@larksuiteoapi/node-sdk";
 import type { ClawdbotConfig, RuntimeEnv, HistoryEntry } from "clawdbot/plugin-sdk";
 import type { FeishuConfig } from "./types.js";
@@ -77,10 +80,35 @@ async function monitorWebSocket(params: {
   const chatHistories = new Map<string, HistoryEntry[]>();
 
   // ─── Message deduplication ─────────────────────────────────────────────────
-  // Feishu WebSocket may deliver the same event multiple times (reconnect/retry).
-  // Track recently seen message_ids to avoid duplicate processing.
-  const recentMessageIds = new Map<string, number>(); // message_id → timestamp
-  const DEDUP_TTL_MS = 60_000; // keep ids for 60s
+  // Feishu WebSocket may re-deliver events on reconnect (even hours later).
+  // Persist recent message_ids to disk so restarts don't lose dedup state.
+  const DEDUP_TTL_MS = 2 * 60 * 60 * 1000; // 2 hours
+  const DEDUP_FILE = path.join(
+    process.env.CLAWDBOT_DATA_DIR || path.join(os.homedir(), ".clawdbot"),
+    "feishu-dedup.json",
+  );
+  const recentMessageIds = new Map<string, number>();
+
+  // Load persisted dedup state on startup
+  try {
+    const raw = fs.readFileSync(DEDUP_FILE, "utf-8");
+    const entries = JSON.parse(raw) as [string, number][];
+    const now = Date.now();
+    for (const [id, ts] of entries) {
+      if (now - ts < DEDUP_TTL_MS) recentMessageIds.set(id, ts);
+    }
+    log(`feishu: loaded ${recentMessageIds.size} dedup entries from disk`);
+  } catch {
+    // File doesn't exist or is corrupt — start fresh
+  }
+
+  function persistDedup(): void {
+    try {
+      fs.writeFileSync(DEDUP_FILE, JSON.stringify([...recentMessageIds]), "utf-8");
+    } catch {
+      // Non-fatal — dedup still works in-memory
+    }
+  }
 
   function isDuplicateMessage(messageId: string): boolean {
     const now = Date.now();
@@ -90,6 +118,7 @@ async function monitorWebSocket(params: {
     }
     if (recentMessageIds.has(messageId)) return true;
     recentMessageIds.set(messageId, now);
+    persistDedup();
     return false;
   }
 
