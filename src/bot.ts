@@ -383,7 +383,8 @@ async function resolveFeishuMediaList(params: {
 
     // For message media, always use messageResource API
     // The image.get API is only for images uploaded via im/v1/images, not for message attachments
-    const fileKey = mediaKeys.imageKey || mediaKeys.fileKey;
+    // For video/media, prefer file_key (actual video) over image_key (thumbnail)
+    const fileKey = mediaKeys.fileKey || mediaKeys.imageKey;
     if (!fileKey) {
       return [];
     }
@@ -402,6 +403,11 @@ async function resolveFeishuMediaList(params: {
     // Detect mime type if not provided
     if (!contentType) {
       contentType = await core.media.detectMime({ buffer });
+    }
+    // For video/media messages, default to video/mp4 if detection fails
+    if ((messageType === "video" || messageType === "media") &&
+        (!contentType || contentType === "application/octet-stream")) {
+      contentType = "video/mp4";
     }
 
     // Save to disk using core's saveMediaBuffer
