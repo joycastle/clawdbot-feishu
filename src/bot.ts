@@ -354,7 +354,7 @@ async function resolveFeishuMediaList(params: {
           errAny?.response?.status === 400 ||
           errStr.includes("status code 400");
         if (isOversized) {
-          log?.(`feishu: embedded video ${media.fileKey} likely exceeds download limit (~25MB), skipping`);
+          log?.(`feishu: embedded video ${media.fileKey} likely exceeds download limit (~30MB), skipping`);
           // Mark as oversized so we can inform the user
           out.push({
             path: "",
@@ -430,7 +430,7 @@ async function resolveFeishuMediaList(params: {
       errStr.includes("status code 400");
 
     if (isOversized && (messageType === "video" || messageType === "media" || messageType === "audio")) {
-      log?.(`feishu: ${messageType} media likely exceeds download limit (~25MB), marking as oversized`);
+      log?.(`feishu: ${messageType} media likely exceeds download limit (~30MB), marking as oversized`);
       out.push({
         path: "",
         contentType: `${messageType}/oversized`,
@@ -730,7 +730,7 @@ export async function handleFeishuMessage(params: {
                 {
                   tag: "markdown",
                   content: [
-                    "检测到视频文件，但**超出飞书 API 下载限制（约 25MB）**，无法处理。",
+                    "检测到视频文件，但**超出飞书 API 下载限制（约 30MB）**，无法处理。",
                     "",
                     "**建议：**",
                     "• 压缩视频后重新发送",
@@ -742,7 +742,7 @@ export async function handleFeishuMessage(params: {
             },
             replyToMessageId: event.message.message_id,
           });
-          log(`feishu: notified user about oversized video (file exceeds ~25MB API limit)`);
+          log(`feishu: notified user about oversized video (file exceeds ~30MB API limit)`);
           // Remove oversized markers from mediaList and continue if there are other valid media
           const validMedia = mediaList.filter((m) => !m.contentType?.endsWith("/oversized"));
           mediaList.length = 0;

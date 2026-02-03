@@ -33,10 +33,13 @@ const WHISPER_COST_PER_MINUTE_USD = 0.006;
 const GEMINI_AUDIO_TOKENS_PER_SEC = 25;
 // Gemini video: ~258 tokens per second of video (1 fps sample rate)
 const GEMINI_VIDEO_TOKENS_PER_SEC = 258;
-// Gemini pricing per million tokens (input) - Gemini 2.0 Flash
-const GEMINI_INPUT_PRICE_PER_M_TOKENS = 0.15;
-// Output pricing (for cost estimate display)
-const GEMINI_OUTPUT_PRICE_PER_M_TOKENS = 0.60;
+
+// Gemini 3 Flash pricing per million tokens (used for video)
+const GEMINI3_FLASH_INPUT_PRICE_PER_M_TOKENS = 0.15;
+const GEMINI3_FLASH_OUTPUT_PRICE_PER_M_TOKENS = 0.60;
+// Gemini 2.0 Flash pricing (fallback for audio/non-video)
+const GEMINI2_INPUT_PRICE_PER_M_TOKENS = 0.15;
+const GEMINI2_OUTPUT_PRICE_PER_M_TOKENS = 0.60;
 // Estimated output tokens for a video analysis (~2000 tokens)
 const GEMINI_ESTIMATED_OUTPUT_TOKENS = 2000;
 
@@ -77,15 +80,23 @@ export function estimateMediaCost(params: {
   let pricingBasis: string;
   let modelName: string;
 
-  if (isGemini) {
-    // Gemini native audio/video processing
-    const tokensPerSec =
-      mediaType === "audio" ? GEMINI_AUDIO_TOKENS_PER_SEC : GEMINI_VIDEO_TOKENS_PER_SEC;
+  if (mediaType === "video") {
+    // Video always uses Gemini 3 Flash for analysis
+    const tokensPerSec = GEMINI_VIDEO_TOKENS_PER_SEC;
     const totalInputTokens = estimatedDurationSec * tokensPerSec;
-    const inputCost = (totalInputTokens / 1_000_000) * GEMINI_INPUT_PRICE_PER_M_TOKENS;
-    const outputCost = (GEMINI_ESTIMATED_OUTPUT_TOKENS / 1_000_000) * GEMINI_OUTPUT_PRICE_PER_M_TOKENS;
+    const inputCost = (totalInputTokens / 1_000_000) * GEMINI3_FLASH_INPUT_PRICE_PER_M_TOKENS;
+    const outputCost = (GEMINI_ESTIMATED_OUTPUT_TOKENS / 1_000_000) * GEMINI3_FLASH_OUTPUT_PRICE_PER_M_TOKENS;
     estimatedCostUsd = inputCost + outputCost;
-    pricingBasis = `Gemini 2.0 Flash ($${GEMINI_INPUT_PRICE_PER_M_TOKENS}/M input + $${GEMINI_OUTPUT_PRICE_PER_M_TOKENS}/M output)`;
+    pricingBasis = `Gemini 3 Flash ($${GEMINI3_FLASH_INPUT_PRICE_PER_M_TOKENS}/M input + $${GEMINI3_FLASH_OUTPUT_PRICE_PER_M_TOKENS}/M output)`;
+    modelName = "gemini-3-flash-preview";
+  } else if (isGemini) {
+    // Gemini native audio processing
+    const tokensPerSec = GEMINI_AUDIO_TOKENS_PER_SEC;
+    const totalInputTokens = estimatedDurationSec * tokensPerSec;
+    const inputCost = (totalInputTokens / 1_000_000) * GEMINI2_INPUT_PRICE_PER_M_TOKENS;
+    const outputCost = (GEMINI_ESTIMATED_OUTPUT_TOKENS / 1_000_000) * GEMINI2_OUTPUT_PRICE_PER_M_TOKENS;
+    estimatedCostUsd = inputCost + outputCost;
+    pricingBasis = `Gemini 2.0 Flash ($${GEMINI2_INPUT_PRICE_PER_M_TOKENS}/M input + $${GEMINI2_OUTPUT_PRICE_PER_M_TOKENS}/M output)`;
     modelName = modelHint || "gemini-2.0-flash";
   } else {
     // Claude mode: uses Whisper for transcription

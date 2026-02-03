@@ -3,7 +3,8 @@
  *
  * Sends video files to Gemini for automatic analysis.
  * Uses service account credentials for authentication (JWT → OAuth2 token).
- * Supports inline video data (< 20MB) via the Gemini generateContent API.
+ * - Videos ≤ 20MB: inline base64 via generateContent API
+ * - Videos 20–30MB: upload to GCS temp bucket, use fileUri, then delete
  */
 
 import fs from "fs";
@@ -63,14 +64,21 @@ export interface VideoAnalysisResult {
 
 // ─── Configuration ───────────────────────────────────────────────────────────
 
-const DEFAULT_MODEL = "gemini-2.0-flash-001";
+const DEFAULT_MODEL = "gemini-3-flash-preview";
 const VERTEX_AI_SCOPE = "https://www.googleapis.com/auth/cloud-platform";
+const MAX_INLINE_SIZE_MB = 20;
+const MAX_VIDEO_SIZE_MB = 30;
 
-// Pricing per million tokens (Gemini 2.0 Flash)
+// Pricing per million tokens
 const PRICING = {
+  "gemini-3-flash-preview": { input: 0.15, output: 0.60 },
+  "gemini-3-pro-preview": { input: 1.25, output: 10.00 },
   "gemini-2.0-flash-001": { input: 0.15, output: 0.60 },
   "gemini-2.5-flash-preview-05-20": { input: 0.30, output: 2.50 },
 } as Record<string, { input: number; output: number }>;
+
+// GCS temp bucket for large video uploads (auto-created if missing)
+const GCS_TEMP_BUCKET_PREFIX = "clawdbot-video-temp";
 
 // ─── Auth: JWT → OAuth2 Token ────────────────────────────────────────────────
 
@@ -124,6 +132,129 @@ async function getAccessToken(credentials: ServiceAccountCredentials): Promise<s
   };
 
   return data.access_token;
+}
+
+// ─── GCS Helpers ─────────────────────────────────────────────────────────────
+
+function getGcsBucketName(projectId: string): string {
+  return `${GCS_TEMP_BUCKET_PREFIX}-${projectId}`;
+}
+
+/**
+ * Ensure GCS temp bucket exists; create if not.
+ */
+async function ensureGcsBucket(
+  projectId: string,
+  accessToken: string,
+  log: (msg: string) => void,
+): Promise<string> {
+  const bucket = getGcsBucketName(projectId);
+
+  // Check if bucket exists
+  const checkRes = await fetch(
+    `https://storage.googleapis.com/storage/v1/b/${bucket}`,
+    { headers: { Authorization: `Bearer ${accessToken}` } },
+  );
+
+  if (checkRes.ok) {
+    return bucket;
+  }
+
+  // Create bucket with auto-delete lifecycle (1 day)
+  log(`video-analyze: creating GCS temp bucket ${bucket}`);
+  const createRes = await fetch(
+    `https://storage.googleapis.com/storage/v1/b?project=${projectId}`,
+    {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        name: bucket,
+        location: "US",
+        storageClass: "STANDARD",
+        lifecycle: {
+          rule: [
+            {
+              action: { type: "Delete" },
+              condition: { age: 1 }, // Auto-delete after 1 day
+            },
+          ],
+        },
+      }),
+    },
+  );
+
+  if (!createRes.ok) {
+    const errText = await createRes.text();
+    throw new Error(`Failed to create GCS bucket ${bucket}: ${createRes.status} ${errText}`);
+  }
+
+  log(`video-analyze: created GCS temp bucket ${bucket}`);
+  return bucket;
+}
+
+/**
+ * Upload a file to GCS and return the gs:// URI.
+ */
+async function uploadToGcs(params: {
+  bucket: string;
+  filePath: string;
+  mimeType: string;
+  accessToken: string;
+  log: (msg: string) => void;
+}): Promise<string> {
+  const { bucket, filePath, mimeType, accessToken, log } = params;
+  const objectName = `video-${Date.now()}-${crypto.randomBytes(4).toString("hex")}${path.extname(filePath)}`;
+
+  log(`video-analyze: uploading to GCS gs://${bucket}/${objectName}`);
+
+  const fileBuffer = fs.readFileSync(filePath);
+  const uploadRes = await fetch(
+    `https://storage.googleapis.com/upload/storage/v1/b/${bucket}/o?uploadType=media&name=${encodeURIComponent(objectName)}`,
+    {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+        "Content-Type": mimeType,
+      },
+      body: fileBuffer,
+    },
+  );
+
+  if (!uploadRes.ok) {
+    const errText = await uploadRes.text();
+    throw new Error(`GCS upload failed: ${uploadRes.status} ${errText}`);
+  }
+
+  const gcsUri = `gs://${bucket}/${objectName}`;
+  log(`video-analyze: uploaded to ${gcsUri}`);
+  return gcsUri;
+}
+
+/**
+ * Delete a GCS object (best-effort cleanup).
+ */
+async function deleteFromGcs(params: {
+  bucket: string;
+  objectName: string;
+  accessToken: string;
+  log: (msg: string) => void;
+}): Promise<void> {
+  const { bucket, objectName, accessToken, log } = params;
+  try {
+    await fetch(
+      `https://storage.googleapis.com/storage/v1/b/${bucket}/o/${encodeURIComponent(objectName)}`,
+      {
+        method: "DELETE",
+        headers: { Authorization: `Bearer ${accessToken}` },
+      },
+    );
+    log(`video-analyze: deleted GCS object gs://${bucket}/${objectName}`);
+  } catch (err) {
+    log(`video-analyze: failed to delete GCS object (non-fatal): ${String(err)}`);
+  }
 }
 
 // ─── Gemini API Call ─────────────────────────────────────────────────────────
@@ -190,71 +321,108 @@ export async function analyzeVideo(
 
   log(`video-analyze: loading video from ${videoPath}`);
 
-  // Read video file
-  const videoBuffer = fs.readFileSync(videoPath);
-  const fileSizeMb = videoBuffer.length / (1024 * 1024);
+  // Check file size
+  const stat = fs.statSync(videoPath);
+  const fileSizeMb = stat.size / (1024 * 1024);
   log(`video-analyze: video size = ${fileSizeMb.toFixed(1)} MB`);
 
-  if (fileSizeMb > 20) {
+  if (fileSizeMb > MAX_VIDEO_SIZE_MB) {
     throw new Error(
-      `Video file too large for inline upload (${fileSizeMb.toFixed(1)} MB > 20 MB limit). File API upload not yet implemented.`,
+      `视频文件过大（${fileSizeMb.toFixed(1)} MB），超出 ${MAX_VIDEO_SIZE_MB} MB 上限。请压缩视频或发送较短的片段。`,
     );
   }
 
   const mimeType = options?.mimeType ?? inferMimeType(videoPath);
-  const videoBase64 = videoBuffer.toString("base64");
 
   // Get access token
   log(`video-analyze: authenticating with Vertex AI...`);
   const accessToken = await getAccessToken(credentials);
 
-  // Build request — handle "global" location specially (no region prefix on hostname)
+  // Build request body based on file size
+  let requestBody: Record<string, unknown>;
+  let gcsUri: string | undefined;
+  let gcsBucket: string | undefined;
+  let gcsObjectName: string | undefined;
+
+  if (fileSizeMb <= MAX_INLINE_SIZE_MB) {
+    // Inline base64 upload for small videos
+    const videoBuffer = fs.readFileSync(videoPath);
+    const videoBase64 = videoBuffer.toString("base64");
+
+    requestBody = {
+      contents: [
+        {
+          role: "user",
+          parts: [
+            { inlineData: { mimeType, data: videoBase64 } },
+            { text: prompt },
+          ],
+        },
+      ],
+      generationConfig: {
+        temperature: 0.4,
+        maxOutputTokens: 8192,
+        topP: 0.95,
+      },
+    };
+  } else {
+    // GCS upload for larger videos (20–30MB)
+    log(`video-analyze: video > ${MAX_INLINE_SIZE_MB}MB, using GCS upload`);
+    gcsBucket = await ensureGcsBucket(projectId, accessToken, log);
+    gcsUri = await uploadToGcs({ bucket: gcsBucket, filePath: videoPath, mimeType, accessToken, log });
+    gcsObjectName = gcsUri.replace(`gs://${gcsBucket}/`, "");
+
+    requestBody = {
+      contents: [
+        {
+          role: "user",
+          parts: [
+            { fileData: { mimeType, fileUri: gcsUri } },
+            { text: prompt },
+          ],
+        },
+      ],
+      generationConfig: {
+        temperature: 0.4,
+        maxOutputTokens: 8192,
+        topP: 0.95,
+      },
+    };
+  }
+
+  // Build API URL — handle "global" location specially
   const apiHost = location === "global"
     ? "aiplatform.googleapis.com"
     : `${location}-aiplatform.googleapis.com`;
   const apiUrl = `https://${apiHost}/v1/projects/${projectId}/locations/${location}/publishers/google/models/${model}:generateContent`;
 
-  const requestBody = {
-    contents: [
-      {
-        role: "user",
-        parts: [
-          {
-            inlineData: {
-              mimeType,
-              data: videoBase64,
-            },
-          },
-          {
-            text: prompt,
-          },
-        ],
-      },
-    ],
-    generationConfig: {
-      temperature: 0.4,
-      maxOutputTokens: 8192,
-      topP: 0.95,
-    },
-  };
-
   log(`video-analyze: calling Gemini API (model=${model})...`);
 
-  const res = await fetch(apiUrl, {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${accessToken}`,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify(requestBody),
-  });
+  let response: GeminiResponse;
+  try {
+    const res = await fetch(apiUrl, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(requestBody),
+    });
 
-  if (!res.ok) {
-    const errText = await res.text();
-    throw new Error(`Gemini API call failed (${res.status}): ${errText}`);
+    if (!res.ok) {
+      const errText = await res.text();
+      throw new Error(`Gemini API call failed (${res.status}): ${errText}`);
+    }
+
+    response = (await res.json()) as GeminiResponse;
+  } finally {
+    // Clean up GCS object if uploaded
+    if (gcsBucket && gcsObjectName) {
+      deleteFromGcs({ bucket: gcsBucket, objectName: gcsObjectName, accessToken, log })
+        .catch(() => {}); // fire-and-forget cleanup
+    }
   }
 
-  const response = (await res.json()) as GeminiResponse;
   const durationMs = Date.now() - startTime;
 
   if (response.error) {
