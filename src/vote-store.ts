@@ -28,6 +28,8 @@ export interface VoteData {
   messageId: string;
   chatId: string;
   createdAt: number;
+  /** Total number of eligible voters (group members). 0 = unknown. */
+  totalMembers: number;
 }
 
 // ─── File Persistence ────────────────────────────────────────────────────────

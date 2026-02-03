@@ -123,9 +123,12 @@ export function buildVoteCard(
 
   elements.push({ tag: "hr" });
 
+  const progressText = data.totalMembers > 0
+    ? `已投 ${totalVoters}/${data.totalMembers} 人`
+    : `共 ${totalVoters} 人参与投票`;
   elements.push({
     tag: "note",
-    elements: [{ tag: "plain_text", content: `共 ${totalVoters} 人参与投票` }],
+    elements: [{ tag: "plain_text", content: progressText }],
   });
 
   if (!data.closed) {

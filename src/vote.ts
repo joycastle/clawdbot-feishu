@@ -15,10 +15,34 @@
  */
 
 import type { ClawdbotConfig } from "clawdbot/plugin-sdk";
+import type { FeishuConfig } from "./types.js";
 import type { VoteData } from "./vote-store.js";
 import { loadVoteData, saveVoteData, withLock } from "./vote-store.js";
 import { buildVoteCard, resolveNames } from "./vote-card.js";
 import { sendCardFeishu, updateCardFeishu } from "./send.js";
+import { createFeishuClient } from "./client.js";
+
+// ─── Group Members ───────────────────────────────────────────────────────────
+
+/** Fetch group member count (excluding bots). Returns 0 for DM chats. */
+async function fetchGroupMemberCount(cfg: ClawdbotConfig, chatId: string): Promise<number> {
+  // Only group chats (oc_xxx) have members; DM (ou_xxx) doesn't
+  if (!chatId.startsWith("oc_")) return 0;
+  try {
+    const feishuCfg = cfg.channels?.feishu as FeishuConfig | undefined;
+    if (!feishuCfg) return 0;
+    const client = createFeishuClient(feishuCfg);
+    const resp = await client.im.chatMembers.get({
+      path: { chat_id: chatId },
+      params: { member_id_type: "open_id", page_size: 100 },
+    });
+    if (resp.code === 0 && resp.data?.items) {
+      // Exclude bots — only count real users
+      return resp.data.items.filter((m: any) => m.member_id_type !== "app").length;
+    }
+  } catch { /* fall through */ }
+  return 0;
+}
 
 // ─── Debounce ────────────────────────────────────────────────────────────────
 
@@ -77,6 +101,9 @@ export async function createPoll(params: CreatePollParams): Promise<{
 
   const pollId = `poll_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
 
+  // Fetch group member count for progress display + auto-close
+  const totalMembers = await fetchGroupMemberCount(cfg, to);
+
   const voteData: VoteData = {
     pollId,
     question,
@@ -89,6 +116,7 @@ export async function createPoll(params: CreatePollParams): Promise<{
     messageId: "",
     chatId: to,
     createdAt: Date.now(),
+    totalMembers,
   };
 
   const card = buildVoteCard(voteData);
@@ -206,8 +234,18 @@ export async function handleVoteCardAction(params: {
       return;
     }
 
-    // 3. Resolve voter names
+    // 3. Auto-close: if all group members have voted, close the poll
     const allVoterIds = Object.keys(voteData.voters);
+    if (
+      !voteData.closed &&
+      voteData.totalMembers > 0 &&
+      allVoterIds.length >= voteData.totalMembers
+    ) {
+      voteData.closed = true;
+      log?.(`vote: auto-closed — all ${voteData.totalMembers} members voted (pollId=${pollId})`);
+    }
+
+    // 4. Resolve voter names
     let namesMap: Map<string, string> | undefined;
     if (!voteData.anonymous && allVoterIds.length > 0) {
       try {
