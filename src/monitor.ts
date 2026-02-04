@@ -9,6 +9,7 @@ import { resolveFeishuCredentials } from "./accounts.js";
 import { handleFeishuMessage, type FeishuMessageEvent, type FeishuBotAddedEvent } from "./bot.js";
 import { handleMediaCardAction, isMediaConfirmAction, type CardActionEvent } from "./media-confirm.js";
 import { handleVoteCardAction, isVoteAction } from "./vote.js";
+import { handleBitableVideoCardAction, isBitableVideoAction } from "./big-video/bitable-video-confirm.js";
 import { probeFeishu } from "./probe.js";
 import { analyzeVideo } from "./video-analyze.js";
 import { sendCardFeishu, updateCardFeishu } from "./send.js";
@@ -347,6 +348,11 @@ async function monitorWebSocket(params: {
             }
           }
           return;
+        }
+
+        if (isBitableVideoAction(actionValue)) {
+          const response = await handleBitableVideoCardAction({ actionData, cfg, log });
+          return response ?? undefined;
         }
 
         if (isVoteAction(actionValue)) {
