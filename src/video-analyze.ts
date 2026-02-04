@@ -305,3 +305,128 @@ export async function analyzeVideo(
     estimatedCostUsd,
   };
 }
+
+/**
+ * Analyze a video from GCS URI using Vertex AI Gemini API.
+ * Unlike analyzeVideo(), this uses fileData with GCS URI instead of inline base64,
+ * supporting videos up to 2GB.
+ *
+ * @param gcsUri - GCS URI like gs://bucket/object
+ * @param mimeType - MIME type of the video
+ * @param options - Analysis options
+ * @returns Analysis result
+ */
+export async function analyzeVideoFromGcs(
+  gcsUri: string,
+  mimeType: string,
+  options?: {
+    model?: string;
+    prompt?: string;
+    log?: (msg: string) => void;
+  },
+): Promise<VideoAnalysisResult> {
+  const log = options?.log ?? console.log;
+  const model = options?.model ?? DEFAULT_MODEL;
+  const prompt =
+    options?.prompt ??
+    "请详细分析这个视频的内容。描述视频中发生了什么，包括画面、文字、操作流程等关键信息。如果是应用或游戏录屏，请描述功能和界面交互。";
+
+  const startTime = Date.now();
+
+  const credentials = loadCredentials();
+  const projectId = credentials.project_id || process.env.GOOGLE_CLOUD_PROJECT;
+  const location = process.env.GOOGLE_CLOUD_LOCATION || "global";
+
+  if (!projectId) {
+    throw new Error("Google Cloud project ID not found in credentials or environment");
+  }
+
+  log(`video-analyze: analyzing from GCS URI ${gcsUri}`);
+
+  const accessToken = await getAccessToken(credentials);
+
+  const requestBody = {
+    contents: [
+      {
+        role: "user",
+        parts: [
+          { fileData: { mimeType, fileUri: gcsUri } },
+          { text: prompt },
+        ],
+      },
+    ],
+    generationConfig: {
+      temperature: 0.4,
+      maxOutputTokens: 8192,
+      topP: 0.95,
+    },
+  };
+
+  const apiHost = location === "global"
+    ? "aiplatform.googleapis.com"
+    : `${location}-aiplatform.googleapis.com`;
+  const apiUrl = `https://${apiHost}/v1/projects/${projectId}/locations/${location}/publishers/google/models/${model}:generateContent`;
+
+  log(`video-analyze: calling Gemini API via GCS (model=${model})...`);
+
+  const res = await fetch(apiUrl, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(requestBody),
+  });
+
+  if (!res.ok) {
+    const errText = await res.text();
+    throw new Error(`Gemini API call failed (${res.status}): ${errText}`);
+  }
+
+  const response = (await res.json()) as GeminiResponse;
+  const durationMs = Date.now() - startTime;
+
+  if (response.error) {
+    throw new Error(`Gemini API error: ${response.error.message} (${response.error.status})`);
+  }
+
+  const text =
+    response.candidates?.[0]?.content?.parts
+      ?.map((p) => p.text)
+      .filter(Boolean)
+      .join("\n") || "";
+
+  if (!text) {
+    throw new Error("Gemini returned empty response");
+  }
+
+  const usage = response.usageMetadata
+    ? {
+        promptTokens: response.usageMetadata.promptTokenCount || 0,
+        completionTokens: response.usageMetadata.candidatesTokenCount || 0,
+        totalTokens: response.usageMetadata.totalTokenCount || 0,
+      }
+    : undefined;
+
+  let estimatedCostUsd: number | undefined;
+  if (usage) {
+    const pricing = PRICING[model] || PRICING[DEFAULT_MODEL];
+    estimatedCostUsd =
+      (usage.promptTokens / 1_000_000) * pricing.input +
+      (usage.completionTokens / 1_000_000) * pricing.output;
+  }
+
+  log(
+    `video-analyze: GCS complete in ${(durationMs / 1000).toFixed(1)}s ` +
+      `(tokens: ${usage?.promptTokens ?? "?"}→${usage?.completionTokens ?? "?"}, ` +
+      `cost: $${estimatedCostUsd?.toFixed(4) ?? "?"})`,
+  );
+
+  return {
+    text,
+    model,
+    usage,
+    durationMs,
+    estimatedCostUsd,
+  };
+}
