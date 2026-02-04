@@ -350,8 +350,9 @@ async function monitorWebSocket(params: {
         }
 
         if (isBitableVideoAction(actionValue)) {
-          const response = await handleBitableVideoCardAction({ actionData, cfg, log });
-          return response ?? undefined;
+          // Handler updates card via API directly, no return value needed
+          await handleBitableVideoCardAction({ actionData, cfg, log });
+          return;
         }
 
         if (isVoteAction(actionValue)) {
