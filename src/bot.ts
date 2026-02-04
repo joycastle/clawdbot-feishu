@@ -740,9 +740,10 @@ export async function handleFeishuMessage(params: {
                   content: [
                     "检测到视频文件，但**超出飞书 API 下载限制（约 20MB）**，无法直接处理。",
                     "",
-                    "**建议：**",
-                    "• 将视频上传到多维表格（appToken: OW7lbIpSlaf4nEsiDKLcqiYGn7c），然后告诉我你想分析哪个视频（最新的 / 编号几的）",
-                    "• 压缩视频后重新发送",
+                    "**请将视频上传到[多维表格](https://joycastle.feishu.cn/base/OW7lbIpSlaf4nEsiDKLcqiYGn7c)**，然后告诉我你想分析哪个视频（最新的 / 编号几的）。",
+                    "",
+                    "其他方案：",
+                    "• 压缩视频到 20MB 以内后重新发送",
                     "• 发送较短的视频片段",
                   ].join("\n"),
                 },
