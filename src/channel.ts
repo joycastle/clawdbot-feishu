@@ -56,6 +56,7 @@ export const feishuPlugin: ChannelPlugin<ResolvedFeishuAccount> = {
     messageToolHints: () => [
       "- Feishu targeting: omit `target` to reply to the current conversation (auto-inferred). Explicit targets: `user:open_id` or `chat:chat_id`.",
       "- Feishu supports interactive cards for rich messages.",
+      "- **Bitable Video Analysis**: When a user wants to analyze a video from the bitable (多维表格), run: `npx tsx /home/ubuntu/.clawdbot/extensions/feishu/src/bitable-video-cli.ts --target <latest|number> --prompt \"用户的分析需求\"`. The CLI outputs JSON to stdout with { text, cacheHit, gcsUri, durationMs, estimatedCostUsd }. Use --target latest for the most recent video, or --target <number> for a specific record number. Recognize user intent naturally — they might say '帮我分析最新的视频', '看看3号视频', '分析一下表格里的视频' etc.",
     ],
   },
   actions: {

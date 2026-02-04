@@ -53,9 +53,15 @@ export interface VideoCommand {
 }
 
 /**
- * Parse video command from user message.
+ * Parse video command from user message using regex templates.
  *
- * Supported formats:
+ * @deprecated This function uses hard-coded regex to parse natural language,
+ * which is fragile and can't handle the variety of user expressions.
+ * The LLM agent now handles intent recognition and constructs VideoCommand
+ * directly via bitable-video-cli.ts with structured --target/--prompt args.
+ * Kept for backward compatibility only.
+ *
+ * Previously supported formats:
  *   "视频：最新，请分析一下"
  *   "视频：最新的，帮我看看"
  *   "视频：编号3，请分析"

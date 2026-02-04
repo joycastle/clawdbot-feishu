@@ -196,6 +196,9 @@ function formatSize(bytes: number): string {
 
 /**
  * Check if a message text is a bitable video command.
+ * @deprecated No longer used for interception in bot.ts. The LLM agent now handles
+ * intent recognition and invokes bitable-video-cli.ts directly with structured args.
+ * Kept for backward compatibility.
  */
 export function isBitableVideoCommand(text: string): boolean {
   return parseVideoCommand(text) !== null;

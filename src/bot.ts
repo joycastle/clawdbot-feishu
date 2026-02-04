@@ -19,8 +19,8 @@ import { createFeishuReplyDispatcher } from "./reply-dispatcher.js";
 import { getMessageFeishu } from "./send.js";
 import { downloadImageFeishu, downloadMessageResourceFeishu } from "./media.js";
 import { sendMediaConfirmCard } from "./media-confirm.js";
-import { isBitableVideoCommand, handleBitableVideoRequest } from "./bitable-video-handler.js";
-import { parseVideoCommand } from "./bitable-video.js";
+// Video analysis is now handled by the LLM agent via bitable-video-cli.ts
+// instead of hard-coded regex interception. See bitable-video-cli.ts.
 import fs from "fs";
 
 export type FeishuMessageEvent = {
@@ -741,7 +741,7 @@ export async function handleFeishuMessage(params: {
                     "检测到视频文件，但**超出飞书 API 下载限制（约 20MB）**，无法直接处理。",
                     "",
                     "**建议：**",
-                    "• 将视频上传到[多维表格](https://joycastle.feishu.cn/base/OW7lbIpSlaf4nEsiDKLcqiYGn7c)，然后发送「视频：最新，请分析xxx」",
+                    "• 将视频上传到[多维表格](https://joycastle.feishu.cn/base/OW7lbIpSlaf4nEsiDKLcqiYGn7c)，然后告诉我你想分析哪个视频（最新的 / 编号几的）",
                     "• 压缩视频后重新发送",
                     "• 发送较短的视频片段",
                   ].join("\n"),
@@ -831,54 +831,11 @@ export async function handleFeishuMessage(params: {
       log(`feishu: doc enrichment failed (non-fatal): ${String(err)}`);
     }
 
-    // --- Bitable video command interception ---
-    // Check if the message is a bitable video command (e.g., "视频：最新，请分析")
-    // If so, handle it directly and return the result without going through the normal dispatch.
-    if (isBitableVideoCommand(enrichedContent)) {
-      const videoCmd = parseVideoCommand(enrichedContent);
-      if (videoCmd) {
-        log(`feishu: detected bitable video command: target=${videoCmd.target}, prompt=${videoCmd.prompt.slice(0, 80)}`);
-        const target = isGroup ? `chat:${ctx.chatId}` : `user:${ctx.senderOpenId}`;
-        try {
-          const { sendMessageFeishu } = await import("./send.js");
-          await sendMessageFeishu({
-            cfg,
-            to: target,
-            text: "🎬 正在处理视频，请稍候...",
-            replyToMessageId: ctx.messageId,
-          });
-
-          const result = await handleBitableVideoRequest({
-            cfg,
-            command: videoCmd,
-            log,
-          });
-
-          const cacheLabel = result.cacheHit === "miss" ? "" : ` (缓存命中: ${result.cacheHit})`;
-          const costLabel = result.analysis.estimatedCostUsd
-            ? `\n\n---\n⏱ ${(result.analysis.durationMs / 1000).toFixed(1)}s | 💰 $${result.analysis.estimatedCostUsd.toFixed(4)}${cacheLabel}`
-            : "";
-
-          await sendMessageFeishu({
-            cfg,
-            to: target,
-            text: result.text + costLabel,
-          });
-          log(`feishu: bitable video analysis complete`);
-        } catch (err) {
-          const errMsg = err instanceof Error ? err.message : String(err);
-          log(`feishu: bitable video error: ${errMsg}`);
-          const { sendMessageFeishu } = await import("./send.js");
-          await sendMessageFeishu({
-            cfg,
-            to: target,
-            text: `❌ 视频处理失败：${errMsg}`,
-            replyToMessageId: ctx.messageId,
-          });
-        }
-        return; // Handled — do not proceed to normal dispatch
-      }
-    }
+    // NOTE: Bitable video commands (e.g., "帮我分析最新的视频") are no longer
+    // intercepted here via regex. Instead, messages flow through to the LLM agent,
+    // which uses natural language understanding to recognize video analysis intent
+    // and invokes bitable-video-cli.ts with structured arguments.
+    // See: src/bitable-video-cli.ts
 
     // Build message body with quoted content if available
     let messageBody = enrichedContent;
