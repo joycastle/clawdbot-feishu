@@ -189,12 +189,12 @@ export async function handleBitableVideoCardAction(params: {
   actionData: { action?: { value?: Record<string, unknown> }; operator?: { open_id?: string }; context?: { open_message_id?: string } };
   cfg: ClawdbotConfig;
   log?: (msg: string) => void;
-}): Promise<void> {
+}): Promise<Record<string, unknown> | undefined> {
   const { actionData, cfg } = params;
   const log = params.log ?? console.log;
 
   const actionValue = actionData.action?.value as Record<string, unknown> | undefined;
-  if (!actionValue) return;
+  if (!actionValue) return undefined;
 
   const action = actionValue.action as string;
   const cardMessageId = actionData.context?.open_message_id;
@@ -202,19 +202,16 @@ export async function handleBitableVideoCardAction(params: {
   // ─── Cancel ────────────────────────────────────────────────────────────────
   if (action === "cancel_bitable_video") {
     log(`[bitable-video] Cancelled by user`);
+    const card = buildCancelledCard();
+    // Also update via API as backup
     if (cardMessageId) {
-      try {
-        await updateCardFeishu({ cfg, messageId: cardMessageId, card: buildCancelledCard() });
-        log(`[bitable-video] Card updated to cancelled`);
-      } catch (err) {
-        log(`[bitable-video] Failed to update card to cancelled: ${err}`);
-      }
+      void updateCardFeishu({ cfg, messageId: cardMessageId, card }).catch(() => {});
     }
-    return;
+    return card;
   }
 
   // ─── Confirm ───────────────────────────────────────────────────────────────
-  if (action !== "confirm_bitable_video") return;
+  if (action !== "confirm_bitable_video") return undefined;
 
   const gcsUri = actionValue.gcsUri as string;
   const mimeType = actionValue.mimeType as string || "video/mp4";
@@ -227,25 +224,15 @@ export async function handleBitableVideoCardAction(params: {
   const operatorOpenId = actionData.operator?.open_id || "";
   if (senderOpenId && operatorOpenId !== senderOpenId) {
     log(`[bitable-video] Action from wrong user (expected=${senderOpenId}, got=${operatorOpenId})`);
-    return;
+    return undefined;
   }
 
   if (!gcsUri) {
     log(`[bitable-video] Missing gcsUri in action value`);
-    return;
+    return undefined;
   }
 
   log(`[bitable-video] Confirmed, starting analysis of ${gcsUri}`);
-
-  // Update card to "processing" immediately
-  if (cardMessageId) {
-    try {
-      await updateCardFeishu({ cfg, messageId: cardMessageId, card: buildAnalyzingCard() });
-      log(`[bitable-video] Card updated to processing`);
-    } catch (err) {
-      log(`[bitable-video] Failed to update card to processing: ${err}`);
-    }
-  }
 
   // Init config for Gemini
   initGcsConfig(cfg);
@@ -327,4 +314,11 @@ export async function handleBitableVideoCardAction(params: {
       } catch { /* ignore */ }
     }
   })();
+
+  // Return analyzing card as callback response + API backup
+  const analyzingCard = buildAnalyzingCard();
+  if (cardMessageId) {
+    void updateCardFeishu({ cfg, messageId: cardMessageId, card: analyzingCard }).catch(() => {});
+  }
+  return analyzingCard;
 }
