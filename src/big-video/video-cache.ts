@@ -6,20 +6,20 @@
  *
  * Cache is persisted to a JSON file and auto-cleaned every 7 days.
  */
-
-import { existsSync } from "fs";
-import { readFile, writeFile, mkdir } from "fs/promises";
-import { join } from "path";
-
+ 
+import { existsSync } from "node:fs";
+import { readFile, writeFile, mkdir } from "node:fs/promises";
+import { join } from "node:path";
+ 
 // ─── Types ───────────────────────────────────────────────────────────────────
-
+ 
 export interface CacheEntry {
   gcsUri: string;
   size: number;
   mimeType: string;
   cachedAt: number; // epoch ms
 }
-
+ 
 export interface VideoCacheData {
   /** fileToken → CacheEntry */
   byFileToken: Record<string, CacheEntry>;
@@ -28,30 +28,29 @@ export interface VideoCacheData {
   /** Last cleanup timestamp */
   lastCleanup: number;
 }
-
+ 
 // ─── Constants ───────────────────────────────────────────────────────────────
-
+ 
 const CACHE_DIR = join(process.env.HOME ?? "/tmp", ".clawdbot");
 const CACHE_FILE = join(CACHE_DIR, "video-cache.json");
 const CACHE_TTL_MS = 7 * 24 * 60 * 60 * 1000; // 7 days
-
+ 
 // ─── In-memory state ─────────────────────────────────────────────────────────
-
+ 
 let cache: VideoCacheData | null = null;
-
+ 
 function emptyCache(): VideoCacheData {
   return { byFileToken: {}, byMd5: {}, lastCleanup: Date.now() };
 }
-
+ 
 // ─── Load / Save ─────────────────────────────────────────────────────────────
-
+ 
 export async function loadVideoCache(): Promise<VideoCacheData> {
   if (cache) return cache;
   try {
     if (existsSync(CACHE_FILE)) {
       const raw = await readFile(CACHE_FILE, "utf-8");
       cache = JSON.parse(raw) as VideoCacheData;
-      // Ensure fields exist (backward compat)
       cache.byFileToken ??= {};
       cache.byMd5 ??= {};
       cache.lastCleanup ??= Date.now();
@@ -63,7 +62,7 @@ export async function loadVideoCache(): Promise<VideoCacheData> {
   }
   return cache;
 }
-
+ 
 export async function saveVideoCache(): Promise<void> {
   if (!cache) return;
   try {
@@ -73,9 +72,9 @@ export async function saveVideoCache(): Promise<void> {
     console.error("[video-cache] Failed to save cache:", err);
   }
 }
-
+ 
 // ─── Lookup ──────────────────────────────────────────────────────────────────
-
+ 
 /** Check fileToken cache. Returns gcsUri if found and not expired. */
 export async function lookupByFileToken(fileToken: string): Promise<CacheEntry | null> {
   const c = await loadVideoCache();
@@ -87,7 +86,7 @@ export async function lookupByFileToken(fileToken: string): Promise<CacheEntry |
   }
   return entry;
 }
-
+ 
 /** Check MD5 cache. Returns gcsUri if found and not expired. */
 export async function lookupByMd5(md5: string): Promise<CacheEntry | null> {
   const c = await loadVideoCache();
@@ -99,9 +98,9 @@ export async function lookupByMd5(md5: string): Promise<CacheEntry | null> {
   }
   return entry;
 }
-
+ 
 // ─── Store ───────────────────────────────────────────────────────────────────
-
+ 
 /** Add entries to both cache layers. */
 export async function cacheVideoMapping(params: {
   fileToken: string;
@@ -121,22 +120,22 @@ export async function cacheVideoMapping(params: {
   c.byMd5[params.md5] = entry;
   await saveVideoCache();
 }
-
+ 
 /** Add fileToken → existing gcsUri mapping (when md5 cache hit). */
 export async function cacheFileTokenAlias(fileToken: string, entry: CacheEntry): Promise<void> {
   const c = await loadVideoCache();
   c.byFileToken[fileToken] = entry;
   await saveVideoCache();
 }
-
+ 
 // ─── Cleanup ─────────────────────────────────────────────────────────────────
-
+ 
 /** Remove all expired entries. Returns number of entries removed. */
 export async function cleanupExpiredEntries(): Promise<number> {
   const c = await loadVideoCache();
   const now = Date.now();
   let removed = 0;
-
+ 
   for (const [k, v] of Object.entries(c.byFileToken)) {
     if (now - v.cachedAt > CACHE_TTL_MS) {
       delete c.byFileToken[k];
@@ -153,19 +152,19 @@ export async function cleanupExpiredEntries(): Promise<number> {
   await saveVideoCache();
   return removed;
 }
-
+ 
 /** Check if cleanup is due (>= 7 days since last). */
 export async function isCleanupDue(): Promise<boolean> {
   const c = await loadVideoCache();
   return Date.now() - c.lastCleanup >= CACHE_TTL_MS;
 }
-
+ 
 /** Full reset — clear all cache entries. */
 export async function resetVideoCache(): Promise<void> {
   cache = emptyCache();
   await saveVideoCache();
 }
-
+ 
 /** Get all GCS URIs currently in cache (for bulk GCS cleanup). */
 export async function getAllCachedGcsUris(): Promise<string[]> {
   const c = await loadVideoCache();
