@@ -175,10 +175,22 @@ async function monitorWebSocket(params: {
 
         // Route to the appropriate handler based on action type
         if (isMediaConfirmAction(actionValue)) {
+          const action = actionValue?.action as string | undefined;
           const confirmed = await handleMediaCardAction({
             actionData,
             log,
           });
+
+          // Cancel or expired — return toast for immediate feedback
+          if (!confirmed) {
+            const isCancelAction = action === "cancel_media";
+            return {
+              toast: {
+                type: isCancelAction ? "info" as const : "warning" as const,
+                content: isCancelAction ? "已取消处理" : "确认已过期，请重新发送",
+              },
+            };
+          }
 
           if (confirmed) {
             // Check if this is a video that should be auto-analyzed with Gemini
@@ -189,6 +201,8 @@ async function monitorWebSocket(params: {
               // Fire-and-forget: run video analysis without blocking the event loop
               const confirmedRef = confirmed;
               log(`feishu: starting async video analysis (pendingId=${confirmedRef.id})`);
+              // Return toast immediately so the button shows feedback
+              const toastResponse = { toast: { type: "info" as const, content: "⏳ 正在处理视频，请稍候..." } };
               void (async () => {
                 try {
                   const videoMedia = confirmedRef.mediaList.find(
@@ -315,8 +329,8 @@ async function monitorWebSocket(params: {
                   });
                 }
               })();
-              // Return immediately — don't block the event loop
-              return;
+              // Return toast immediately — don't block the event loop
+              return toastResponse;
             } else {
               // Non-video media (audio, etc.) — resume normal agent dispatch
               log(`feishu: resuming media processing after confirmation (pendingId=${confirmed.id})`);
@@ -329,6 +343,7 @@ async function monitorWebSocket(params: {
                 skipMediaConfirm: true,
                 preResolvedMediaList: confirmed.mediaList,
               });
+              return { toast: { type: "info" as const, content: "⏳ 正在处理中..." } };
             }
           }
           return;
