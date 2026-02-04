@@ -35,10 +35,30 @@ export interface GcsUploadResult {
 
 // ─── Configuration ───────────────────────────────────────────────────────────
 
-const BUCKET_NAME = "larkbot-storage";
+const DEFAULT_BUCKET_NAME = "larkbot-storage";
+const DEFAULT_SA_PATH = path.join(process.env.HOME ?? "/tmp", ".clawdbot/credentials/google-vertex-sa.json");
 const GCS_SCOPE = "https://www.googleapis.com/auth/cloud-platform";
-const SA_PATH = process.env.GOOGLE_APPLICATION_CREDENTIALS
-  ?? path.join(process.env.HOME ?? "/tmp", ".clawdbot/credentials/google-vertex-sa.json");
+
+/** Runtime-resolved config (set once via initGcsConfig or resolved from env/defaults). */
+let _bucketName: string | null = null;
+let _saPath: string | null = null;
+
+/** Initialize GCS config from feishu channel config. Call once at startup. */
+export function initGcsConfig(cfg: any): void {
+  const feishuCfg = cfg?.channels?.feishu as Record<string, unknown> | undefined;
+  _bucketName = (feishuCfg?.gcsBucket as string) || DEFAULT_BUCKET_NAME;
+  _saPath = (feishuCfg?.gcsCredentialsPath as string)
+    || process.env.GOOGLE_APPLICATION_CREDENTIALS
+    || DEFAULT_SA_PATH;
+}
+
+function getBucketName(): string {
+  return _bucketName || process.env.GCS_BUCKET || DEFAULT_BUCKET_NAME;
+}
+
+function getSaPath(): string {
+  return _saPath || process.env.GOOGLE_APPLICATION_CREDENTIALS || DEFAULT_SA_PATH;
+}
 
 // ─── Auth ────────────────────────────────────────────────────────────────────
 
@@ -50,7 +70,7 @@ function base64url(data: Buffer | string): string {
 }
 
 function loadServiceAccount(): ServiceAccountCredentials {
-  const raw = fs.readFileSync(SA_PATH, "utf-8");
+  const raw = fs.readFileSync(getSaPath(), "utf-8");
   return JSON.parse(raw);
 }
 
@@ -118,7 +138,7 @@ export async function streamUploadToGcs(
 
   // Initiate resumable upload
   const initRes = await fetch(
-    `https://storage.googleapis.com/upload/storage/v1/b/${BUCKET_NAME}/o?uploadType=resumable&name=${encodeURIComponent(objectName)}`,
+    `https://storage.googleapis.com/upload/storage/v1/b/${getBucketName()}/o?uploadType=resumable&name=${encodeURIComponent(objectName)}`,
     {
       method: "POST",
       headers: {
@@ -207,7 +227,7 @@ export async function streamUploadToGcs(
   }
 
   return {
-    gcsUri: `gs://${BUCKET_NAME}/${objectName}`,
+    gcsUri: `gs://${getBucketName()}/${objectName}`,
     objectName,
     size: bytesSent,
   };
@@ -232,7 +252,7 @@ export async function uploadToGcs(params: {
     const fileData = fs.readFileSync(params.filePath);
 
     const res = await fetch(
-      `https://storage.googleapis.com/upload/storage/v1/b/${BUCKET_NAME}/o?uploadType=media&name=${encodeURIComponent(objectName)}`,
+      `https://storage.googleapis.com/upload/storage/v1/b/${getBucketName()}/o?uploadType=media&name=${encodeURIComponent(objectName)}`,
       {
         method: "POST",
         headers: {
@@ -249,14 +269,14 @@ export async function uploadToGcs(params: {
     }
 
     return {
-      gcsUri: `gs://${BUCKET_NAME}/${objectName}`,
+      gcsUri: `gs://${getBucketName()}/${objectName}`,
       objectName,
       size: fileSize,
     };
   }
 
   const initRes = await fetch(
-    `https://storage.googleapis.com/upload/storage/v1/b/${BUCKET_NAME}/o?uploadType=resumable&name=${encodeURIComponent(objectName)}`,
+    `https://storage.googleapis.com/upload/storage/v1/b/${getBucketName()}/o?uploadType=resumable&name=${encodeURIComponent(objectName)}`,
     {
       method: "POST",
       headers: {
@@ -330,7 +350,7 @@ export async function uploadToGcs(params: {
   }
 
   return {
-    gcsUri: `gs://${BUCKET_NAME}/${objectName}`,
+    gcsUri: `gs://${getBucketName()}/${objectName}`,
     objectName,
     size: fileSize,
   };
@@ -342,7 +362,7 @@ export async function uploadToGcs(params: {
 export async function deleteGcsObject(objectName: string): Promise<void> {
   const token = await getAccessToken();
   const res = await fetch(
-    `https://storage.googleapis.com/storage/v1/b/${BUCKET_NAME}/o/${encodeURIComponent(objectName)}`,
+    `https://storage.googleapis.com/storage/v1/b/${getBucketName()}/o/${encodeURIComponent(objectName)}`,
     {
       method: "DELETE",
       headers: { Authorization: `Bearer ${token}` },
@@ -360,7 +380,7 @@ export async function clearGcsBucket(): Promise<number> {
   let pageToken: string | undefined;
 
   do {
-    const url = new URL(`https://storage.googleapis.com/storage/v1/b/${BUCKET_NAME}/o`);
+    const url = new URL(`https://storage.googleapis.com/storage/v1/b/${getBucketName()}/o`);
     if (pageToken) url.searchParams.set("pageToken", pageToken);
 
     const res = await fetch(url.toString(), {

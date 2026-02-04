@@ -92,6 +92,11 @@ export const FeishuConfigSchema = z
     renderMode: RenderModeSchema, // raw = plain text (default), card = interactive card with markdown
     confirmMediaCost: z.boolean().optional(), // prompt user to confirm cost before processing audio/video
     contextIsolation: z.boolean().optional(), // per-user, per-group, per-topic context isolation (default: true)
+    // ── Bitable Video Analysis ──
+    bitableAppToken: z.string().optional(), // bitable app token for video attachment table
+    bitableTableToken: z.string().optional(), // bitable table id for video attachment table
+    gcsBucket: z.string().optional(), // GCS bucket name for video uploads (default: larkbot-storage)
+    gcsCredentialsPath: z.string().optional(), // path to GCS/Vertex AI service account JSON
   })
   .strict()
   .superRefine((value, ctx) => {

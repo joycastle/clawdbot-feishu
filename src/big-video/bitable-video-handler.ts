@@ -19,6 +19,7 @@ import {
 import {
   streamUploadToGcs,
   clearGcsBucket,
+  initGcsConfig,
 } from "./gcs-upload.js";
 import {
   lookupByFileToken,
@@ -26,7 +27,7 @@ import {
   isCleanupDue,
   resetVideoCache,
 } from "./video-cache.js";
-import { analyzeVideoFromGcs, type VideoAnalysisResult } from "../video-analyze.js";
+import { analyzeVideoFromGcs, setCredentialsPath, type VideoAnalysisResult } from "../video-analyze.js";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -46,6 +47,11 @@ export async function handleBitableVideoRequest(params: {
 }): Promise<BitableVideoResult> {
   const { cfg, command } = params;
   const log = params.log ?? console.log;
+
+  // Initialize config from feishu channel settings
+  initGcsConfig(cfg);
+  const feishuCfg = cfg?.channels?.feishu as Record<string, unknown> | undefined;
+  if (feishuCfg?.gcsCredentialsPath) setCredentialsPath(feishuCfg.gcsCredentialsPath as string);
 
   try {
     if (await isCleanupDue()) {
@@ -138,6 +144,11 @@ export async function handleUploadOnly(params: {
 }): Promise<UploadOnlyResult> {
   const { cfg, command } = params;
   const log = params.log ?? console.log;
+
+  // Initialize config from feishu channel settings
+  initGcsConfig(cfg);
+  const feishuCfg = cfg?.channels?.feishu as Record<string, unknown> | undefined;
+  if (feishuCfg?.gcsCredentialsPath) setCredentialsPath(feishuCfg.gcsCredentialsPath as string);
 
   log(`[bitable-video] Upload-only: finding video target=${command.target}`);
   const found = await findVideoRecord({ cfg, target: command.target });
