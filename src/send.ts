@@ -2,7 +2,7 @@ import type { ClawdbotConfig } from "clawdbot/plugin-sdk";
 import type { FeishuConfig, FeishuSendResult } from "./types.js";
 import { createFeishuClient } from "./client.js";
 import { resolveReceiveIdType, normalizeFeishuTarget } from "./targets.js";
-import { getFeishuRuntime } from "./runtime.js";
+import { tryGetFeishuRuntime } from "./runtime.js";
 
 export type FeishuMessageInfo = {
   messageId: string;
@@ -107,11 +107,13 @@ export async function sendMessageFeishu(params: SendFeishuMessageParams): Promis
   }
 
   const receiveIdType = resolveReceiveIdType(receiveId);
-  const tableMode = getFeishuRuntime().channel.text.resolveMarkdownTableMode({
-    cfg,
-    channel: "feishu",
-  });
-  const messageText = getFeishuRuntime().channel.text.convertMarkdownTables(text ?? "", tableMode);
+  const rt = tryGetFeishuRuntime();
+  const messageText = rt
+    ? rt.channel.text.convertMarkdownTables(
+        text ?? "",
+        rt.channel.text.resolveMarkdownTableMode({ cfg, channel: "feishu" }),
+      )
+    : (text ?? "");
 
   const content = JSON.stringify({ text: messageText });
 
@@ -412,11 +414,13 @@ export async function editMessageFeishu(params: {
   }
 
   const client = createFeishuClient(feishuCfg);
-  const tableMode = getFeishuRuntime().channel.text.resolveMarkdownTableMode({
-    cfg,
-    channel: "feishu",
-  });
-  const messageText = getFeishuRuntime().channel.text.convertMarkdownTables(text ?? "", tableMode);
+  const rt2 = tryGetFeishuRuntime();
+  const messageText = rt2
+    ? rt2.channel.text.convertMarkdownTables(
+        text ?? "",
+        rt2.channel.text.resolveMarkdownTableMode({ cfg, channel: "feishu" }),
+      )
+    : (text ?? "");
   const content = JSON.stringify({ text: messageText });
 
   const response = await client.im.message.update({

@@ -132,8 +132,16 @@ async function getAccessToken(credentials: ServiceAccountCredentials): Promise<s
 
 // ─── Gemini API Call ─────────────────────────────────────────────────────────
 
+/** Allow overriding credentials path from feishu config. */
+let _configCredPath: string | null = null;
+
+export function setCredentialsPath(p: string): void {
+  _configCredPath = p;
+}
+
 function loadCredentials(): ServiceAccountCredentials {
   const credPath =
+    _configCredPath ||
     process.env.GOOGLE_APPLICATION_CREDENTIALS ||
     path.join(process.env.HOME || "/home/ubuntu", ".clawdbot/credentials/google-vertex-sa.json");
 
