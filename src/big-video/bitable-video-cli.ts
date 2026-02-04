@@ -2,33 +2,39 @@
 /**
  * Bitable Video CLI — standalone entry point for video analysis.
  *
- * Instead of hard-coded regex parsing in bot.ts, the LLM agent recognizes
- * user intent naturally, then invokes this CLI with structured arguments.
+ * The LLM agent recognizes user intent naturally, then invokes this CLI
+ * with structured arguments.
+ *
+ * Modes:
+ *   --upload-only   Find video + upload to GCS, return metadata (no analysis).
+ *                   Use this to get cost estimate before user confirmation.
+ *   --analyze-only  Analyze an already-uploaded GCS URI directly.
+ *   (default)       Full pipeline: find → upload → analyze.
  *
  * Usage:
- *   npx tsx src/big-video/bitable-video-cli.ts --target latest --prompt "请分析这个视频的内容"
- *   npx tsx src/big-video/bitable-video-cli.ts --target 3 --prompt "帮我看看这个视频讲了什么"
+ *   npx tsx bitable-video-cli.ts --target latest --prompt "请分析"
+ *   npx tsx bitable-video-cli.ts --target latest --upload-only
+ *   npx tsx bitable-video-cli.ts --analyze-only --gcs-uri "gs://..." --prompt "请分析"
  *
- * Arguments:
- *   --target   "latest" or a record number (required)
- *   --prompt   Analysis prompt text (optional, has sensible default)
- *
- * Output: JSON to stdout with { text, cacheHit, gcsUri, durationMs, estimatedCostUsd }
+ * Output: JSON to stdout
  * Logs go to stderr so they don't pollute the JSON output.
  */
- 
+
 import fs from "node:fs";
 import os from "node:os";
 import { handleBitableVideoRequest } from "./bitable-video-handler.js";
+import { handleUploadOnly } from "./bitable-video-handler.js";
 import type { VideoCommand } from "./bitable-video.js";
-import { sendMessageFeishu } from "../send.js";
- 
+import { analyzeVideoFromGcs } from "../video-analyze.js";
+
 const args = process.argv.slice(2);
 let targetArg: string | undefined;
 let promptArg: string | undefined;
-let notifyTo: string | undefined;
-let notifyReplyTo: string | undefined;
- 
+let uploadOnly = false;
+let analyzeOnly = false;
+let gcsUriArg: string | undefined;
+let mimeTypeArg: string | undefined;
+
 for (let i = 0; i < args.length; i++) {
   if ((args[i] === "--target" || args[i] === "-t") && args[i + 1]) {
     targetArg = args[i + 1];
@@ -36,83 +42,112 @@ for (let i = 0; i < args.length; i++) {
   } else if ((args[i] === "--prompt" || args[i] === "-p") && args[i + 1]) {
     promptArg = args[i + 1];
     i++;
-  } else if (args[i] === "--notify-to" && args[i + 1]) {
-    notifyTo = args[i + 1];
+  } else if (args[i] === "--upload-only") {
+    uploadOnly = true;
+  } else if (args[i] === "--analyze-only") {
+    analyzeOnly = true;
+  } else if (args[i] === "--gcs-uri" && args[i + 1]) {
+    gcsUriArg = args[i + 1];
     i++;
-  } else if (args[i] === "--notify-reply-to" && args[i + 1]) {
-    notifyReplyTo = args[i + 1];
+  } else if (args[i] === "--mime-type" && args[i + 1]) {
+    mimeTypeArg = args[i + 1];
     i++;
   } else if (args[i] === "--help" || args[i] === "-h") {
-    console.log(
-      `Usage: npx tsx bitable-video-cli.ts --target <latest|number> [--prompt "text"] [--notify-to "<chatId|user:openId|chat:chatId>"] [--notify-reply-to "<messageId>"]`,
-    );
-    console.log(`  --target, -t   "latest" or a record auto-number (required)`);
-    console.log(`  --prompt, -p   Analysis prompt (default: "请分析这个视频的内容")`);
-    console.log(`  --notify-to    Where to send progress updates (optional)`);
-    console.log(`  --notify-reply-to  Reply-to message_id for progress updates (optional)`);
+    console.log(`Usage:`);
+    console.log(`  Full pipeline:  npx tsx bitable-video-cli.ts --target <latest|number> [--prompt "text"]`);
+    console.log(`  Upload only:    npx tsx bitable-video-cli.ts --target <latest|number> --upload-only`);
+    console.log(`  Analyze only:   npx tsx bitable-video-cli.ts --analyze-only --gcs-uri "gs://..." [--prompt "text"] [--mime-type "video/mp4"]`);
     process.exit(0);
   }
 }
- 
-if (!targetArg) {
-  console.error("Error: --target is required (use 'latest' or a number)");
-  process.exit(1);
-}
- 
-const targetArgValue = targetArg as string;
- 
-const target: "latest" | number =
-  targetArgValue === "latest" ? "latest" : parseInt(targetArgValue, 10);
- 
-if (typeof target === "number" && isNaN(target)) {
-  console.error(`Error: invalid target "${targetArgValue}" — must be "latest" or an integer`);
-  process.exit(1);
-}
- 
-const prompt = promptArg || "请分析这个视频的内容";
- 
+
 const configPath = process.env.CLAWDBOT_CONFIG || `${os.homedir()}/.clawdbot/clawdbot.json`;
- 
+
 if (!fs.existsSync(configPath)) {
   console.error(`Error: config not found at ${configPath}`);
   process.exit(1);
 }
- 
+
 const cfg = JSON.parse(fs.readFileSync(configPath, "utf-8"));
- 
-const command: VideoCommand = { target, prompt };
- 
+const prompt = promptArg || "请分析这个视频的内容";
+
 try {
-  const notify =
-    notifyTo && notifyReplyTo
-      ? async (msg: string) => {
-          await sendMessageFeishu({
-            cfg,
-            to: notifyTo,
-            text: msg,
-            replyToMessageId: notifyReplyTo,
-          });
-        }
-      : undefined;
- 
-  const result = await handleBitableVideoRequest({
-    cfg,
-    command,
-    log: (msg: string) => console.error(msg),
-    notify,
-  });
- 
-  const output = {
-    text: result.text,
-    cacheHit: result.cacheHit,
-    gcsUri: result.gcsUri,
-    durationMs: result.analysis.durationMs,
-    estimatedCostUsd: result.analysis.estimatedCostUsd,
-    model: result.analysis.model,
-    usage: result.analysis.usage,
-  };
- 
-  console.log(JSON.stringify(output));
+  if (analyzeOnly) {
+    // ── Analyze-only mode: call Gemini on an existing GCS URI ──
+    if (!gcsUriArg) {
+      console.error("Error: --analyze-only requires --gcs-uri");
+      process.exit(1);
+    }
+
+    console.error(`[bitable-video] Analyze-only mode: ${gcsUriArg}`);
+    const analysis = await analyzeVideoFromGcs(gcsUriArg, mimeTypeArg || "video/mp4", {
+      prompt,
+      log: (msg: string) => console.error(msg),
+    });
+
+    console.log(JSON.stringify({
+      text: analysis.text,
+      gcsUri: gcsUriArg,
+      durationMs: analysis.durationMs,
+      estimatedCostUsd: analysis.estimatedCostUsd,
+      model: analysis.model,
+      usage: analysis.usage,
+    }));
+  } else if (uploadOnly) {
+    // ── Upload-only mode: find + upload, no analysis ──
+    if (!targetArg) {
+      console.error("Error: --upload-only requires --target");
+      process.exit(1);
+    }
+
+    const target: "latest" | number =
+      targetArg === "latest" ? "latest" : parseInt(targetArg, 10);
+
+    if (typeof target === "number" && isNaN(target)) {
+      console.error(`Error: invalid target "${targetArg}"`);
+      process.exit(1);
+    }
+
+    const result = await handleUploadOnly({
+      cfg,
+      command: { target, prompt },
+      log: (msg: string) => console.error(msg),
+    });
+
+    console.log(JSON.stringify(result));
+  } else {
+    // ── Full pipeline mode ──
+    if (!targetArg) {
+      console.error("Error: --target is required (use 'latest' or a number)");
+      process.exit(1);
+    }
+
+    const target: "latest" | number =
+      targetArg === "latest" ? "latest" : parseInt(targetArg, 10);
+
+    if (typeof target === "number" && isNaN(target)) {
+      console.error(`Error: invalid target "${targetArg}"`);
+      process.exit(1);
+    }
+
+    const command: VideoCommand = { target, prompt };
+
+    const result = await handleBitableVideoRequest({
+      cfg,
+      command,
+      log: (msg: string) => console.error(msg),
+    });
+
+    console.log(JSON.stringify({
+      text: result.text,
+      cacheHit: result.cacheHit,
+      gcsUri: result.gcsUri,
+      durationMs: result.analysis.durationMs,
+      estimatedCostUsd: result.analysis.estimatedCostUsd,
+      model: result.analysis.model,
+      usage: result.analysis.usage,
+    }));
+  }
 } catch (err) {
   const message = err instanceof Error ? err.message : String(err);
   console.error(`Error: ${message}`);

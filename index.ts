@@ -28,7 +28,7 @@ export {
 } from "./src/reactions.js";
 export { feishuPlugin } from "./src/channel.js";
 export { createPoll, handleVoteCardAction, isVoteAction, getPoll, cleanupOldPolls } from "./src/vote.js";
-export { handleBitableVideoRequest, isBitableVideoCommand } from "./src/big-video/bitable-video-handler.js";
+export { handleBitableVideoRequest, handleUploadOnly } from "./src/big-video/bitable-video-handler.js";
 export { analyzeVideoFromGcs } from "./src/video-analyze.js";
 
 const plugin = {
