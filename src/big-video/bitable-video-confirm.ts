@@ -1,74 +1,21 @@
 /**
  * Bitable Video Confirm — interactive card for cost confirmation.
  *
- * Sends a Feishu interactive card with cost estimate and confirm/cancel buttons.
- * Card action callbacks are handled by monitor.ts → triggers Gemini analysis.
- *
- * State is stored in-memory (pending confirmations map) with 30-min TTL.
+ * STATELESS design: all data needed for analysis is embedded in the card
+ * button's action value. No external state (no files, no in-memory maps).
+ * Feishu returns the action value in the card callback, so we just read it.
  */
 
 import type { ClawdbotConfig } from "clawdbot/plugin-sdk";
 import { sendCardFeishu, updateCardFeishu } from "../send.js";
 import { formatFileSize } from "../cost-estimator.js";
 import { analyzeVideoFromGcs } from "../video-analyze.js";
-
-// ─── Types ───────────────────────────────────────────────────────────────────
-
-export interface PendingBitableVideoConfirm {
-  id: string;
-  gcsUri: string;
-  mimeType: string;
-  fileName: string;
-  size: number;
-  recordNumber: number | string;
-  prompt: string;
-  costDisplay: string;
-  estimatedCostUsd: number;
-  durationDisplay: string;
-  model: string;
-  pricingBasis: string;
-  /** Card message ID (for updating after confirm/cancel) */
-  cardMessageId: string;
-  /** Where to send the result */
-  target: string;
-  /** Reply to this message */
-  replyToMessageId: string;
-  /** Who initiated the request */
-  senderOpenId: string;
-  /** Config snapshot */
-  cfg: ClawdbotConfig;
-  /** Timestamp */
-  createdAt: number;
-}
-
-// ─── State ───────────────────────────────────────────────────────────────────
-
-const pendingMap = new Map<string, PendingBitableVideoConfirm>();
-const PENDING_TTL_MS = 30 * 60 * 1000;
-
-let cleanupTimer: ReturnType<typeof setInterval> | null = null;
-
-function ensureCleanup(): void {
-  if (cleanupTimer) return;
-  cleanupTimer = setInterval(() => {
-    const now = Date.now();
-    for (const [id, entry] of pendingMap) {
-      if (now - entry.createdAt > PENDING_TTL_MS) pendingMap.delete(id);
-    }
-    if (pendingMap.size === 0 && cleanupTimer) {
-      clearInterval(cleanupTimer);
-      cleanupTimer = null;
-    }
-  }, 5 * 60 * 1000);
-}
-
-function generateId(): string {
-  return `bv_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
-}
+import { initGcsConfig } from "./gcs-upload.js";
+import { setCredentialsPath } from "../video-analyze.js";
 
 // ─── Card Builders ───────────────────────────────────────────────────────────
 
-function buildConfirmCard(entry: {
+function buildConfirmCard(params: {
   fileName: string;
   size: number;
   recordNumber: number | string;
@@ -76,7 +23,9 @@ function buildConfirmCard(entry: {
   durationDisplay: string;
   pricingBasis: string;
   cacheHit: boolean;
-  pendingId: string;
+  /** All data needed for analysis, embedded in button value */
+  confirmValue: Record<string, unknown>;
+  cancelValue: Record<string, unknown>;
 }): Record<string, unknown> {
   return {
     config: { wide_screen_mode: true },
@@ -88,12 +37,12 @@ function buildConfirmCard(entry: {
       {
         tag: "markdown",
         content: [
-          `**文件：** ${entry.fileName}（#${entry.recordNumber}）`,
-          `**大小：** ${formatFileSize(entry.size)}`,
-          `**预估时长：** ~${entry.durationDisplay}`,
-          `**预估成本：** ${entry.costDisplay}`,
-          `**计费方式：** ${entry.pricingBasis}`,
-          entry.cacheHit ? `**状态：** 已缓存，无需重新上传` : `**状态：** 已上传到 GCS`,
+          `**文件：** ${params.fileName}（#${params.recordNumber}）`,
+          `**大小：** ${formatFileSize(params.size)}`,
+          `**预估时长：** ~${params.durationDisplay}`,
+          `**预估成本：** ${params.costDisplay}`,
+          `**计费方式：** ${params.pricingBasis}`,
+          params.cacheHit ? `**状态：** 已缓存，无需重新上传` : `**状态：** 已上传到 GCS`,
         ].join("\n"),
       },
       { tag: "hr" },
@@ -104,13 +53,13 @@ function buildConfirmCard(entry: {
             tag: "button",
             text: { tag: "plain_text", content: "✅ 确认分析" },
             type: "primary",
-            value: { action: "confirm_bitable_video", pendingId: entry.pendingId },
+            value: params.confirmValue,
           },
           {
             tag: "button",
             text: { tag: "plain_text", content: "❌ 取消" },
             type: "default",
-            value: { action: "cancel_bitable_video", pendingId: entry.pendingId },
+            value: params.cancelValue,
           },
         ],
       },
@@ -140,22 +89,11 @@ function buildCancelledCard(): Record<string, unknown> {
   };
 }
 
-function buildExpiredCard(): Record<string, unknown> {
-  return {
-    config: { wide_screen_mode: true },
-    header: {
-      title: { tag: "plain_text", content: "🎬 视频分析 — 已过期" },
-      template: "grey",
-    },
-    elements: [{ tag: "markdown", content: "确认已过期，请重新发送分析请求。" }],
-  };
-}
-
 // ─── Public API ──────────────────────────────────────────────────────────────
 
 /**
  * Send a cost confirmation card for bitable video analysis.
- * Returns the pending ID for tracking.
+ * All analysis parameters are embedded in the button's action value.
  */
 export async function sendBitableVideoConfirmCard(params: {
   cfg: ClawdbotConfig;
@@ -171,16 +109,27 @@ export async function sendBitableVideoConfirmCard(params: {
   durationDisplay: string;
   model: string;
   pricingBasis: string;
-  /** Target: user:open_id or chat:chat_id */
   target: string;
-  /** Reply to this message_id */
   replyToMessageId: string;
-  /** Sender's open_id (for authorization) */
   senderOpenId: string;
   log?: (msg: string) => void;
 }): Promise<string> {
-  const pendingId = generateId();
   const log = params.log ?? console.log;
+
+  // Embed all data needed for analysis in the confirm button value
+  const confirmValue = {
+    action: "confirm_bitable_video",
+    gcsUri: params.gcsUri,
+    mimeType: params.mimeType,
+    prompt: params.prompt,
+    target: params.target,
+    replyToMessageId: params.replyToMessageId,
+    senderOpenId: params.senderOpenId,
+  };
+
+  const cancelValue = {
+    action: "cancel_bitable_video",
+  };
 
   const card = buildConfirmCard({
     fileName: params.fileName,
@@ -190,7 +139,8 @@ export async function sendBitableVideoConfirmCard(params: {
     durationDisplay: params.durationDisplay,
     pricingBasis: params.pricingBasis,
     cacheHit: params.cacheHit,
-    pendingId,
+    confirmValue,
+    cancelValue,
   });
 
   const result = await sendCardFeishu({
@@ -200,32 +150,8 @@ export async function sendBitableVideoConfirmCard(params: {
     replyToMessageId: params.replyToMessageId,
   });
 
-  const entry: PendingBitableVideoConfirm = {
-    id: pendingId,
-    gcsUri: params.gcsUri,
-    mimeType: params.mimeType,
-    fileName: params.fileName,
-    size: params.size,
-    recordNumber: params.recordNumber,
-    prompt: params.prompt,
-    costDisplay: params.costDisplay,
-    estimatedCostUsd: params.estimatedCostUsd,
-    durationDisplay: params.durationDisplay,
-    model: params.model,
-    pricingBasis: params.pricingBasis,
-    cardMessageId: result.messageId,
-    target: params.target,
-    replyToMessageId: params.replyToMessageId,
-    senderOpenId: params.senderOpenId,
-    cfg: params.cfg,
-    createdAt: Date.now(),
-  };
-
-  pendingMap.set(pendingId, entry);
-  ensureCleanup();
-
-  log(`[bitable-video] Confirm card sent (pendingId=${pendingId}, card=${result.messageId})`);
-  return pendingId;
+  log(`[bitable-video] Confirm card sent (card=${result.messageId})`);
+  return result.messageId;
 }
 
 /**
@@ -239,13 +165,13 @@ export function isBitableVideoAction(actionValue: Record<string, unknown> | unde
 
 /**
  * Handle a bitable video card action (confirm or cancel).
- * On confirm: updates card → runs Gemini analysis → sends result card.
- * On cancel: updates card to cancelled state.
+ * STATELESS: reads all data from the action value itself.
  *
- * Returns a card response for immediate callback feedback.
+ * On confirm: runs Gemini analysis → sends result card.
+ * On cancel: returns cancelled card.
  */
 export async function handleBitableVideoCardAction(params: {
-  actionData: { action?: { value?: Record<string, unknown> }; operator?: { open_id?: string } };
+  actionData: { action?: { value?: Record<string, unknown> }; operator?: { open_id?: string }; context?: { open_message_id?: string } };
   cfg: ClawdbotConfig;
   log?: (msg: string) => void;
 }): Promise<Record<string, unknown> | undefined> {
@@ -256,39 +182,47 @@ export async function handleBitableVideoCardAction(params: {
   if (!actionValue) return undefined;
 
   const action = actionValue.action as string;
-  const pendingId = actionValue.pendingId as string;
-
-  if (!pendingId) return undefined;
-
-  const entry = pendingMap.get(pendingId);
-
-  if (!entry) {
-    log(`[bitable-video] Pending not found: ${pendingId} (expired?)`);
-    return buildExpiredCard();
-  }
-
-  // Verify sender
-  const operatorOpenId = actionData.operator?.open_id || "";
-  if (entry.senderOpenId && operatorOpenId !== entry.senderOpenId) {
-    log(`[bitable-video] Action from wrong user (expected=${entry.senderOpenId}, got=${operatorOpenId})`);
-    return undefined;
-  }
-
-  pendingMap.delete(pendingId);
 
   if (action === "cancel_bitable_video") {
-    log(`[bitable-video] Cancelled by user (pendingId=${pendingId})`);
+    log(`[bitable-video] Cancelled by user`);
     return buildCancelledCard();
   }
 
-  // ── Confirm: update card → analyze → send result ──
-  log(`[bitable-video] Confirmed by user (pendingId=${pendingId}), starting analysis...`);
+  if (action !== "confirm_bitable_video") return undefined;
+
+  // Read all data from the button value
+  const gcsUri = actionValue.gcsUri as string;
+  const mimeType = actionValue.mimeType as string || "video/mp4";
+  const prompt = actionValue.prompt as string || "请分析这个视频的内容";
+  const target = actionValue.target as string;
+  const replyToMessageId = actionValue.replyToMessageId as string;
+  const senderOpenId = actionValue.senderOpenId as string;
+  const cardMessageId = actionData.context?.open_message_id;
+
+  // Verify sender
+  const operatorOpenId = actionData.operator?.open_id || "";
+  if (senderOpenId && operatorOpenId !== senderOpenId) {
+    log(`[bitable-video] Action from wrong user (expected=${senderOpenId}, got=${operatorOpenId})`);
+    return undefined;
+  }
+
+  if (!gcsUri) {
+    log(`[bitable-video] Missing gcsUri in action value`);
+    return undefined;
+  }
+
+  log(`[bitable-video] Confirmed, starting analysis of ${gcsUri}`);
+
+  // Init config for Gemini
+  initGcsConfig(cfg);
+  const feishuCfg = cfg?.channels?.feishu as Record<string, unknown> | undefined;
+  if (feishuCfg?.gcsCredentialsPath) setCredentialsPath(feishuCfg.gcsCredentialsPath as string);
 
   // Fire-and-forget: analyze in background
   void (async () => {
     try {
-      const analysis = await analyzeVideoFromGcs(entry.gcsUri, entry.mimeType, {
-        prompt: entry.prompt,
+      const analysis = await analyzeVideoFromGcs(gcsUri, mimeType, {
+        prompt,
         log,
       });
 
@@ -302,8 +236,8 @@ export async function handleBitableVideoCardAction(params: {
 
       // Send result card
       await sendCardFeishu({
-        cfg: entry.cfg,
-        to: entry.target,
+        cfg,
+        to: target,
         card: {
           config: { wide_screen_mode: true },
           header: {
@@ -322,35 +256,37 @@ export async function handleBitableVideoCardAction(params: {
             },
           ],
         },
-        replyToMessageId: entry.replyToMessageId,
+        replyToMessageId,
       });
 
       // Update confirm card to show completion
-      try {
-        await updateCardFeishu({
-          cfg: entry.cfg,
-          messageId: entry.cardMessageId,
-          card: {
-            config: { wide_screen_mode: true },
-            header: {
-              title: { tag: "plain_text", content: "🎬 视频分析 — 完成" },
-              template: "green",
+      if (cardMessageId) {
+        try {
+          await updateCardFeishu({
+            cfg,
+            messageId: cardMessageId,
+            card: {
+              config: { wide_screen_mode: true },
+              header: {
+                title: { tag: "plain_text", content: "🎬 视频分析 — 完成" },
+                template: "green",
+              },
+              elements: [{
+                tag: "markdown",
+                content: `✅ 分析完成（${durationStr}，${costStr}）`,
+              }],
             },
-            elements: [{
-              tag: "markdown",
-              content: `✅ 分析完成（${durationStr}，${costStr}）`,
-            }],
-          },
-        });
-      } catch (err) {
-        log(`[bitable-video] Failed to update card: ${err}`);
+          });
+        } catch (err) {
+          log(`[bitable-video] Failed to update card: ${err}`);
+        }
       }
     } catch (err) {
       log(`[bitable-video] Analysis failed: ${err}`);
       try {
         await sendCardFeishu({
-          cfg: entry.cfg,
-          to: entry.target,
+          cfg,
+          to: target,
           card: {
             config: { wide_screen_mode: true },
             header: {
@@ -362,7 +298,7 @@ export async function handleBitableVideoCardAction(params: {
               content: `分析失败：${err instanceof Error ? err.message : String(err)}`,
             }],
           },
-          replyToMessageId: entry.replyToMessageId,
+          replyToMessageId,
         });
       } catch { /* ignore */ }
     }
