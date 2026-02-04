@@ -93,6 +93,16 @@ async function getAccessToken(): Promise<string> {
   return cachedToken.token;
 }
 
+async function computeFileMd5(filePath: string): Promise<string> {
+  const hash = crypto.createHash("md5");
+  const readStream = fs.createReadStream(filePath);
+  for await (const chunk of readStream) {
+    const buf = Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk);
+    hash.update(buf);
+  }
+  return hash.digest("hex");
+}
+
 // ─── Stream Download + MD5 ───────────────────────────────────────────────────
 
 /**
@@ -141,14 +151,11 @@ export async function uploadToGcs(params: {
   const token = await getAccessToken();
   const fileSize = fs.statSync(params.filePath).size;
   const objectName = params.objectName ?? `video-${Date.now()}-${path.basename(params.filePath)}`;
-
-  // Compute MD5 while reading for upload
-  const hash = crypto.createHash("md5");
+  const md5 = await computeFileMd5(params.filePath);
 
   if (fileSize < 5 * 1024 * 1024) {
     // Simple upload for small files
     const fileData = fs.readFileSync(params.filePath);
-    hash.update(fileData);
 
     const res = await fetch(
       `https://storage.googleapis.com/upload/storage/v1/b/${BUCKET_NAME}/o?uploadType=media&name=${encodeURIComponent(objectName)}`,
@@ -171,7 +178,7 @@ export async function uploadToGcs(params: {
       gcsUri: `gs://${BUCKET_NAME}/${objectName}`,
       objectName,
       size: fileSize,
-      md5: hash.digest("hex"),
+      md5,
     };
   }
 
@@ -201,36 +208,62 @@ export async function uploadToGcs(params: {
   }
 
   // Step 2: Stream upload the file
-  const fileStream = fs.createReadStream(params.filePath);
+  const chunkSize = 8 * 1024 * 1024;
+  let start = 0;
+  while (start < fileSize) {
+    const end = Math.min(start + chunkSize - 1, fileSize - 1);
+    const contentLength = end - start + 1;
+    const contentRange = `bytes ${start}-${end}/${fileSize}`;
 
-  // We need to collect for MD5 and also send to GCS
-  // Read file in chunks, update hash, collect into buffer for upload
-  const chunks: Buffer[] = [];
-  for await (const chunk of fileStream) {
-    const buf = Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk);
-    hash.update(buf);
-    chunks.push(buf);
-  }
-  const fullBuffer = Buffer.concat(chunks);
+    let attempt = 0;
+    while (true) {
+      attempt++;
+      const body = fs.createReadStream(params.filePath, { start, end });
+      const uploadRes = await fetch(uploadUrl, ({
+        method: "PUT",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Length": String(contentLength),
+          "Content-Type": params.mimeType,
+          "Content-Range": contentRange,
+        },
+        body,
+        duplex: "half",
+      } as any));
 
-  const uploadRes = await fetch(uploadUrl, {
-    method: "PUT",
-    headers: {
-      "Content-Length": String(fileSize),
-      "Content-Type": params.mimeType,
-    },
-    body: fullBuffer,
-  });
+      if (uploadRes.status === 308) {
+        const range = uploadRes.headers.get("range");
+        if (range) {
+          const m = /bytes=\d+-(\d+)/i.exec(range);
+          if (m?.[1]) {
+            const last = Number.parseInt(m[1], 10);
+            if (Number.isFinite(last) && last >= start) {
+              start = last + 1;
+              break;
+            }
+          }
+        }
+        if (attempt >= 3) {
+          throw new Error(`GCS resumable upload incomplete after retries (start=${start}, end=${end})`);
+        }
+        await uploadRes.arrayBuffer().catch(() => {});
+        continue;
+      }
 
-  if (!uploadRes.ok) {
-    throw new Error(`GCS resumable upload failed: ${uploadRes.status} ${await uploadRes.text()}`);
+      if (!uploadRes.ok) {
+        throw new Error(`GCS resumable upload failed: ${uploadRes.status} ${await uploadRes.text()}`);
+      }
+
+      start = end + 1;
+      break;
+    }
   }
 
   return {
     gcsUri: `gs://${BUCKET_NAME}/${objectName}`,
     objectName,
     size: fileSize,
-    md5: hash.digest("hex"),
+    md5,
   };
 }
 

@@ -14,6 +14,7 @@ import {
   listFeishuDirectoryGroupsLive,
 } from "./directory.js";
 import { feishuOnboardingAdapter } from "./onboarding.js";
+import { clearAllBitableRecords } from "./bitable-video.js";
 
 const meta = {
   id: "feishu",
@@ -218,6 +219,13 @@ export const feishuPlugin: ChannelPlugin<ResolvedFeishuAccount> = {
       const port = feishuCfg?.webhookPort ?? null;
       ctx.setStatus({ accountId: ctx.accountId, port });
       ctx.log?.info(`starting feishu provider (mode: ${feishuCfg?.connectionMode ?? "websocket"})`);
+
+      startDailyBitableRecordClear({
+        cfg: ctx.cfg,
+        abortSignal: ctx.abortSignal,
+        log: ctx.log?.info ? (msg) => ctx.log?.info(msg) : undefined,
+      });
+
       return monitorFeishuProvider({
         config: ctx.cfg,
         runtime: ctx.runtime,
@@ -227,3 +235,56 @@ export const feishuPlugin: ChannelPlugin<ResolvedFeishuAccount> = {
     },
   },
 };
+
+function startDailyBitableRecordClear(params: {
+  cfg: ClawdbotConfig;
+  abortSignal: AbortSignal;
+  log?: (msg: string) => void;
+}) {
+  const log = params.log ?? console.log;
+
+  let timer: ReturnType<typeof setTimeout> | null = null;
+  let running = false;
+
+  const clearTimer = () => {
+    if (timer) clearTimeout(timer);
+    timer = null;
+  };
+
+  const scheduleNext = () => {
+    clearTimer();
+    if (params.abortSignal.aborted) return;
+
+    const now = new Date();
+    const next = new Date(now);
+    next.setHours(24, 0, 0, 0);
+    const delayMs = Math.max(0, next.getTime() - now.getTime());
+
+    timer = setTimeout(() => {
+      void (async () => {
+        if (params.abortSignal.aborted) return;
+        if (running) return;
+        running = true;
+        try {
+          const res = await clearAllBitableRecords({ cfg: params.cfg });
+          log(`[bitable-clear] cleared records: deleted=${res.deleted}, total=${res.total}, batches=${res.batches}`);
+        } catch (err) {
+          log(`[bitable-clear] clear failed: ${err}`);
+        } finally {
+          running = false;
+          scheduleNext();
+        }
+      })();
+    }, delayMs);
+  };
+
+  params.abortSignal.addEventListener(
+    "abort",
+    () => {
+      clearTimer();
+    },
+    { once: true },
+  );
+
+  scheduleNext();
+}

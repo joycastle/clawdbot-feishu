@@ -162,6 +162,85 @@ export async function fetchBitableRecords(params: {
   return records;
 }
 
+export async function clearAllBitableRecords(params: {
+  cfg: ClawdbotConfig;
+  config?: BitableVideoConfig;
+}): Promise<{ deleted: number; total: number; batches: number }> {
+  const { cfg } = params;
+  const btConfig = params.config ?? DEFAULT_CONFIG;
+  const feishuCfg = cfg.channels?.feishu as FeishuConfig | undefined;
+  if (!feishuCfg) throw new Error("Feishu channel not configured");
+
+  const client = createFeishuClient(feishuCfg);
+
+  const recordIds: string[] = [];
+  let pageToken: string | undefined;
+
+  while (true) {
+    const response = await (client.bitable.appTableRecord as any).search({
+      path: {
+        app_token: btConfig.appToken,
+        table_id: btConfig.tableToken,
+      },
+      params: {
+        page_size: 200,
+        page_token: pageToken,
+      },
+      data: {},
+    });
+
+    if (response.code !== 0) {
+      throw new Error(`Bitable search failed: ${response.msg || `code ${response.code}`}`);
+    }
+
+    const items = response.data?.items ?? [];
+    for (const item of items) {
+      const id = item.record_id as string | undefined;
+      if (id) recordIds.push(id);
+    }
+
+    if (!response.data?.has_more) break;
+    const nextToken = response.data?.page_token as string | undefined;
+    if (!nextToken) break;
+    pageToken = nextToken;
+  }
+
+  const total = recordIds.length;
+  if (total === 0) return { deleted: 0, total: 0, batches: 0 };
+
+  const chunkSize = 500;
+  let deleted = 0;
+  let batches = 0;
+
+  for (let i = 0; i < recordIds.length; i += chunkSize) {
+    const chunk = recordIds.slice(i, i + chunkSize);
+    batches += 1;
+
+    const delResp = await (client.bitable.appTableRecord as any).batchDelete({
+      path: {
+        app_token: btConfig.appToken,
+        table_id: btConfig.tableToken,
+      },
+      data: {
+        records: chunk,
+      },
+    });
+
+    if (delResp.code !== 0) {
+      throw new Error(`Bitable batchDelete failed: ${delResp.msg || `code ${delResp.code}`}`);
+    }
+
+    const results = delResp.data?.records ?? [];
+    if (Array.isArray(results) && results.length > 0) {
+      deleted += results.filter((r: any) => r?.deleted).length;
+    } else {
+      deleted += chunk.length;
+    }
+  }
+
+  return { deleted, total, batches };
+}
+
 /**
  * Find a specific record by target (latest or auto-number).
  */
