@@ -398,15 +398,17 @@ export async function handleMediaCardAction(params: {
   if (action === "cancel_media") {
     log?.(`feishu: media processing cancelled by user (pendingId=${pendingId})`);
     // Update card to show cancelled state
-    try {
-      await updateCardFeishu({
-        cfg: entry.cfg,
-        messageId: entry.cardMessageId,
-        card: buildCancelledCard(entry.mediaType),
-      });
-    } catch (err) {
-      log?.(`feishu: failed to update cancelled card: ${String(err)}`);
-    }
+    void (async () => {
+      try {
+        await updateCardFeishu({
+          cfg: entry.cfg,
+          messageId: entry.cardMessageId,
+          card: buildCancelledCard(entry.mediaType),
+        });
+      } catch (err) {
+        log?.(`feishu: failed to update cancelled card: ${String(err)}`);
+      }
+    })();
     return null;
   }
 
@@ -414,15 +416,17 @@ export async function handleMediaCardAction(params: {
   log?.(`feishu: media processing confirmed by user (pendingId=${pendingId})`);
 
   // Update card to show processing state
-  try {
-    await updateCardFeishu({
-      cfg: entry.cfg,
-      messageId: entry.cardMessageId,
-      card: buildProcessingCard(entry.mediaType),
-    });
-  } catch (err) {
-    log?.(`feishu: failed to update processing card: ${String(err)}`);
-  }
+  void (async () => {
+    try {
+      await updateCardFeishu({
+        cfg: entry.cfg,
+        messageId: entry.cardMessageId,
+        card: buildProcessingCard(entry.mediaType),
+      });
+    } catch (err) {
+      log?.(`feishu: failed to update processing card: ${String(err)}`);
+    }
+  })();
 
   return entry;
 }

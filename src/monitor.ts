@@ -334,7 +334,7 @@ async function monitorWebSocket(params: {
             } else {
               // Non-video media (audio, etc.) — resume normal agent dispatch
               log(`feishu: resuming media processing after confirmation (pendingId=${confirmed.id})`);
-              await handleFeishuMessage({
+              void handleFeishuMessage({
                 cfg,
                 event: confirmed.event,
                 botOpenId,
@@ -363,7 +363,7 @@ async function monitorWebSocket(params: {
 
         if (confirmed) {
           log(`feishu: resuming media processing after confirmation (pendingId=${confirmed.id})`);
-          await handleFeishuMessage({
+          void handleFeishuMessage({
             cfg,
             event: confirmed.event,
             botOpenId,
@@ -372,6 +372,7 @@ async function monitorWebSocket(params: {
             skipMediaConfirm: true,
             preResolvedMediaList: confirmed.mediaList,
           });
+          return { toast: { type: "info" as const, content: "⏳ 正在处理中..." } };
         }
       } catch (err) {
         error(`feishu: error handling card action: ${String(err)}`);
