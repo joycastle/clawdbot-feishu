@@ -14,6 +14,7 @@ import {
   listFeishuDirectoryGroupsLive,
 } from "./directory.js";
 import { feishuOnboardingAdapter } from "./onboarding.js";
+import { clearAllBitableRecords } from "./big-video/bitable-video.js";
 
 const meta = {
   id: "feishu",
@@ -55,6 +56,7 @@ export const feishuPlugin: ChannelPlugin<ResolvedFeishuAccount> = {
     messageToolHints: () => [
       "- Feishu targeting: omit `target` to reply to the current conversation (auto-inferred). Explicit targets: `user:open_id` or `chat:chat_id`.",
       "- Feishu supports interactive cards for rich messages.",
+      "- **Bitable Video Analysis**: When a user wants to analyze a video from the bitable (多维表格), run: `npx tsx /home/ubuntu/.clawdbot/extensions/feishu/src/big-video/bitable-video-cli.ts --target <latest|number> --prompt \"用户的分析需求\" --notify-to \"chat:<chat_id>\" --notify-reply-to \"<message_id>\"`. The CLI outputs JSON to stdout with { text, cacheHit, gcsUri, durationMs, estimatedCostUsd }. Use --target latest for the most recent video, or --target <number> for a specific record number. Recognize user intent naturally — they might say '帮我分析最新的视频', '看看3号视频', '分析一下表格里的视频' etc.",
     ],
   },
   actions: {
@@ -218,6 +220,13 @@ export const feishuPlugin: ChannelPlugin<ResolvedFeishuAccount> = {
       const port = feishuCfg?.webhookPort ?? null;
       ctx.setStatus({ accountId: ctx.accountId, port });
       ctx.log?.info(`starting feishu provider (mode: ${feishuCfg?.connectionMode ?? "websocket"})`);
+
+      startDailyBitableRecordClear({
+        cfg: ctx.cfg,
+        abortSignal: ctx.abortSignal,
+        log: ctx.log?.info ? (msg) => ctx.log?.info(msg) : undefined,
+      });
+
       return monitorFeishuProvider({
         config: ctx.cfg,
         runtime: ctx.runtime,
@@ -227,3 +236,56 @@ export const feishuPlugin: ChannelPlugin<ResolvedFeishuAccount> = {
     },
   },
 };
+
+function startDailyBitableRecordClear(params: {
+  cfg: ClawdbotConfig;
+  abortSignal: AbortSignal;
+  log?: (msg: string) => void;
+}) {
+  const log = params.log ?? console.log;
+
+  let timer: ReturnType<typeof setTimeout> | null = null;
+  let running = false;
+
+  const clearTimer = () => {
+    if (timer) clearTimeout(timer);
+    timer = null;
+  };
+
+  const scheduleNext = () => {
+    clearTimer();
+    if (params.abortSignal.aborted) return;
+
+    const now = new Date();
+    const next = new Date(now);
+    next.setHours(24, 0, 0, 0);
+    const delayMs = Math.max(0, next.getTime() - now.getTime());
+
+    timer = setTimeout(() => {
+      void (async () => {
+        if (params.abortSignal.aborted) return;
+        if (running) return;
+        running = true;
+        try {
+          const res = await clearAllBitableRecords({ cfg: params.cfg });
+          log(`[bitable-clear] cleared records: deleted=${res.deleted}, total=${res.total}, batches=${res.batches}`);
+        } catch (err) {
+          log(`[bitable-clear] clear failed: ${err}`);
+        } finally {
+          running = false;
+          scheduleNext();
+        }
+      })();
+    }, delayMs);
+  };
+
+  params.abortSignal.addEventListener(
+    "abort",
+    () => {
+      clearTimer();
+    },
+    { once: true },
+  );
+
+  scheduleNext();
+}

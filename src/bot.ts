@@ -19,6 +19,8 @@ import { createFeishuReplyDispatcher } from "./reply-dispatcher.js";
 import { getMessageFeishu } from "./send.js";
 import { downloadImageFeishu, downloadMessageResourceFeishu } from "./media.js";
 import { sendMediaConfirmCard } from "./media-confirm.js";
+// Video analysis is now handled by the LLM agent via bitable-video-cli.ts
+// instead of hard-coded regex interception. See bitable-video-cli.ts.
 import fs from "fs";
 
 export type FeishuMessageEvent = {
@@ -736,12 +738,12 @@ export async function handleFeishuMessage(params: {
                 {
                   tag: "markdown",
                   content: [
-                    "检测到视频文件，但**超出飞书 API 下载限制（约 20MB）**，无法处理。",
+                    "检测到视频文件，但**超出飞书 API 下载限制（约 20MB）**，无法直接处理。",
                     "",
                     "**建议：**",
+                    "• 将视频上传到多维表格（appToken: OW7lbIpSlaf4nEsiDKLcqiYGn7c），然后告诉我你想分析哪个视频（最新的 / 编号几的）",
                     "• 压缩视频后重新发送",
                     "• 发送较短的视频片段",
-                    "• 将视频上传到网盘并分享链接",
                   ].join("\n"),
                 },
               ],
@@ -828,6 +830,12 @@ export async function handleFeishuMessage(params: {
     } catch (err) {
       log(`feishu: doc enrichment failed (non-fatal): ${String(err)}`);
     }
+
+    // NOTE: Bitable video commands (e.g., "帮我分析最新的视频") are no longer
+    // intercepted here via regex. Instead, messages flow through to the LLM agent,
+    // which uses natural language understanding to recognize video analysis intent
+    // and invokes bitable-video-cli.ts with structured arguments.
+    // See: src/big-video/bitable-video-cli.ts
 
     // Build message body with quoted content if available
     let messageBody = enrichedContent;
