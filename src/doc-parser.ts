@@ -145,7 +145,7 @@ function blocksToText(blocks: DocBlock[]): string {
     // Text-like blocks
     const key = typeKeyMap[bt];
     if (key) {
-      const content = (block as Record<string, unknown>)[key] as
+      const content = (block as unknown as Record<string, unknown>)[key] as
         | { elements?: DocElement[] }
         | undefined;
       const text = extractBlockText(content?.elements);

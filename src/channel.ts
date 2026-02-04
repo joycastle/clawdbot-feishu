@@ -56,7 +56,7 @@ export const feishuPlugin: ChannelPlugin<ResolvedFeishuAccount> = {
     messageToolHints: () => [
       "- Feishu targeting: omit `target` to reply to the current conversation (auto-inferred). Explicit targets: `user:open_id` or `chat:chat_id`.",
       "- Feishu supports interactive cards for rich messages.",
-      "- **Bitable Video Analysis**: When a user wants to analyze a video from the bitable (多维表格), run: `npx tsx /home/ubuntu/.clawdbot/extensions/feishu/src/big-video/bitable-video-cli.ts --target <latest|number> --prompt \"用户的分析需求\" --notify-to \"chat:<chat_id>\" --notify-reply-to \"<message_id>\"`. The CLI outputs JSON to stdout with { text, cacheHit, gcsUri, durationMs, estimatedCostUsd }. Use --target latest for the most recent video, or --target <number> for a specific record number. Recognize user intent naturally — they might say '帮我分析最新的视频', '看看3号视频', '分析一下表格里的视频' etc.",
+      "- **Bitable Video Analysis**: When a user wants to analyze a video from the bitable (多维表格), run: `npx tsx /home/ubuntu/.clawdbot/extensions/feishu/src/big-video/bitable-video-cli.ts --target <latest|number> --prompt \"用户的分析需求\"`. The CLI outputs JSON to stdout with { text, cacheHit, gcsUri, durationMs, estimatedCostUsd }. Use --target latest for the most recent video, or --target <number> for a specific record number. Recognize user intent naturally — they might say '帮我分析最新的视频', '看看3号视频', '分析一下表格里的视频' etc.",
     ],
   },
   actions: {
@@ -246,6 +246,8 @@ function startDailyBitableRecordClear(params: {
 
   let timer: ReturnType<typeof setTimeout> | null = null;
   let running = false;
+  let lastScheduledAt: number | null = null;
+  const intervalMs = 7 * 24 * 60 * 60 * 1000;
 
   const clearTimer = () => {
     if (timer) clearTimeout(timer);
@@ -257,8 +259,13 @@ function startDailyBitableRecordClear(params: {
     if (params.abortSignal.aborted) return;
 
     const now = new Date();
-    const next = new Date(now);
-    next.setHours(24, 0, 0, 0);
+    const next = lastScheduledAt == null
+      ? (() => {
+          const d = new Date(now);
+          d.setHours(24, 0, 0, 0);
+          return d;
+        })()
+      : new Date(lastScheduledAt + intervalMs);
     const delayMs = Math.max(0, next.getTime() - now.getTime());
 
     timer = setTimeout(() => {
@@ -266,6 +273,7 @@ function startDailyBitableRecordClear(params: {
         if (params.abortSignal.aborted) return;
         if (running) return;
         running = true;
+        lastScheduledAt = next.getTime();
         try {
           const res = await clearAllBitableRecords({ cfg: params.cfg });
           log(`[bitable-clear] cleared records: deleted=${res.deleted}, total=${res.total}, batches=${res.batches}`);

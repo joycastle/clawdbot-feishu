@@ -164,6 +164,7 @@ export async function streamUploadToGcs(
       const uploadRes = await fetch(uploadUrl, {
         method: "PUT",
         headers: {
+          Authorization: `Bearer ${token}`,
           "Content-Length": String(toSend.length),
           "Content-Type": mimeType,
           "Content-Range": contentRange,
@@ -190,6 +191,7 @@ export async function streamUploadToGcs(
     const uploadRes = await fetch(uploadUrl, {
       method: "PUT",
       headers: {
+        Authorization: `Bearer ${token}`,
         "Content-Length": String(buffer.length),
         "Content-Type": mimeType,
         "Content-Range": contentRange,
