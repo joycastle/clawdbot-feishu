@@ -187,7 +187,7 @@ function buildCostConfirmCard(params: {
 /**
  * Build a "processing" card (shown after user confirms).
  */
-function buildProcessingCard(mediaType: "audio" | "video"): Record<string, unknown> {
+export function buildProcessingCard(mediaType: "audio" | "video"): Record<string, unknown> {
   const mediaLabel = mediaType === "audio" ? "🎤 语音消息" : "🎬 视频消息";
   return {
     config: { wide_screen_mode: true },
@@ -207,7 +207,7 @@ function buildProcessingCard(mediaType: "audio" | "video"): Record<string, unkno
 /**
  * Build a "cancelled" card.
  */
-function buildCancelledCard(mediaType: "audio" | "video"): Record<string, unknown> {
+export function buildCancelledCard(mediaType: "audio" | "video"): Record<string, unknown> {
   const mediaLabel = mediaType === "audio" ? "🎤 语音消息" : "🎬 视频消息";
   return {
     config: { wide_screen_mode: true },
@@ -227,7 +227,7 @@ function buildCancelledCard(mediaType: "audio" | "video"): Record<string, unknow
 /**
  * Build an "expired" card.
  */
-function buildExpiredCard(): Record<string, unknown> {
+export function buildExpiredCard(): Record<string, unknown> {
   return {
     config: { wide_screen_mode: true },
     header: {
@@ -397,32 +397,15 @@ export async function handleMediaCardAction(params: {
 
   if (action === "cancel_media") {
     log?.(`feishu: media processing cancelled by user (pendingId=${pendingId})`);
-    // Update card to show cancelled state
-    try {
-      await updateCardFeishu({
-        cfg: entry.cfg,
-        messageId: entry.cardMessageId,
-        card: buildCancelledCard(entry.mediaType),
-      });
-    } catch (err) {
-      log?.(`feishu: failed to update cancelled card: ${String(err)}`);
-    }
+    // Card update is handled by the callback response in monitor.ts
+    // (returning the card directly as callback response is the correct Feishu pattern,
+    // rather than using a separate PATCH which races with the callback response)
     return null;
   }
 
   // action === "confirm_media"
   log?.(`feishu: media processing confirmed by user (pendingId=${pendingId})`);
-
-  // Update card to show processing state
-  try {
-    await updateCardFeishu({
-      cfg: entry.cfg,
-      messageId: entry.cardMessageId,
-      card: buildProcessingCard(entry.mediaType),
-    });
-  } catch (err) {
-    log?.(`feishu: failed to update processing card: ${String(err)}`);
-  }
+  // Card update to "processing" state is handled by the callback response in monitor.ts
 
   return entry;
 }
