@@ -400,12 +400,37 @@ export async function handleMediaCardAction(params: {
     // Card update is handled by the callback response in monitor.ts
     // (returning the card directly as callback response is the correct Feishu pattern,
     // rather than using a separate PATCH which races with the callback response)
+    // Update card to show cancelled state
+    void (async () => {
+      try {
+        await updateCardFeishu({
+          cfg: entry.cfg,
+          messageId: entry.cardMessageId,
+          card: buildCancelledCard(entry.mediaType),
+        });
+      } catch (err) {
+        log?.(`feishu: failed to update cancelled card: ${String(err)}`);
+      }
+    })();
     return null;
   }
 
   // action === "confirm_media"
   log?.(`feishu: media processing confirmed by user (pendingId=${pendingId})`);
   // Card update to "processing" state is handled by the callback response in monitor.ts
+
+  // Update card to show processing state
+  void (async () => {
+    try {
+      await updateCardFeishu({
+        cfg: entry.cfg,
+        messageId: entry.cardMessageId,
+        card: buildProcessingCard(entry.mediaType),
+      });
+    } catch (err) {
+      log?.(`feishu: failed to update processing card: ${String(err)}`);
+    }
+  })();
 
   return entry;
 }
