@@ -126,23 +126,27 @@ async function monitorWebSocket(params: {
 
   eventDispatcher.register({
     "im.message.receive_v1": async (data) => {
-      try {
-        const event = data as unknown as FeishuMessageEvent;
-        const messageId = event.message?.message_id;
-        if (messageId && isDuplicateMessage(messageId)) {
-          log(`feishu: skipping duplicate message (id=${messageId})`);
-          return;
-        }
-        await handleFeishuMessage({
-          cfg,
-          event,
-          botOpenId,
-          runtime,
-          chatHistories,
-        });
-      } catch (err) {
-        error(`feishu: error handling message event: ${String(err)}`);
+      const event = data as unknown as FeishuMessageEvent;
+      const messageId = event.message?.message_id;
+      if (messageId && isDuplicateMessage(messageId)) {
+        log(`feishu: skipping duplicate message (id=${messageId})`);
+        return;
       }
+      // Fire-and-forget: return immediately so SDK sends ACK to Feishu,
+      // avoiding timeout-triggered re-delivery of the same message.
+      void (async () => {
+        try {
+          await handleFeishuMessage({
+            cfg,
+            event,
+            botOpenId,
+            runtime,
+            chatHistories,
+          });
+        } catch (err) {
+          error(`feishu: error handling message event: ${String(err)}`);
+        }
+      })();
     },
     "im.message.message_read_v1": async () => {
       // Ignore read receipts
