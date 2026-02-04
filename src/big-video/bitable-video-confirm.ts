@@ -41,25 +41,63 @@ export interface PendingBitableVideoConfirm {
   createdAt: number;
 }
 
-// ─── State ───────────────────────────────────────────────────────────────────
+// ─── State (file-persisted, shared between CLI and Clawdbot process) ─────────
 
-const pendingMap = new Map<string, PendingBitableVideoConfirm>();
+import { existsSync } from "node:fs";
+import { readFile, writeFile, mkdir } from "node:fs/promises";
+import { join } from "node:path";
+
+const PENDING_DIR = join(process.env.HOME ?? "/tmp", ".clawdbot");
+const PENDING_FILE = join(PENDING_DIR, "bitable-video-pending.json");
 const PENDING_TTL_MS = 30 * 60 * 1000;
 
-let cleanupTimer: ReturnType<typeof setInterval> | null = null;
+type PendingStore = Record<string, PendingBitableVideoConfirm>;
 
-function ensureCleanup(): void {
-  if (cleanupTimer) return;
-  cleanupTimer = setInterval(() => {
-    const now = Date.now();
-    for (const [id, entry] of pendingMap) {
-      if (now - entry.createdAt > PENDING_TTL_MS) pendingMap.delete(id);
+async function loadPending(): Promise<PendingStore> {
+  try {
+    if (existsSync(PENDING_FILE)) {
+      const raw = await readFile(PENDING_FILE, "utf-8");
+      const store = JSON.parse(raw) as PendingStore;
+      // Clean expired entries
+      const now = Date.now();
+      let changed = false;
+      for (const [id, entry] of Object.entries(store)) {
+        if (now - entry.createdAt > PENDING_TTL_MS) {
+          delete store[id];
+          changed = true;
+        }
+      }
+      if (changed) await savePending(store);
+      return store;
     }
-    if (pendingMap.size === 0 && cleanupTimer) {
-      clearInterval(cleanupTimer);
-      cleanupTimer = null;
-    }
-  }, 5 * 60 * 1000);
+  } catch { /* ignore */ }
+  return {};
+}
+
+async function savePending(store: PendingStore): Promise<void> {
+  try {
+    if (!existsSync(PENDING_DIR)) await mkdir(PENDING_DIR, { recursive: true });
+    await writeFile(PENDING_FILE, JSON.stringify(store, null, 2), "utf-8");
+  } catch (err) {
+    console.error("[bitable-video-confirm] Failed to save pending:", err);
+  }
+}
+
+async function getPending(id: string): Promise<PendingBitableVideoConfirm | null> {
+  const store = await loadPending();
+  return store[id] ?? null;
+}
+
+async function setPending(entry: PendingBitableVideoConfirm): Promise<void> {
+  const store = await loadPending();
+  store[entry.id] = entry;
+  await savePending(store);
+}
+
+async function deletePending(id: string): Promise<void> {
+  const store = await loadPending();
+  delete store[id];
+  await savePending(store);
 }
 
 function generateId(): string {
@@ -221,8 +259,7 @@ export async function sendBitableVideoConfirmCard(params: {
     createdAt: Date.now(),
   };
 
-  pendingMap.set(pendingId, entry);
-  ensureCleanup();
+  await setPending(entry);
 
   log(`[bitable-video] Confirm card sent (pendingId=${pendingId}, card=${result.messageId})`);
   return pendingId;
@@ -260,7 +297,7 @@ export async function handleBitableVideoCardAction(params: {
 
   if (!pendingId) return undefined;
 
-  const entry = pendingMap.get(pendingId);
+  const entry = await getPending(pendingId);
 
   if (!entry) {
     log(`[bitable-video] Pending not found: ${pendingId} (expired?)`);
@@ -274,7 +311,7 @@ export async function handleBitableVideoCardAction(params: {
     return undefined;
   }
 
-  pendingMap.delete(pendingId);
+  await deletePending(pendingId);
 
   if (action === "cancel_bitable_video") {
     log(`[bitable-video] Cancelled by user (pendingId=${pendingId})`);
