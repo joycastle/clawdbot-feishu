@@ -56,7 +56,11 @@ export const feishuPlugin: ChannelPlugin<ResolvedFeishuAccount> = {
     messageToolHints: () => [
       "- Feishu targeting: omit `target` to reply to the current conversation (auto-inferred). Explicit targets: `user:open_id` or `chat:chat_id`.",
       "- Feishu supports interactive cards for rich messages.",
-      "- **Bitable Video Analysis**: When a user wants to analyze a video from the bitable (多维表格), run: `npx tsx /home/ubuntu/.clawdbot/extensions/feishu/src/big-video/bitable-video-cli.ts --target <latest|number> --prompt \"用户的分析需求\"`. The CLI outputs JSON to stdout with { text, cacheHit, gcsUri, durationMs, estimatedCostUsd }. Use --target latest for the most recent video, or --target <number> for a specific record number. Recognize user intent naturally — they might say '帮我分析最新的视频', '看看3号视频', '分析一下表格里的视频' etc.",
+      `- **Bitable Video Analysis (TWO-STEP, mandatory)**: When a user wants to analyze a video from the bitable (多维表格):`,
+      `  Step 1: \`npx tsx /home/ubuntu/.clawdbot/extensions/feishu/src/big-video/bitable-video-cli.ts --target <latest|number>\` → returns JSON with { gcsUri, size, costDisplay, estimatedCostUsd, fileName, ... }.`,
+      `  Step 2: Show cost estimate to user, ask for confirmation (确认/取消).`,
+      `  Step 3 (only after user confirms): \`npx tsx /home/ubuntu/.clawdbot/extensions/feishu/src/big-video/bitable-video-cli.ts --analyze --gcs-uri "gs://..." --prompt "用户的分析需求"\` → returns { text, durationMs, estimatedCostUsd }.`,
+      `  NEVER skip Step 2. There is no full-pipeline mode. Recognize user intent naturally — '帮我分析最新的视频', '看看3号视频' etc.`,
     ],
   },
   actions: {
