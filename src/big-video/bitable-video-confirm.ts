@@ -294,10 +294,22 @@ export async function handleBitableVideoCardAction(params: {
 
   // ─── Cancel ────────────────────────────────────────────────────────────────
   if (action === "cancel_bitable_video") {
-    log(`[bitable-video] Cancelled by user`);
-    // Return card as callback response ONLY — no PATCH.
-    // Feishu's callback has transaction semantics: PATCHes during callback get rolled back.
-    return buildCancelledCard();
+    log(`[bitable-video] Cancelled by user, cardMessageId=${cardMessageId || "(none)"}`);
+    // Try BOTH: PATCH first, then return card as callback response.
+    // Log everything to debug which mechanism works.
+    const card = buildCancelledCard();
+    if (cardMessageId) {
+      try {
+        await updateCardFeishu({ cfg, messageId: cardMessageId, card });
+        log(`[bitable-video] PATCH succeeded for cancel (messageId=${cardMessageId})`);
+      } catch (err) {
+        log(`[bitable-video] PATCH failed for cancel: ${String(err)}`);
+      }
+    } else {
+      log(`[bitable-video] No cardMessageId — cannot PATCH`);
+    }
+    log(`[bitable-video] Returning card as callback response`);
+    return card;
   }
 
   // ─── Confirm ───────────────────────────────────────────────────────────────

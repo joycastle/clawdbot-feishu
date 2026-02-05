@@ -182,13 +182,14 @@ async function monitorWebSocket(params: {
             log,
           });
 
-          // Cancel or expired — return card as callback response (no PATCH).
-          // Feishu's callback has transaction semantics: PATCHes during callback get rolled back.
+          // Cancel or expired — return card as callback response.
           if (!confirmed) {
             const isCancelAction = action === "cancel_media";
             if (isCancelAction) {
+              log(`feishu: media cancel — returning cancelled card as callback response`);
               return buildCancelledCard("video");
             }
+            log(`feishu: media expired — returning expired card as callback response`);
             return buildExpiredCard();
           }
 
@@ -357,6 +358,7 @@ async function monitorWebSocket(params: {
 
         if (isBitableVideoAction(actionValue)) {
           const cardResponse = await handleBitableVideoCardAction({ actionData, cfg, log });
+          log(`feishu: bitable video callback response type=${cardResponse ? typeof cardResponse : 'undefined'}, keys=${cardResponse ? Object.keys(cardResponse).join(',') : 'none'}`);
           return cardResponse ?? undefined;
         }
 
