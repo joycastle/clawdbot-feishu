@@ -182,15 +182,39 @@ async function monitorWebSocket(params: {
             log,
           });
 
-          // Cancel or expired — return card as callback response.
+          // Cancel or expired — use delayed PATCH (same pattern as bitable-video-confirm).
+          // Callback return card is unreliable via WebSocket; delayed PATCH avoids transaction rollback.
           if (!confirmed) {
             const isCancelAction = action === "cancel_media";
+            const cardMessageId = actionData.context?.open_message_id;
             if (isCancelAction) {
-              log(`feishu: media cancel — returning cancelled card as callback response`);
-              return buildCancelledCard("video");
+              log(`feishu: media cancel — delayed PATCH to cancelled card`);
+              if (cardMessageId) {
+                const msgId = cardMessageId;
+                setTimeout(async () => {
+                  try {
+                    await updateCardFeishu({ cfg, messageId: msgId, card: buildCancelledCard("video") });
+                    log(`feishu: media cancel delayed PATCH succeeded (messageId=${msgId})`);
+                  } catch (err) {
+                    log(`feishu: media cancel delayed PATCH failed: ${String(err)}`);
+                  }
+                }, 500);
+              }
+              return undefined;
             }
-            log(`feishu: media expired — returning expired card as callback response`);
-            return buildExpiredCard();
+            log(`feishu: media expired — delayed PATCH to expired card`);
+            if (cardMessageId) {
+              const msgId = cardMessageId;
+              setTimeout(async () => {
+                try {
+                  await updateCardFeishu({ cfg, messageId: msgId, card: buildExpiredCard() });
+                  log(`feishu: media expired delayed PATCH succeeded (messageId=${msgId})`);
+                } catch (err) {
+                  log(`feishu: media expired delayed PATCH failed: ${String(err)}`);
+                }
+              }, 500);
+            }
+            return undefined;
           }
 
           if (confirmed) {
@@ -202,7 +226,7 @@ async function monitorWebSocket(params: {
               // Fire-and-forget: run video analysis without blocking the event loop
               const confirmedRef = confirmed;
               log(`feishu: starting async video analysis (pendingId=${confirmedRef.id})`);
-              // Card already updated to "processing" via PATCH in handleMediaCardAction.
+              // Update card to "processing" via delayed PATCH (after callback response completes).
               void (async () => {
                 try {
                   const videoMedia = confirmedRef.mediaList.find(
@@ -336,8 +360,20 @@ async function monitorWebSocket(params: {
                   });
                 }
               })();
-              // Return processing card as callback response
-              return buildProcessingCard(confirmed.mediaType);
+              // Delayed PATCH to processing card (after callback response completes)
+              const confirmCardMsgId = confirmed.cardMessageId || actionData.context?.open_message_id;
+              if (confirmCardMsgId) {
+                const msgId = confirmCardMsgId;
+                setTimeout(async () => {
+                  try {
+                    await updateCardFeishu({ cfg, messageId: msgId, card: buildProcessingCard(confirmed.mediaType) });
+                    log(`feishu: media confirm delayed PATCH to processing succeeded (messageId=${msgId})`);
+                  } catch (err) {
+                    log(`feishu: media confirm delayed PATCH failed: ${String(err)}`);
+                  }
+                }, 500);
+              }
+              return undefined;
             } else {
               // Non-video media (audio, etc.) — resume normal agent dispatch
               log(`feishu: resuming media processing after confirmation (pendingId=${confirmed.id})`);
@@ -350,7 +386,20 @@ async function monitorWebSocket(params: {
                 skipMediaConfirm: true,
                 preResolvedMediaList: confirmed.mediaList,
               });
-              return buildProcessingCard(confirmed.mediaType);
+              // Delayed PATCH to processing card
+              const audioCardMsgId = confirmed.cardMessageId || actionData.context?.open_message_id;
+              if (audioCardMsgId) {
+                const msgId = audioCardMsgId;
+                setTimeout(async () => {
+                  try {
+                    await updateCardFeishu({ cfg, messageId: msgId, card: buildProcessingCard(confirmed.mediaType) });
+                    log(`feishu: media confirm delayed PATCH to processing succeeded (messageId=${msgId})`);
+                  } catch (err) {
+                    log(`feishu: media confirm delayed PATCH failed: ${String(err)}`);
+                  }
+                }, 500);
+              }
+              return undefined;
             }
           }
           return;
