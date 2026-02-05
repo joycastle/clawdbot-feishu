@@ -444,7 +444,7 @@ export async function analyzeVideo(
     ],
     generationConfig: {
       temperature: 0.4,
-      maxOutputTokens: 4096,
+      maxOutputTokens: 8192,
       topP: 0.95,
     },
   };
@@ -585,7 +585,7 @@ export async function analyzeVideoFromGcs(
     ],
     generationConfig: {
       temperature: 0.4,
-      maxOutputTokens: 4096,
+      maxOutputTokens: 8192,
       topP: 0.95,
     },
   };
