@@ -295,21 +295,21 @@ export async function handleBitableVideoCardAction(params: {
   // ─── Cancel ────────────────────────────────────────────────────────────────
   if (action === "cancel_bitable_video") {
     log(`[bitable-video] Cancelled by user, cardMessageId=${cardMessageId || "(none)"}`);
-    // Try BOTH: PATCH first, then return card as callback response.
-    // Log everything to debug which mechanism works.
-    const card = buildCancelledCard();
+    // Delay PATCH until AFTER callback response completes.
+    // Feishu's callback has transaction semantics — PATCHes during callback get rolled back.
+    // By deferring, the PATCH runs outside the transaction window.
     if (cardMessageId) {
-      try {
-        await updateCardFeishu({ cfg, messageId: cardMessageId, card });
-        log(`[bitable-video] PATCH succeeded for cancel (messageId=${cardMessageId})`);
-      } catch (err) {
-        log(`[bitable-video] PATCH failed for cancel: ${String(err)}`);
-      }
-    } else {
-      log(`[bitable-video] No cardMessageId — cannot PATCH`);
+      const msgId = cardMessageId;
+      setTimeout(async () => {
+        try {
+          await updateCardFeishu({ cfg, messageId: msgId, card: buildCancelledCard() });
+          log(`[bitable-video] Delayed PATCH succeeded for cancel (messageId=${msgId})`);
+        } catch (err) {
+          log(`[bitable-video] Delayed PATCH failed: ${String(err)}`);
+        }
+      }, 500);
     }
-    log(`[bitable-video] Returning card as callback response`);
-    return card;
+    return undefined;
   }
 
   // ─── Confirm ───────────────────────────────────────────────────────────────
@@ -361,8 +361,18 @@ export async function handleBitableVideoCardAction(params: {
 
   const initialStatus = getGeminiQueueStatus();
   const queuedCard = buildQueuedCard({ ...initialStatus, position: null, jobId });
-  // Initial state transition via callback return ONLY — no PATCH.
-  // Feishu's callback has transaction semantics: PATCHes during callback get rolled back.
+  // Delay PATCH until after callback response completes (avoids transaction rollback).
+  if (cardMessageId) {
+    const msgId = cardMessageId;
+    setTimeout(async () => {
+      try {
+        await updateCardFeishu({ cfg, messageId: msgId, card: queuedCard });
+        log(`[bitable-video] Delayed PATCH: card updated to queued state (messageId=${msgId})`);
+      } catch (err) {
+        log(`[bitable-video] Delayed PATCH failed: ${String(err)}`);
+      }
+    }, 500);
+  }
 
   // Fire-and-forget: analyze in background
   void (async () => {
@@ -489,8 +499,6 @@ export async function handleBitableVideoCardAction(params: {
     }
   })();
 
-  // Return queued card as callback response (initial state transition).
-  // Subsequent async updates (queue position, analyzing, completed) use PATCH since
-  // they happen AFTER the callback has completed (no transaction conflict).
-  return queuedCard;
+  // Return undefined — card update is handled by delayed PATCH (after callback completes).
+  return undefined;
 }
