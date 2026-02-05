@@ -7,7 +7,7 @@ import type { FeishuConfig } from "./types.js";
 import { createFeishuWSClient, createEventDispatcher } from "./client.js";
 import { resolveFeishuCredentials } from "./accounts.js";
 import { handleFeishuMessage, type FeishuMessageEvent, type FeishuBotAddedEvent } from "./bot.js";
-import { handleMediaCardAction, isMediaConfirmAction, buildProcessingCard, buildCancelledCard, buildExpiredCard, type CardActionEvent } from "./media-confirm.js";
+import { handleMediaCardAction, isMediaConfirmAction, type CardActionEvent } from "./media-confirm.js";
 import { handleVoteCardAction, isVoteAction } from "./vote.js";
 import { handleBitableVideoCardAction, isBitableVideoAction } from "./big-video/bitable-video-confirm.js";
 import { probeFeishu } from "./probe.js";
@@ -182,14 +182,14 @@ async function monitorWebSocket(params: {
             log,
           });
 
-          // Cancel or expired — return updated card as callback response
+          // Cancel or expired — card already updated via PATCH in handleMediaCardAction.
+          // Return toast only (callback return card doesn't work reliably via WebSocket).
           if (!confirmed) {
             const isCancelAction = action === "cancel_media";
             if (isCancelAction) {
-              // We don't have mediaType for expired entries, default to video
-              return buildCancelledCard("video");
+              return { toast: { type: "info" as const, content: "已取消" } };
             }
-            return buildExpiredCard();
+            return { toast: { type: "warning" as const, content: "确认已过期，请重新发送" } };
           }
 
           if (confirmed) {
@@ -201,8 +201,7 @@ async function monitorWebSocket(params: {
               // Fire-and-forget: run video analysis without blocking the event loop
               const confirmedRef = confirmed;
               log(`feishu: starting async video analysis (pendingId=${confirmedRef.id})`);
-              // Return "processing" card as callback response for immediate feedback
-              const cardResponse = buildProcessingCard(confirmed.mediaType);
+              // Card already updated to "processing" via PATCH in handleMediaCardAction.
               void (async () => {
                 try {
                   const videoMedia = confirmedRef.mediaList.find(
@@ -336,8 +335,8 @@ async function monitorWebSocket(params: {
                   });
                 }
               })();
-              // Return card immediately — don't block the event loop
-              return cardResponse;
+              // Return toast only — card already updated via PATCH
+              return { toast: { type: "info" as const, content: "⏳ 正在处理中..." } };
             } else {
               // Non-video media (audio, etc.) — resume normal agent dispatch
               log(`feishu: resuming media processing after confirmation (pendingId=${confirmed.id})`);
@@ -350,7 +349,7 @@ async function monitorWebSocket(params: {
                 skipMediaConfirm: true,
                 preResolvedMediaList: confirmed.mediaList,
               });
-              return buildProcessingCard(confirmed.mediaType);
+              return { toast: { type: "info" as const, content: "⏳ 正在处理中..." } };
             }
           }
           return;

@@ -5,9 +5,9 @@
  * button's action value. No external state (no files, no in-memory maps).
  * Feishu returns the action value in the card callback, so we just read it.
  *
- * Initial state transitions (confirm→queued, cancel→cancelled) use callback return value only.
- * Subsequent async state updates (queue position, analyzing, completed) use updateCardFeishu PATCH
- * since they happen later and don't race with the callback response.
+ * Card updates use updateCardFeishu PATCH API exclusively.
+ * Callback return value sends toast only (card return is unreliable via WebSocket).
+ * This avoids the race condition where callback return and PATCH fight each other.
  */
 
 import type { ClawdbotConfig } from "clawdbot/plugin-sdk";
@@ -252,8 +252,8 @@ export function isBitableVideoAction(actionValue: Record<string, unknown> | unde
  * Handle a bitable video card action (confirm or cancel).
  * STATELESS: reads all data from the action value itself.
  *
- * Initial state transitions use callback return value only (avoids race with PATCH API).
- * Later async state updates (queue, analyzing, completed) use updateCardFeishu PATCH.
+ * Card updates use updateCardFeishu PATCH API exclusively.
+ * Callback return sends toast only (card return unreliable via WebSocket).
  */
 export async function handleBitableVideoCardAction(params: {
   actionData: { action?: { value?: Record<string, unknown> }; operator?: { open_id?: string }; context?: { open_message_id?: string } };
@@ -272,7 +272,13 @@ export async function handleBitableVideoCardAction(params: {
   if (action === "cancel_bitable_video_job") {
     const jobId = actionValue.jobId as string;
     const job = jobs.get(jobId);
-    if (!job) return buildCancelledCard();
+    if (!job) {
+      // Job already gone — update card via PATCH, return toast
+      if (cardMessageId) {
+        try { await updateCardFeishu({ cfg, messageId: cardMessageId, card: buildCancelledCard() }); } catch {}
+      }
+      return { toast: { type: "info" as const, content: "已取消" } };
+    }
 
     const operatorOpenId = actionData.operator?.open_id || "";
     if (job.senderOpenId && operatorOpenId !== job.senderOpenId) {
@@ -286,15 +292,32 @@ export async function handleBitableVideoCardAction(params: {
     if (job.cleanupTimer) clearTimeout(job.cleanupTimer);
     jobs.delete(jobId);
 
-    // Only use callback return to update card — no PATCH API (avoids race condition)
-    return buildCancelledCard();
+    // Update card via PATCH API, return toast only (callback return card unreliable via WebSocket)
+    const targetMessageId = job.cardMessageId || cardMessageId;
+    if (targetMessageId) {
+      try {
+        await updateCardFeishu({ cfg, messageId: targetMessageId, card: buildCancelledCard() });
+        log(`[bitable-video] Card updated to cancelled state (jobId=${jobId})`);
+      } catch (err) {
+        log(`[bitable-video] Failed to update card: ${String(err)}`);
+      }
+    }
+    return { toast: { type: "info" as const, content: "已取消" } };
   }
 
   // ─── Cancel ────────────────────────────────────────────────────────────────
   if (action === "cancel_bitable_video") {
     log(`[bitable-video] Cancelled by user`);
-    // Only use callback return to update card — no PATCH API (avoids race condition)
-    return buildCancelledCard();
+    // Update card via PATCH API, return toast only
+    if (cardMessageId) {
+      try {
+        await updateCardFeishu({ cfg, messageId: cardMessageId, card: buildCancelledCard() });
+        log(`[bitable-video] Card updated to cancelled state`);
+      } catch (err) {
+        log(`[bitable-video] Failed to update card: ${String(err)}`);
+      }
+    }
+    return { toast: { type: "info" as const, content: "已取消" } };
   }
 
   // ─── Confirm ───────────────────────────────────────────────────────────────
@@ -345,9 +368,15 @@ export async function handleBitableVideoCardAction(params: {
 
   const initialStatus = getGeminiQueueStatus();
   const queuedCard = buildQueuedCard({ ...initialStatus, position: null, jobId });
-  // Initial state transition uses callback return only — no PATCH API (avoids race condition).
-  // Subsequent state updates (queue position, analyzing, completed) use updateCardFeishu since
-  // they happen later and don't race with the callback response.
+  // Update card via PATCH API (reliable). Callback returns toast only.
+  if (cardMessageId) {
+    try {
+      await updateCardFeishu({ cfg, messageId: cardMessageId, card: queuedCard });
+      log(`[bitable-video] Card updated to queued state (messageId=${cardMessageId})`);
+    } catch (err) {
+      log(`[bitable-video] Failed to update card to queued state: ${String(err)}`);
+    }
+  }
 
   // Fire-and-forget: analyze in background
   void (async () => {
@@ -474,5 +503,5 @@ export async function handleBitableVideoCardAction(params: {
     }
   })();
 
-  return queuedCard;
+  return { toast: { type: "info" as const, content: "⏳ 已加入分析队列" } };
 }
