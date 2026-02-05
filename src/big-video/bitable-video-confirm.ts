@@ -286,10 +286,14 @@ export async function handleBitableVideoCardAction(params: {
     jobs.delete(jobId);
 
     const card = buildCancelledCard();
-    if (job.cardMessageId) {
-      void updateCardFeishu({ cfg, messageId: job.cardMessageId, card }).catch(() => {});
-    } else if (cardMessageId) {
-      void updateCardFeishu({ cfg, messageId: cardMessageId, card }).catch(() => {});
+    const targetMessageId = job.cardMessageId || cardMessageId;
+    if (targetMessageId) {
+      try {
+        await updateCardFeishu({ cfg, messageId: targetMessageId, card });
+        log(`[bitable-video] Card updated to cancelled state (jobId=${jobId})`);
+      } catch (err) {
+        log(`[bitable-video] Failed to update card to cancelled state: ${String(err)}`);
+      }
     }
     return card;
   }
@@ -298,9 +302,13 @@ export async function handleBitableVideoCardAction(params: {
   if (action === "cancel_bitable_video") {
     log(`[bitable-video] Cancelled by user`);
     const card = buildCancelledCard();
-    // Also update via API as backup
     if (cardMessageId) {
-      void updateCardFeishu({ cfg, messageId: cardMessageId, card }).catch(() => {});
+      try {
+        await updateCardFeishu({ cfg, messageId: cardMessageId, card });
+        log(`[bitable-video] Card updated to cancelled state`);
+      } catch (err) {
+        log(`[bitable-video] Failed to update card to cancelled state: ${String(err)}`);
+      }
     }
     return card;
   }
@@ -354,7 +362,12 @@ export async function handleBitableVideoCardAction(params: {
   const initialStatus = getGeminiQueueStatus();
   const queuedCard = buildQueuedCard({ ...initialStatus, position: null, jobId });
   if (cardMessageId) {
-    void updateCardFeishu({ cfg, messageId: cardMessageId, card: queuedCard }).catch(() => {});
+    try {
+      await updateCardFeishu({ cfg, messageId: cardMessageId, card: queuedCard });
+      log(`[bitable-video] Card updated to queued state (messageId=${cardMessageId})`);
+    } catch (err) {
+      log(`[bitable-video] Failed to update card to queued state: ${String(err)}`);
+    }
   }
 
   // Fire-and-forget: analyze in background
