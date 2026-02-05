@@ -28,6 +28,7 @@ let promptArg: string | undefined;
 let toArg: string | undefined;
 let replyToArg: string | undefined;
 let senderArg: string | undefined;
+let urlArg: string | undefined;
 
 for (let i = 0; i < args.length; i++) {
   if ((args[i] === "--target" || args[i] === "-t") && args[i + 1]) {
@@ -40,10 +41,13 @@ for (let i = 0; i < args.length; i++) {
     replyToArg = args[i + 1]; i++;
   } else if (args[i] === "--sender" && args[i + 1]) {
     senderArg = args[i + 1]; i++;
+  } else if (args[i] === "--url" && args[i + 1]) {
+    urlArg = args[i + 1]; i++;
   } else if (args[i] === "--help" || args[i] === "-h") {
     console.log(`Usage:`);
-    console.log(`  npx tsx bitable-video-cli.ts --target <latest|number> --prompt "text" \\`);
-    console.log(`    --to "user:open_id" --reply-to "message_id" --sender "open_id"`);
+    console.log(`  npx tsx bitable-video-cli.ts --target <latest|number|row:N> --prompt "text" \\`);
+    console.log(`    --to "user:open_id" --reply-to "message_id" --sender "open_id" \\`);
+    console.log(`    [--url "https://xxx.feishu.cn/base/APP_TOKEN?table=TABLE_ID"]`);
     console.log(`\nUploads video to GCS and sends a confirm/cancel card.`);
     console.log(`User clicks confirm → Gemini analysis runs automatically via card callback.`);
     process.exit(0);
@@ -74,18 +78,30 @@ const feishuCfg = cfg?.channels?.feishu as Record<string, unknown> | undefined;
 if (feishuCfg?.gcsCredentialsPath) setCredentialsPath(feishuCfg.gcsCredentialsPath as string);
 
 try {
-  const target: "latest" | number =
-    targetArg === "latest" ? "latest" : parseInt(targetArg, 10);
-
-  if (typeof target === "number" && isNaN(target)) {
-    console.error(`Error: invalid target "${targetArg}"`);
-    process.exit(1);
+  // Parse target: "latest", a number (auto-number), or "row:N" (position)
+  let target: "latest" | number | `row:${number}`;
+  if (targetArg === "latest") {
+    target = "latest";
+  } else if (targetArg!.startsWith("row:")) {
+    const rowNum = parseInt(targetArg!.slice(4), 10);
+    if (isNaN(rowNum) || rowNum < 1) {
+      console.error(`Error: invalid row target "${targetArg}"`);
+      process.exit(1);
+    }
+    target = `row:${rowNum}` as `row:${number}`;
+  } else {
+    const num = parseInt(targetArg!, 10);
+    if (isNaN(num)) {
+      console.error(`Error: invalid target "${targetArg}"`);
+      process.exit(1);
+    }
+    target = num;
   }
 
   // Step 1: Upload
   const result = await handleUploadOnly({
     cfg,
-    command: { target, prompt },
+    command: { target, prompt, bitableUrl: urlArg },
     log: (msg: string) => console.error(msg),
   });
 
