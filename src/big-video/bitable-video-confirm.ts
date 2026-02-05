@@ -273,11 +273,11 @@ export async function handleBitableVideoCardAction(params: {
     const jobId = actionValue.jobId as string;
     const job = jobs.get(jobId);
     if (!job) {
-      // Job already gone — update card via PATCH, return toast
+      // Job already gone — update card via PATCH, return undefined
       if (cardMessageId) {
         try { await updateCardFeishu({ cfg, messageId: cardMessageId, card: buildCancelledCard() }); } catch {}
       }
-      return { toast: { type: "info" as const, content: "已取消" } };
+      return undefined;
     }
 
     const operatorOpenId = actionData.operator?.open_id || actionData.operator?.user_id || "";
@@ -292,7 +292,8 @@ export async function handleBitableVideoCardAction(params: {
     if (job.cleanupTimer) clearTimeout(job.cleanupTimer);
     jobs.delete(jobId);
 
-    // Update card via PATCH API, return toast only (callback return card unreliable via WebSocket)
+    // Update card via PATCH API only. Return undefined so WebSocket response has no data
+    // (any callback return — even toast — can overwrite the PATCH result in Feishu).
     const targetMessageId = job.cardMessageId || cardMessageId;
     if (targetMessageId) {
       try {
@@ -302,13 +303,13 @@ export async function handleBitableVideoCardAction(params: {
         log(`[bitable-video] Failed to update card: ${String(err)}`);
       }
     }
-    return { toast: { type: "info" as const, content: "已取消" } };
+    return undefined;
   }
 
   // ─── Cancel ────────────────────────────────────────────────────────────────
   if (action === "cancel_bitable_video") {
     log(`[bitable-video] Cancelled by user`);
-    // Update card via PATCH API, return toast only
+    // Update card via PATCH API only. Return undefined — no callback data.
     if (cardMessageId) {
       try {
         await updateCardFeishu({ cfg, messageId: cardMessageId, card: buildCancelledCard() });
@@ -317,7 +318,7 @@ export async function handleBitableVideoCardAction(params: {
         log(`[bitable-video] Failed to update card: ${String(err)}`);
       }
     }
-    return { toast: { type: "info" as const, content: "已取消" } };
+    return undefined;
   }
 
   // ─── Confirm ───────────────────────────────────────────────────────────────
@@ -504,5 +505,6 @@ export async function handleBitableVideoCardAction(params: {
     }
   })();
 
-  return { toast: { type: "info" as const, content: "⏳ 已加入分析队列" } };
+  // Return undefined — card already updated via PATCH. Any callback return overwrites PATCH.
+  return undefined;
 }

@@ -183,13 +183,9 @@ async function monitorWebSocket(params: {
           });
 
           // Cancel or expired — card already updated via PATCH in handleMediaCardAction.
-          // Return toast only (callback return card doesn't work reliably via WebSocket).
+          // Return undefined so WebSocket response has no data (any return can overwrite PATCH).
           if (!confirmed) {
-            const isCancelAction = action === "cancel_media";
-            if (isCancelAction) {
-              return { toast: { type: "info" as const, content: "已取消" } };
-            }
-            return { toast: { type: "warning" as const, content: "确认已过期，请重新发送" } };
+            return undefined;
           }
 
           if (confirmed) {
@@ -335,8 +331,8 @@ async function monitorWebSocket(params: {
                   });
                 }
               })();
-              // Return toast only — card already updated via PATCH
-              return { toast: { type: "info" as const, content: "⏳ 正在处理中..." } };
+              // Return undefined — card already updated via PATCH
+              return undefined;
             } else {
               // Non-video media (audio, etc.) — resume normal agent dispatch
               log(`feishu: resuming media processing after confirmation (pendingId=${confirmed.id})`);
@@ -349,7 +345,7 @@ async function monitorWebSocket(params: {
                 skipMediaConfirm: true,
                 preResolvedMediaList: confirmed.mediaList,
               });
-              return { toast: { type: "info" as const, content: "⏳ 正在处理中..." } };
+              return undefined;
             }
           }
           return;
