@@ -273,11 +273,7 @@ export async function handleBitableVideoCardAction(params: {
     const jobId = actionValue.jobId as string;
     const job = jobs.get(jobId);
     if (!job) {
-      // Job already gone — update card via PATCH, return undefined
-      if (cardMessageId) {
-        try { await updateCardFeishu({ cfg, messageId: cardMessageId, card: buildCancelledCard() }); } catch {}
-      }
-      return undefined;
+      return buildCancelledCard();
     }
 
     const operatorOpenId = actionData.operator?.open_id || actionData.operator?.user_id || "";
@@ -292,33 +288,16 @@ export async function handleBitableVideoCardAction(params: {
     if (job.cleanupTimer) clearTimeout(job.cleanupTimer);
     jobs.delete(jobId);
 
-    // Update card via PATCH API only. Return undefined so WebSocket response has no data
-    // (any callback return — even toast — can overwrite the PATCH result in Feishu).
-    const targetMessageId = job.cardMessageId || cardMessageId;
-    if (targetMessageId) {
-      try {
-        await updateCardFeishu({ cfg, messageId: targetMessageId, card: buildCancelledCard() });
-        log(`[bitable-video] Card updated to cancelled state (jobId=${jobId})`);
-      } catch (err) {
-        log(`[bitable-video] Failed to update card: ${String(err)}`);
-      }
-    }
-    return undefined;
+    // Return card as callback response ONLY — no PATCH (gets rolled back by callback).
+    return buildCancelledCard();
   }
 
   // ─── Cancel ────────────────────────────────────────────────────────────────
   if (action === "cancel_bitable_video") {
     log(`[bitable-video] Cancelled by user`);
-    // Update card via PATCH API only. Return undefined — no callback data.
-    if (cardMessageId) {
-      try {
-        await updateCardFeishu({ cfg, messageId: cardMessageId, card: buildCancelledCard() });
-        log(`[bitable-video] Card updated to cancelled state`);
-      } catch (err) {
-        log(`[bitable-video] Failed to update card: ${String(err)}`);
-      }
-    }
-    return undefined;
+    // Return card as callback response ONLY — no PATCH.
+    // Feishu's callback has transaction semantics: PATCHes during callback get rolled back.
+    return buildCancelledCard();
   }
 
   // ─── Confirm ───────────────────────────────────────────────────────────────
@@ -370,15 +349,8 @@ export async function handleBitableVideoCardAction(params: {
 
   const initialStatus = getGeminiQueueStatus();
   const queuedCard = buildQueuedCard({ ...initialStatus, position: null, jobId });
-  // Update card via PATCH API (reliable). Callback returns toast only.
-  if (cardMessageId) {
-    try {
-      await updateCardFeishu({ cfg, messageId: cardMessageId, card: queuedCard });
-      log(`[bitable-video] Card updated to queued state (messageId=${cardMessageId})`);
-    } catch (err) {
-      log(`[bitable-video] Failed to update card to queued state: ${String(err)}`);
-    }
-  }
+  // Initial state transition via callback return ONLY — no PATCH.
+  // Feishu's callback has transaction semantics: PATCHes during callback get rolled back.
 
   // Fire-and-forget: analyze in background
   void (async () => {
@@ -505,6 +477,8 @@ export async function handleBitableVideoCardAction(params: {
     }
   })();
 
-  // Return undefined — card already updated via PATCH. Any callback return overwrites PATCH.
-  return undefined;
+  // Return queued card as callback response (initial state transition).
+  // Subsequent async updates (queue position, analyzing, completed) use PATCH since
+  // they happen AFTER the callback has completed (no transaction conflict).
+  return queuedCard;
 }

@@ -7,7 +7,7 @@ import type { FeishuConfig } from "./types.js";
 import { createFeishuWSClient, createEventDispatcher } from "./client.js";
 import { resolveFeishuCredentials } from "./accounts.js";
 import { handleFeishuMessage, type FeishuMessageEvent, type FeishuBotAddedEvent } from "./bot.js";
-import { handleMediaCardAction, isMediaConfirmAction, type CardActionEvent } from "./media-confirm.js";
+import { handleMediaCardAction, isMediaConfirmAction, buildProcessingCard, buildCancelledCard, buildExpiredCard, type CardActionEvent } from "./media-confirm.js";
 import { handleVoteCardAction, isVoteAction } from "./vote.js";
 import { handleBitableVideoCardAction, isBitableVideoAction } from "./big-video/bitable-video-confirm.js";
 import { probeFeishu } from "./probe.js";
@@ -182,10 +182,14 @@ async function monitorWebSocket(params: {
             log,
           });
 
-          // Cancel or expired — card already updated via PATCH in handleMediaCardAction.
-          // Return undefined so WebSocket response has no data (any return can overwrite PATCH).
+          // Cancel or expired — return card as callback response (no PATCH).
+          // Feishu's callback has transaction semantics: PATCHes during callback get rolled back.
           if (!confirmed) {
-            return undefined;
+            const isCancelAction = action === "cancel_media";
+            if (isCancelAction) {
+              return buildCancelledCard("video");
+            }
+            return buildExpiredCard();
           }
 
           if (confirmed) {
@@ -331,8 +335,8 @@ async function monitorWebSocket(params: {
                   });
                 }
               })();
-              // Return undefined — card already updated via PATCH
-              return undefined;
+              // Return processing card as callback response
+              return buildProcessingCard(confirmed.mediaType);
             } else {
               // Non-video media (audio, etc.) — resume normal agent dispatch
               log(`feishu: resuming media processing after confirmation (pendingId=${confirmed.id})`);
@@ -345,7 +349,7 @@ async function monitorWebSocket(params: {
                 skipMediaConfirm: true,
                 preResolvedMediaList: confirmed.mediaList,
               });
-              return undefined;
+              return buildProcessingCard(confirmed.mediaType);
             }
           }
           return;

@@ -400,32 +400,14 @@ export async function handleMediaCardAction(params: {
 
   if (action === "cancel_media") {
     log?.(`feishu: media processing cancelled by user (pendingId=${pendingId})`);
-    // Update card via PATCH API (reliable). Callback in monitor.ts returns toast only.
-    try {
-      await updateCardFeishu({
-        cfg: entry.cfg,
-        messageId: entry.cardMessageId,
-        card: buildCancelledCard(entry.mediaType),
-      });
-    } catch (err) {
-      log?.(`feishu: failed to update cancelled card: ${String(err)}`);
-    }
+    // No PATCH here — callback return card in monitor.ts handles the update.
+    // Feishu's callback has transaction semantics: PATCHes during callback get rolled back.
     return null;
   }
 
   // action === "confirm_media"
   log?.(`feishu: media processing confirmed by user (pendingId=${pendingId})`);
-  // Update card via PATCH API (reliable). Callback in monitor.ts returns toast only.
-  try {
-    await updateCardFeishu({
-      cfg: entry.cfg,
-      messageId: entry.cardMessageId,
-      card: buildProcessingCard(entry.mediaType),
-    });
-  } catch (err) {
-    log?.(`feishu: failed to update processing card: ${String(err)}`);
-  }
-
+  // No PATCH here — callback return card in monitor.ts handles the update.
   return entry;
 }
 
