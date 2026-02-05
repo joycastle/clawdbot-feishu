@@ -17,9 +17,11 @@ import {
   findVideoRecord,
   downloadBitableAttachment,
   parseBitableUrl,
+  resolveWikiBitableToken,
   type VideoCommand,
   type BitableVideoConfig,
 } from "./bitable-video.js";
+import type { FeishuConfig } from "../types.js";
 import {
   streamUploadToGcs,
   clearGcsBucket,
@@ -76,10 +78,18 @@ export async function handleUploadOnly(params: {
   // Resolve bitable config: user-specified URL takes priority over default
   let btConfig: BitableVideoConfig | undefined;
   if (command.bitableUrl) {
-    btConfig = parseBitableUrl(command.bitableUrl) ?? undefined;
-    if (!btConfig) {
+    const parsed = parseBitableUrl(command.bitableUrl) as (BitableVideoConfig & { _isWiki?: boolean }) | null;
+    if (!parsed) {
       throw new Error(`无法解析多维表格链接：${command.bitableUrl}`);
     }
+    // Wiki-embedded bitables need an extra API call to resolve the actual app_token
+    if (parsed._isWiki) {
+      const fCfg = feishuCfg as unknown as FeishuConfig;
+      const realAppToken = await resolveWikiBitableToken(fCfg, parsed.appToken, log);
+      parsed.appToken = realAppToken;
+      delete parsed._isWiki;
+    }
+    btConfig = parsed;
     log(`[bitable-video] Using user-specified table: appToken=${btConfig.appToken}, tableToken=${btConfig.tableToken || "(auto)"}`);
   }
 

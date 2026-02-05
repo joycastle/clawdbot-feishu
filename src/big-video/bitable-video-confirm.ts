@@ -5,8 +5,9 @@
  * button's action value. No external state (no files, no in-memory maps).
  * Feishu returns the action value in the card callback, so we just read it.
  *
- * Card updates use updateCardFeishu API directly (not callback return value)
- * for reliable card state transitions.
+ * Initial state transitions (confirm→queued, cancel→cancelled) use callback return value only.
+ * Subsequent async state updates (queue position, analyzing, completed) use updateCardFeishu PATCH
+ * since they happen later and don't race with the callback response.
  */
 
 import type { ClawdbotConfig } from "clawdbot/plugin-sdk";
@@ -251,8 +252,8 @@ export function isBitableVideoAction(actionValue: Record<string, unknown> | unde
  * Handle a bitable video card action (confirm or cancel).
  * STATELESS: reads all data from the action value itself.
  *
- * Card updates use updateCardFeishu API directly for reliability.
- * Does NOT rely on callback return value for card updates.
+ * Initial state transitions use callback return value only (avoids race with PATCH API).
+ * Later async state updates (queue, analyzing, completed) use updateCardFeishu PATCH.
  */
 export async function handleBitableVideoCardAction(params: {
   actionData: { action?: { value?: Record<string, unknown> }; operator?: { open_id?: string }; context?: { open_message_id?: string } };
@@ -285,32 +286,15 @@ export async function handleBitableVideoCardAction(params: {
     if (job.cleanupTimer) clearTimeout(job.cleanupTimer);
     jobs.delete(jobId);
 
-    const card = buildCancelledCard();
-    const targetMessageId = job.cardMessageId || cardMessageId;
-    if (targetMessageId) {
-      try {
-        await updateCardFeishu({ cfg, messageId: targetMessageId, card });
-        log(`[bitable-video] Card updated to cancelled state (jobId=${jobId})`);
-      } catch (err) {
-        log(`[bitable-video] Failed to update card to cancelled state: ${String(err)}`);
-      }
-    }
-    return card;
+    // Only use callback return to update card — no PATCH API (avoids race condition)
+    return buildCancelledCard();
   }
 
   // ─── Cancel ────────────────────────────────────────────────────────────────
   if (action === "cancel_bitable_video") {
     log(`[bitable-video] Cancelled by user`);
-    const card = buildCancelledCard();
-    if (cardMessageId) {
-      try {
-        await updateCardFeishu({ cfg, messageId: cardMessageId, card });
-        log(`[bitable-video] Card updated to cancelled state`);
-      } catch (err) {
-        log(`[bitable-video] Failed to update card to cancelled state: ${String(err)}`);
-      }
-    }
-    return card;
+    // Only use callback return to update card — no PATCH API (avoids race condition)
+    return buildCancelledCard();
   }
 
   // ─── Confirm ───────────────────────────────────────────────────────────────
@@ -361,14 +345,9 @@ export async function handleBitableVideoCardAction(params: {
 
   const initialStatus = getGeminiQueueStatus();
   const queuedCard = buildQueuedCard({ ...initialStatus, position: null, jobId });
-  if (cardMessageId) {
-    try {
-      await updateCardFeishu({ cfg, messageId: cardMessageId, card: queuedCard });
-      log(`[bitable-video] Card updated to queued state (messageId=${cardMessageId})`);
-    } catch (err) {
-      log(`[bitable-video] Failed to update card to queued state: ${String(err)}`);
-    }
-  }
+  // Initial state transition uses callback return only — no PATCH API (avoids race condition).
+  // Subsequent state updates (queue position, analyzing, completed) use updateCardFeishu since
+  // they happen later and don't race with the callback response.
 
   // Fire-and-forget: analyze in background
   void (async () => {
