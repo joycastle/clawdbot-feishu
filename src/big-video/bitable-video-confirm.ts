@@ -256,7 +256,7 @@ export function isBitableVideoAction(actionValue: Record<string, unknown> | unde
  * Callback return sends toast only (card return unreliable via WebSocket).
  */
 export async function handleBitableVideoCardAction(params: {
-  actionData: { action?: { value?: Record<string, unknown> }; operator?: { open_id?: string }; context?: { open_message_id?: string } };
+  actionData: { action?: { value?: Record<string, unknown> }; operator?: { open_id?: string; user_id?: string }; context?: { open_message_id?: string } };
   cfg: ClawdbotConfig;
   log?: (msg: string) => void;
 }): Promise<Record<string, unknown> | undefined> {
@@ -280,8 +280,8 @@ export async function handleBitableVideoCardAction(params: {
       return { toast: { type: "info" as const, content: "已取消" } };
     }
 
-    const operatorOpenId = actionData.operator?.open_id || "";
-    if (job.senderOpenId && operatorOpenId !== job.senderOpenId) {
+    const operatorOpenId = actionData.operator?.open_id || actionData.operator?.user_id || "";
+    if (job.senderOpenId && operatorOpenId && operatorOpenId !== job.senderOpenId) {
       log(`[bitable-video] Cancel from wrong user (expected=${job.senderOpenId}, got=${operatorOpenId})`);
       return undefined;
     }
@@ -331,8 +331,9 @@ export async function handleBitableVideoCardAction(params: {
   const senderOpenId = actionValue.senderOpenId as string;
 
   // Verify sender
-  const operatorOpenId = actionData.operator?.open_id || "";
-  if (senderOpenId && operatorOpenId !== senderOpenId) {
+  const operatorOpenId = actionData.operator?.open_id || actionData.operator?.user_id || "";
+  log(`[bitable-video] Card action operator: open_id=${actionData.operator?.open_id || "(empty)"}, user_id=${actionData.operator?.user_id || "(empty)"}`);
+  if (senderOpenId && operatorOpenId && operatorOpenId !== senderOpenId) {
     log(`[bitable-video] Action from wrong user (expected=${senderOpenId}, got=${operatorOpenId})`);
     return undefined;
   }

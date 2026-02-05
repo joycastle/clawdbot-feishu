@@ -351,7 +351,9 @@ export async function handleMediaCardAction(params: {
   const { actionData, log } = params;
 
   const actionValue = actionData.action?.value as Record<string, unknown> | undefined;
-  const operatorOpenId = actionData.operator?.open_id || "";
+  // operator.open_id may be empty in some scenarios; fallback to user_id
+  const operatorOpenId = actionData.operator?.open_id || actionData.operator?.user_id || "";
+  log?.(`feishu: card action operator: open_id=${actionData.operator?.open_id || "(empty)"}, user_id=${actionData.operator?.user_id || "(empty)"}`);
 
   if (!actionValue) {
     log?.(`feishu: card action has no value payload`);
@@ -385,7 +387,8 @@ export async function handleMediaCardAction(params: {
   }
 
   // Verify the operator is the original sender
-  if (entry.senderOpenId && operatorOpenId !== entry.senderOpenId) {
+  // Skip auth check if we can't determine operator identity (open_id/user_id both empty)
+  if (entry.senderOpenId && operatorOpenId && operatorOpenId !== entry.senderOpenId) {
     log?.(
       `feishu: card action from wrong user (expected=${entry.senderOpenId}, got=${operatorOpenId})`,
     );
