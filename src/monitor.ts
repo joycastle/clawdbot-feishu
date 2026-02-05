@@ -209,6 +209,9 @@ async function monitorWebSocket(params: {
                     (m) => m.contentType?.startsWith("video/") && m.path,
                   );
                   if (videoMedia) {
+                    // Init GCS config in case analyzeVideo needs to auto-escalate to GCS for >20MB videos
+                    const { initGcsConfig } = await import("./big-video/gcs-upload.js");
+                    initGcsConfig(cfg);
                     const result = await analyzeVideo(videoMedia.path, { log });
 
                     // Build result card

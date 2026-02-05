@@ -417,9 +417,20 @@ export async function analyzeVideo(
   log(`video-analyze: video size = ${fileSizeMb.toFixed(1)} MB`);
 
   if (fileSizeMb > MAX_VIDEO_SIZE_MB) {
-    throw new Error(
-      `视频文件过大（${fileSizeMb.toFixed(1)} MB），超出 ${MAX_VIDEO_SIZE_MB} MB 上限。请压缩视频或发送较短的片段。`,
-    );
+    // Auto-escalate to GCS path for videos > 20MB (inline base64 limit)
+    log(`video-analyze: video exceeds ${MAX_VIDEO_SIZE_MB}MB inline limit, auto-escalating to GCS path`);
+    const mimeType = options?.mimeType ?? inferMimeType(videoPath);
+    const { initGcsConfig, uploadToGcs } = await import("./big-video/gcs-upload.js");
+
+    // initGcsConfig needs the full config but we may not have it here;
+    // uploadToGcs uses env/defaults if initGcsConfig was already called by the caller.
+    // The caller (monitor.ts) should have already called initGcsConfig.
+    const objectName = `video/auto-${Date.now()}-${path.basename(videoPath)}`;
+    log(`video-analyze: uploading ${fileSizeMb.toFixed(1)}MB to GCS...`);
+    const uploadResult = await uploadToGcs({ filePath: videoPath, mimeType, objectName });
+    log(`video-analyze: uploaded to ${uploadResult.gcsUri}`);
+
+    return analyzeVideoFromGcs(uploadResult.gcsUri, mimeType, options);
   }
 
   const mimeType = options?.mimeType ?? inferMimeType(videoPath);
