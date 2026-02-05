@@ -373,8 +373,12 @@ export async function findVideoRecord(params: {
   target: "latest" | number | `row:${number}`;
   config?: BitableVideoConfig;
 }): Promise<{ record: BitableRecord; attachment: BitableAttachment } | null> {
-  const isRow = typeof params.target === "string" && params.target.startsWith("row:");
-  const rowIndex = isRow ? parseInt(params.target.slice(4), 10) : 0;
+  let isRow = false;
+  let rowIndex = 0;
+  if (typeof params.target === "string" && params.target.startsWith("row:")) {
+    isRow = true;
+    rowIndex = parseInt(params.target.slice(4), 10);
+  }
 
   const records = await fetchBitableRecords({
     cfg: params.cfg,

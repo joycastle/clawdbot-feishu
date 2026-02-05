@@ -14,8 +14,6 @@ import {
   listFeishuDirectoryGroupsLive,
 } from "./directory.js";
 import { feishuOnboardingAdapter } from "./onboarding.js";
-import { clearAllBitableRecords } from "./big-video/bitable-video.js";
-import { getLastBitableRecordClearAt, markBitableRecordsCleared } from "./big-video/video-cache.js";
 
 const meta = {
   id: "feishu",
@@ -222,12 +220,6 @@ export const feishuPlugin: ChannelPlugin<ResolvedFeishuAccount> = {
       ctx.setStatus({ accountId: ctx.accountId, port });
       ctx.log?.info(`starting feishu provider (mode: ${feishuCfg?.connectionMode ?? "websocket"})`);
 
-      startDailyBitableRecordClear({
-        cfg: ctx.cfg,
-        abortSignal: ctx.abortSignal,
-        log: ctx.log?.info ? (msg) => ctx.log?.info(msg) : undefined,
-      });
-
       return monitorFeishuProvider({
         config: ctx.cfg,
         runtime: ctx.runtime,
@@ -237,72 +229,3 @@ export const feishuPlugin: ChannelPlugin<ResolvedFeishuAccount> = {
     },
   },
 };
-
-function startDailyBitableRecordClear(params: {
-  cfg: ClawdbotConfig;
-  abortSignal: AbortSignal;
-  log?: (msg: string) => void;
-}) {
-  const log = params.log ?? console.log;
-
-  let timer: ReturnType<typeof setTimeout> | null = null;
-  let running = false;
-  let lastRunAt: number | null = null;
-  const intervalMs = 7 * 24 * 60 * 60 * 1000;
-
-  const clearTimer = () => {
-    if (timer) clearTimeout(timer);
-    timer = null;
-  };
-
-  const scheduleNext = () => {
-    clearTimer();
-    if (params.abortSignal.aborted) return;
-    if (lastRunAt == null) return;
-
-    const nextAt = lastRunAt + intervalMs;
-    const delayMs = Math.max(0, nextAt - Date.now());
-
-    timer = setTimeout(() => {
-      void (async () => {
-        if (params.abortSignal.aborted) return;
-        if (running) return;
-        running = true;
-        const runAt = Date.now();
-        try {
-          const res = await clearAllBitableRecords({ cfg: params.cfg });
-          log(`[bitable-clear] cleared records: deleted=${res.deleted}, total=${res.total}, batches=${res.batches}`);
-          lastRunAt = runAt;
-          try {
-            await markBitableRecordsCleared(runAt);
-          } catch (err) {
-            log(`[bitable-clear] failed to persist last run time: ${err}`);
-          }
-        } catch (err) {
-          log(`[bitable-clear] clear failed: ${err}`);
-        } finally {
-          running = false;
-          scheduleNext();
-        }
-      })();
-    }, delayMs);
-  };
-
-  params.abortSignal.addEventListener(
-    "abort",
-    () => {
-      clearTimer();
-    },
-    { once: true },
-  );
-
-  void (async () => {
-    try {
-      lastRunAt = await getLastBitableRecordClearAt();
-    } catch (err) {
-      lastRunAt = Date.now();
-      log(`[bitable-clear] failed to load last run time, defaulting to now: ${err}`);
-    }
-    scheduleNext();
-  })();
-}
