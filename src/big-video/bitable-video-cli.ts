@@ -17,7 +17,6 @@
 import fs from "node:fs";
 import os from "node:os";
 import { handleUploadOnly } from "./bitable-video-handler.js";
-import { sendBitableVideoConfirmCard } from "./bitable-video-confirm.js";
 import { estimateMediaCost } from "../cost-estimator.js";
 import { initGcsConfig } from "./gcs-upload.js";
 import { setCredentialsPath } from "../video-analyze.js";
@@ -98,7 +97,7 @@ try {
     target = num;
   }
 
-  // Step 1: Upload
+  // Step 1: Upload video to GCS
   const result = await handleUploadOnly({
     cfg,
     command: { target, prompt, bitableUrl: urlArg },
@@ -111,35 +110,22 @@ try {
     mediaType: "video",
   });
 
-  // Step 2: Send confirm card (analysis only runs when user clicks confirm)
-  const pendingId = await sendBitableVideoConfirmCard({
-    cfg,
+  // Output upload result as JSON — card sending is done by the caller (main process)
+  // so the card belongs to the same WebSocket session that handles callbacks.
+  console.log(JSON.stringify({
+    ok: true,
     gcsUri: result.gcsUri,
     mimeType: result.mimeType,
     fileName: result.fileName,
     size: result.size,
     recordNumber: result.recordNumber,
     cacheHit: result.cacheHit,
-    prompt,
     costDisplay: costEstimate.costDisplay,
     estimatedCostUsd: costEstimate.estimatedCostUsd,
     durationDisplay: costEstimate.durationDisplay,
     model: costEstimate.model,
     pricingBasis: costEstimate.pricingBasis,
-    target: toArg,
-    replyToMessageId: replyToArg,
-    senderOpenId: senderArg || "",
-    log: (msg: string) => console.error(msg),
-  });
-
-  console.log(JSON.stringify({
-    ok: true,
-    pendingId,
-    gcsUri: result.gcsUri,
-    fileName: result.fileName,
-    size: result.size,
-    costDisplay: costEstimate.costDisplay,
-    cacheHit: result.cacheHit,
+    prompt,
   }));
 } catch (err) {
   const message = err instanceof Error ? err.message : String(err);
