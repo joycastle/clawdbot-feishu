@@ -13,7 +13,7 @@
 
 import type { ClawdbotConfig, HistoryEntry } from "clawdbot/plugin-sdk";
 import { estimateMediaCost, formatFileSize, type CostEstimate } from "./cost-estimator.js";
-import { sendCardFeishu, updateCardFeishu } from "./send.js";
+import { sendCardFeishu } from "./send.js";
 import type { FeishuMessageEvent } from "./bot.js";
 import type { FeishuMediaInfo } from "./types.js";
 
@@ -397,40 +397,16 @@ export async function handleMediaCardAction(params: {
 
   if (action === "cancel_media") {
     log?.(`feishu: media processing cancelled by user (pendingId=${pendingId})`);
-    // Card update is handled by the callback response in monitor.ts
-    // (returning the card directly as callback response is the correct Feishu pattern,
-    // rather than using a separate PATCH which races with the callback response)
-    // Update card to show cancelled state
-    void (async () => {
-      try {
-        await updateCardFeishu({
-          cfg: entry.cfg,
-          messageId: entry.cardMessageId,
-          card: buildCancelledCard(entry.mediaType),
-        });
-      } catch (err) {
-        log?.(`feishu: failed to update cancelled card: ${String(err)}`);
-      }
-    })();
+    // Card update is handled ONLY by the callback response in monitor.ts.
+    // Do NOT call updateCardFeishu here — it races with the callback response
+    // and causes the card to flicker back to initial state.
     return null;
   }
 
   // action === "confirm_media"
   log?.(`feishu: media processing confirmed by user (pendingId=${pendingId})`);
-  // Card update to "processing" state is handled by the callback response in monitor.ts
-
-  // Update card to show processing state
-  void (async () => {
-    try {
-      await updateCardFeishu({
-        cfg: entry.cfg,
-        messageId: entry.cardMessageId,
-        card: buildProcessingCard(entry.mediaType),
-      });
-    } catch (err) {
-      log?.(`feishu: failed to update processing card: ${String(err)}`);
-    }
-  })();
+  // Card update to "processing" state is handled ONLY by the callback response in monitor.ts.
+  // Do NOT call updateCardFeishu here — it races with the callback response.
 
   return entry;
 }

@@ -57,13 +57,22 @@ export function resolveBitableConfig(cfg: any): BitableVideoConfig {
  *   Shorthand: just the appToken string (e.g. "OW7lbIpSlaf4nEsiDKLcqiYGn7c")
  */
 export function parseBitableUrl(urlOrToken: string): BitableVideoConfig | null {
-  // Try full URL
-  const urlMatch = urlOrToken.match(/\/base\/([A-Za-z0-9]+)/);
-  if (urlMatch) {
-    const appToken = urlMatch[1];
+  // Try /base/ URL
+  const baseMatch = urlOrToken.match(/\/base\/([A-Za-z0-9]+)/);
+  if (baseMatch) {
+    const appToken = baseMatch[1];
     const tableMatch = urlOrToken.match(/[?&]table=([A-Za-z0-9]+)/);
     const tableToken = tableMatch?.[1] ?? "";
     return { appToken, tableToken };
+  }
+
+  // Try /wiki/ URL — returns wiki node token as appToken (caller must resolve via resolveWikiBitableToken)
+  const wikiMatch = urlOrToken.match(/\/wiki\/([A-Za-z0-9]+)/);
+  if (wikiMatch) {
+    const appToken = wikiMatch[1];
+    const tableMatch = urlOrToken.match(/[?&]table=([A-Za-z0-9]+)/);
+    const tableToken = tableMatch?.[1] ?? "";
+    return { appToken, tableToken, _isWiki: true } as BitableVideoConfig & { _isWiki?: boolean };
   }
 
   // Try bare appToken (alphanumeric, typically 20+ chars)
@@ -72,6 +81,37 @@ export function parseBitableUrl(urlOrToken: string): BitableVideoConfig | null {
   }
 
   return null;
+}
+
+/**
+ * Resolve a wiki node token to the actual bitable obj_token.
+ * Wiki-embedded bitables have a different token than the wiki node.
+ */
+export async function resolveWikiBitableToken(
+  feishuCfg: FeishuConfig,
+  wikiNodeToken: string,
+  log?: (msg: string) => void,
+): Promise<string> {
+  const client = createFeishuClient(feishuCfg);
+  const res = await client.wiki.space.getNode({
+    params: { token: wikiNodeToken },
+  });
+  if (res.code !== 0) {
+    throw new Error(`Failed to resolve wiki node ${wikiNodeToken}: ${res.msg || `code ${res.code}`}`);
+  }
+  const node = res.data?.node;
+  if (!node) {
+    throw new Error(`Wiki node ${wikiNodeToken} not found`);
+  }
+  if (node.obj_type !== "bitable") {
+    throw new Error(`Wiki node ${wikiNodeToken} is type "${node.obj_type}", not bitable`);
+  }
+  const objToken = node.obj_token;
+  if (!objToken) {
+    throw new Error(`Wiki node ${wikiNodeToken} has no obj_token`);
+  }
+  log?.(`[bitable-video] Resolved wiki node ${wikiNodeToken} → bitable app_token ${objToken}`);
+  return objToken;
 }
 
 // ─── Parse user command ──────────────────────────────────────────────────────
