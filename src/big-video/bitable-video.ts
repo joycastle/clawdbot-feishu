@@ -1,10 +1,9 @@
 /**
  * Bitable Video - read video attachments from Feishu Bitable (多维表格).
  *
- * Reads records from a configured bitable table, downloads video attachments
- * via the Drive media API, and streams them through the GCS upload pipeline.
- *
- * Table structure: auto-number + attachment (two fields only).
+ * Reads records from any Feishu bitable table that contains attachment fields.
+ * Supports user-specified tables via URL, or the default configured table.
+ * Finds video attachments automatically by scanning all attachment-type fields.
  */
 
 import type { FeishuConfig } from "../types.js";
@@ -49,13 +48,41 @@ export function resolveBitableConfig(cfg: any): BitableVideoConfig {
   };
 }
 
+/**
+ * Parse a Feishu bitable URL to extract appToken and tableToken.
+ *
+ * Supported formats:
+ *   https://xxx.feishu.cn/base/OW7lbIpSlaf4nEsiDKLcqiYGn7c?table=tblPFJHzLTyXMGcJ&view=...
+ *   https://xxx.feishu.cn/wiki/... (wiki-embedded bitable)
+ *   Shorthand: just the appToken string (e.g. "OW7lbIpSlaf4nEsiDKLcqiYGn7c")
+ */
+export function parseBitableUrl(urlOrToken: string): BitableVideoConfig | null {
+  // Try full URL
+  const urlMatch = urlOrToken.match(/\/base\/([A-Za-z0-9]+)/);
+  if (urlMatch) {
+    const appToken = urlMatch[1];
+    const tableMatch = urlOrToken.match(/[?&]table=([A-Za-z0-9]+)/);
+    const tableToken = tableMatch?.[1] ?? "";
+    return { appToken, tableToken };
+  }
+
+  // Try bare appToken (alphanumeric, typically 20+ chars)
+  if (/^[A-Za-z0-9]{15,}$/.test(urlOrToken.trim())) {
+    return { appToken: urlOrToken.trim(), tableToken: "" };
+  }
+
+  return null;
+}
+
 // ─── Parse user command ──────────────────────────────────────────────────────
 
 export interface VideoCommand {
-  /** "latest" or a specific auto-number */
-  target: "latest" | number;
+  /** "latest", a specific auto-number, or "row:N" for Nth record by position */
+  target: "latest" | number | `row:${number}`;
   /** User's analysis prompt (the text after the video reference) */
   prompt: string;
+  /** Optional: user-specified bitable URL or appToken to override default table */
+  bitableUrl?: string;
 }
 
 /**
@@ -103,8 +130,50 @@ export function parseVideoCommand(text: string): VideoCommand | null {
 // ─── Bitable API ─────────────────────────────────────────────────────────────
 
 /**
- * Fetch records from the video bitable table.
- * Returns records sorted by auto-number descending (latest first).
+ * Auto-resolve tableToken when only appToken is provided.
+ * Lists all tables in the bitable and returns the first one.
+ */
+export async function resolveTableToken(params: {
+  cfg: any;
+  appToken: string;
+}): Promise<string> {
+  const feishuCfg = params.cfg.channels?.feishu as FeishuConfig | undefined;
+  if (!feishuCfg) throw new Error("Feishu channel not configured");
+
+  const client = createFeishuClient(feishuCfg);
+  const response = await (client.bitable.appTable as any).list({
+    path: { app_token: params.appToken },
+    params: { page_size: 1 },
+  });
+
+  if (response.code !== 0) {
+    throw new Error(`无法读取该多维表格（可能没有权限或链接无效）: ${response.msg || `code ${response.code}`}`);
+  }
+
+  const tables = response.data?.items ?? [];
+  if (tables.length === 0) {
+    throw new Error("多维表格中没有找到数据表");
+  }
+
+  return tables[0].table_id as string;
+}
+
+/**
+ * Ensure config has a valid tableToken. If missing, auto-resolve it.
+ */
+export async function ensureTableToken(params: {
+  cfg: any;
+  config: BitableVideoConfig;
+}): Promise<BitableVideoConfig> {
+  if (params.config.tableToken) return params.config;
+  const tableToken = await resolveTableToken({ cfg: params.cfg, appToken: params.config.appToken });
+  return { ...params.config, tableToken };
+}
+
+/**
+ * Fetch records from a bitable table.
+ * Auto-detects attachment fields and video files.
+ * Returns records sorted by auto-number descending (latest first), or by position.
  */
 export async function fetchBitableRecords(params: {
   cfg: any;
@@ -112,7 +181,8 @@ export async function fetchBitableRecords(params: {
   limit?: number;
 }): Promise<BitableRecord[]> {
   const { cfg } = params;
-  const btConfig = params.config ?? resolveBitableConfig(params.cfg);
+  let btConfig = params.config ?? resolveBitableConfig(params.cfg);
+  btConfig = await ensureTableToken({ cfg, config: btConfig });
   const feishuCfg = cfg.channels?.feishu as FeishuConfig | undefined;
   if (!feishuCfg) throw new Error("Feishu channel not configured");
 
@@ -251,26 +321,45 @@ export async function clearAllBitableRecords(params: {
 }
 
 /**
- * Find a specific record by target (latest or auto-number).
+ * Find a specific record by target.
+ *
+ * Target types:
+ *   - "latest": most recently created record with video attachment
+ *   - number: match by auto-number field value
+ *   - "row:N": Nth record by position (1-based)
  */
 export async function findVideoRecord(params: {
   cfg: any;
-  target: "latest" | number;
+  target: "latest" | number | `row:${number}`;
   config?: BitableVideoConfig;
 }): Promise<{ record: BitableRecord; attachment: BitableAttachment } | null> {
+  const isRow = typeof params.target === "string" && params.target.startsWith("row:");
+  const rowIndex = isRow ? parseInt(params.target.slice(4), 10) : 0;
+
   const records = await fetchBitableRecords({
     cfg: params.cfg,
     config: params.config,
-    limit: params.target === "latest" ? 1 : 100,
+    limit: params.target === "latest" ? 1 : isRow ? Math.max(rowIndex, 10) : 100,
   });
 
   if (records.length === 0) return null;
 
+  // Filter to records with video attachments
+  const withVideo = records.filter((r) =>
+    r.attachments.some((a) => a.type?.startsWith("video/") || a.name?.match(/\.(mp4|mov|avi|mkv|webm|flv)$/i)),
+  );
+
   let record: BitableRecord | undefined;
 
   if (params.target === "latest") {
-    record = records[0];
+    record = withVideo[0] || records[0]; // prefer records with video, fallback to any
+  } else if (isRow) {
+    // row:N is 1-based position
+    record = (rowIndex > 0 && rowIndex <= withVideo.length) ? withVideo[rowIndex - 1]
+      : (rowIndex > 0 && rowIndex <= records.length) ? records[rowIndex - 1]
+      : undefined;
   } else {
+    // Match by auto-number
     record = records.find((r) => {
       const num = typeof r.autoNumber === "number"
         ? r.autoNumber
@@ -281,7 +370,12 @@ export async function findVideoRecord(params: {
 
   if (!record || record.attachments.length === 0) return null;
 
-  return { record, attachment: record.attachments[0] };
+  // Find the first video attachment
+  const videoAtt = record.attachments.find((a) =>
+    a.type?.startsWith("video/") || a.name?.match(/\.(mp4|mov|avi|mkv|webm|flv)$/i),
+  ) || record.attachments[0];
+
+  return { record, attachment: videoAtt };
 }
 
 // ─── Download attachment ─────────────────────────────────────────────────────

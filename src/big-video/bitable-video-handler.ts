@@ -16,7 +16,9 @@
 import {
   findVideoRecord,
   downloadBitableAttachment,
+  parseBitableUrl,
   type VideoCommand,
+  type BitableVideoConfig,
 } from "./bitable-video.js";
 import {
   streamUploadToGcs,
@@ -71,8 +73,18 @@ export async function handleUploadOnly(params: {
     log(`[bitable-video] Cleanup check failed (non-fatal): ${err}`);
   }
 
+  // Resolve bitable config: user-specified URL takes priority over default
+  let btConfig: BitableVideoConfig | undefined;
+  if (command.bitableUrl) {
+    btConfig = parseBitableUrl(command.bitableUrl) ?? undefined;
+    if (!btConfig) {
+      throw new Error(`无法解析多维表格链接：${command.bitableUrl}`);
+    }
+    log(`[bitable-video] Using user-specified table: appToken=${btConfig.appToken}, tableToken=${btConfig.tableToken || "(auto)"}`);
+  }
+
   log(`[bitable-video] Finding video: target=${command.target}`);
-  const found = await findVideoRecord({ cfg, target: command.target });
+  const found = await findVideoRecord({ cfg, target: command.target, config: btConfig });
 
   if (!found) {
     const msg = command.target === "latest"
@@ -103,6 +115,7 @@ export async function handleUploadOnly(params: {
   const { stream, contentType } = await downloadBitableAttachment({
     cfg,
     fileToken: attachment.file_token,
+    config: btConfig,
   });
 
   const mimeType = contentType || attachment.type || "video/mp4";
