@@ -353,6 +353,7 @@ async function resolveFeishuMediaList(params: {
         const isOversized =
           errStr.includes("234037") ||
           errStr.includes("file size exceeds") ||
+          errStr.includes("Media exceeds") ||
           errAny?.response?.status === 400 ||
           errStr.includes("status code 400");
         if (isOversized) {
@@ -434,6 +435,7 @@ async function resolveFeishuMediaList(params: {
     const isOversized =
       errStr.includes("234037") ||
       errStr.includes("file size exceeds") ||
+      errStr.includes("Media exceeds") ||
       errAny?.response?.status === 400 ||
       errStr.includes("status code 400");
 
