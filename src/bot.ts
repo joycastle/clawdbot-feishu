@@ -349,17 +349,30 @@ async function resolveFeishuMediaList(params: {
         const errStr = String(err);
         const errAny = err as any;
         const respStatus = errAny?.response?.status;
-        const respCode = errAny?.response?.data?.code || errAny?.code;
-        log?.(`feishu: embedded video download error: status=${respStatus}, code=${respCode}, err=${errStr.slice(0, 300)}`);
-        // Detect oversized files: Feishu returns 400 with code 234037 for large files (>100MB).
+        // Try to extract Feishu error code from response body (may be Buffer/string/object)
+        let respCode = errAny?.code;
+        try {
+          const respData = errAny?.response?.data;
+          if (respData) {
+            const bodyStr = Buffer.isBuffer(respData) ? respData.toString("utf-8") : typeof respData === "string" ? respData : JSON.stringify(respData);
+            const codeMatch = bodyStr.match(/"code"\s*:\s*(\d+)/);
+            if (codeMatch) respCode = codeMatch[1];
+            log?.(`feishu: embedded video download error: status=${respStatus}, code=${respCode}, body=${bodyStr.slice(0, 200)}`);
+          } else {
+            log?.(`feishu: embedded video download error: status=${respStatus}, code=${respCode}, err=${errStr.slice(0, 300)}`);
+          }
+        } catch { log?.(`feishu: embedded video download error: status=${respStatus}, err=${errStr.slice(0, 300)}`); }
+        // Detect oversized files: Feishu returns 400 with code 234037 for files exceeding ~100MB (post-compression).
+        // For video downloads, any 400 is almost certainly a size limit issue.
         const isOversized =
           errStr.includes("234037") ||
           errStr.includes("file size exceeds") ||
           errStr.includes("Media exceeds") ||
           errStr.includes("Downloaded file size exceeds limit") ||
-          (respStatus === 400 && (String(respCode) === "234037" || errStr.includes("234037")));
+          String(respCode) === "234037" ||
+          respStatus === 400; // video download 400 = size limit
         if (isOversized) {
-          log?.(`feishu: embedded video ${media.fileKey} exceeds Feishu API download limit (~100MB), skipping`);
+          log?.(`feishu: embedded video ${media.fileKey} exceeds Feishu API download limit (code=${respCode}), skipping`);
           // Mark as oversized so we can inform the user
           out.push({
             path: "",
@@ -435,14 +448,26 @@ async function resolveFeishuMediaList(params: {
     const errStr = String(err);
     const errAny = err as any;
     const respStatus = errAny?.response?.status;
-    const respCode = errAny?.response?.data?.code || errAny?.code;
-    log?.(`feishu: ${messageType} media download error: status=${respStatus}, code=${respCode}, err=${errStr.slice(0, 300)}`);
+    let respCode = errAny?.code;
+    try {
+      const respData = errAny?.response?.data;
+      if (respData) {
+        const bodyStr = Buffer.isBuffer(respData) ? respData.toString("utf-8") : typeof respData === "string" ? respData : JSON.stringify(respData);
+        const codeMatch = bodyStr.match(/"code"\s*:\s*(\d+)/);
+        if (codeMatch) respCode = codeMatch[1];
+        log?.(`feishu: ${messageType} media download error: status=${respStatus}, code=${respCode}, body=${bodyStr.slice(0, 200)}`);
+      } else {
+        log?.(`feishu: ${messageType} media download error: status=${respStatus}, code=${respCode}, err=${errStr.slice(0, 300)}`);
+      }
+    } catch { log?.(`feishu: ${messageType} media download error: status=${respStatus}, err=${errStr.slice(0, 300)}`); }
+    const isVideoType = messageType === "video" || messageType === "media" || messageType === "audio";
     const isOversized =
       errStr.includes("234037") ||
       errStr.includes("file size exceeds") ||
       errStr.includes("Media exceeds") ||
       errStr.includes("Downloaded file size exceeds limit") ||
-      (respStatus === 400 && (String(respCode) === "234037" || errStr.includes("234037")));
+      String(respCode) === "234037" ||
+      (isVideoType && respStatus === 400); // video download 400 = size limit
 
     if (isOversized && (messageType === "video" || messageType === "media" || messageType === "audio")) {
       log?.(`feishu: ${messageType} media exceeds Feishu API download limit (~100MB), marking as oversized`);
