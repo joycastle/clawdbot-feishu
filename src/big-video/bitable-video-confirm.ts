@@ -12,9 +12,22 @@
 import type { ClawdbotConfig } from "clawdbot/plugin-sdk";
 import { sendCardFeishu, updateCardFeishu } from "../send.js";
 import { formatFileSize } from "../cost-estimator.js";
-import { analyzeVideoFromGcs } from "../video-analyze.js";
+import { analyzeVideoFromGcs, getGeminiQueuePosition, getGeminiQueueStatus, setCredentialsPath } from "../video-analyze.js";
 import { initGcsConfig } from "./gcs-upload.js";
-import { setCredentialsPath } from "../video-analyze.js";
+
+type BitableVideoJob = {
+  jobId: string;
+  senderOpenId: string;
+  abortController: AbortController;
+  ticketId?: string;
+  cardMessageId?: string;
+  target: string;
+  replyToMessageId: string;
+  queueTimer?: NodeJS.Timeout;
+  cleanupTimer?: NodeJS.Timeout;
+};
+
+const jobs = new Map<string, BitableVideoJob>();
 
 // ─── Card Builders ───────────────────────────────────────────────────────────
 
@@ -69,14 +82,70 @@ function buildConfirmCard(params: {
   };
 }
 
-function buildAnalyzingCard(): Record<string, unknown> {
+function buildQueuedCard(params: {
+  position?: number | null;
+  maxConcurrent: number;
+  running: number;
+  queued: number;
+  jobId: string;
+}): Record<string, unknown> {
+  const positionText =
+    params.position == null
+      ? "⏳ 已进入队列，正在获取排队位置..."
+      : params.position <= 0
+        ? "⏳ 即将开始分析..."
+        : `⏳ 已进入队列：你当前排在第 ${params.position} 位`;
+  return {
+    config: { wide_screen_mode: true },
+    header: {
+      title: { tag: "plain_text", content: "🎬 视频分析 — 排队中" },
+      template: "blue",
+    },
+    elements: [
+      {
+        tag: "markdown",
+        content: [
+          positionText,
+          "",
+          `并发上限：${params.maxConcurrent} | 运行中：${params.running} | 排队中：${params.queued}`,
+        ].join("\n"),
+      },
+      {
+        tag: "action",
+        actions: [
+          {
+            tag: "button",
+            text: { tag: "plain_text", content: "🛑 取消" },
+            type: "default",
+            value: { action: "cancel_bitable_video_job", jobId: params.jobId },
+          },
+        ],
+      },
+    ],
+  };
+}
+
+function buildAnalyzingCard(jobId: string): Record<string, unknown> {
   return {
     config: { wide_screen_mode: true },
     header: {
       title: { tag: "plain_text", content: "🎬 视频分析 — 处理中" },
       template: "blue",
     },
-    elements: [{ tag: "markdown", content: "⏳ 正在用 Gemini 分析视频，请稍候..." }],
+    elements: [
+      { tag: "markdown", content: "⏳ 正在用 Gemini 分析视频，请稍候..." },
+      {
+        tag: "action",
+        actions: [
+          {
+            tag: "button",
+            text: { tag: "plain_text", content: "🛑 取消" },
+            type: "default",
+            value: { action: "cancel_bitable_video_job", jobId },
+          },
+        ],
+      },
+    ],
   };
 }
 
@@ -175,7 +244,7 @@ export async function sendBitableVideoConfirmCard(params: {
 export function isBitableVideoAction(actionValue: Record<string, unknown> | undefined): boolean {
   if (!actionValue) return false;
   const action = actionValue.action;
-  return action === "confirm_bitable_video" || action === "cancel_bitable_video";
+  return action === "confirm_bitable_video" || action === "cancel_bitable_video" || action === "cancel_bitable_video_job";
 }
 
 /**
@@ -198,6 +267,32 @@ export async function handleBitableVideoCardAction(params: {
 
   const action = actionValue.action as string;
   const cardMessageId = actionData.context?.open_message_id;
+
+  if (action === "cancel_bitable_video_job") {
+    const jobId = actionValue.jobId as string;
+    const job = jobs.get(jobId);
+    if (!job) return buildCancelledCard();
+
+    const operatorOpenId = actionData.operator?.open_id || "";
+    if (job.senderOpenId && operatorOpenId !== job.senderOpenId) {
+      log(`[bitable-video] Cancel from wrong user (expected=${job.senderOpenId}, got=${operatorOpenId})`);
+      return undefined;
+    }
+
+    log(`[bitable-video] Cancel jobId=${jobId}`);
+    job.abortController.abort();
+    if (job.queueTimer) clearInterval(job.queueTimer);
+    if (job.cleanupTimer) clearTimeout(job.cleanupTimer);
+    jobs.delete(jobId);
+
+    const card = buildCancelledCard();
+    if (job.cardMessageId) {
+      void updateCardFeishu({ cfg, messageId: job.cardMessageId, card }).catch(() => {});
+    } else if (cardMessageId) {
+      void updateCardFeishu({ cfg, messageId: cardMessageId, card }).catch(() => {});
+    }
+    return card;
+  }
 
   // ─── Cancel ────────────────────────────────────────────────────────────────
   if (action === "cancel_bitable_video") {
@@ -239,14 +334,68 @@ export async function handleBitableVideoCardAction(params: {
   const feishuCfg = cfg?.channels?.feishu as Record<string, unknown> | undefined;
   if (feishuCfg?.gcsCredentialsPath) setCredentialsPath(feishuCfg.gcsCredentialsPath as string);
 
+  const jobId = `bv_${Date.now()}_${Math.random().toString(16).slice(2)}`;
+  const abortController = new AbortController();
+
+  const job: BitableVideoJob = {
+    jobId,
+    senderOpenId,
+    abortController,
+    cardMessageId,
+    target,
+    replyToMessageId,
+  };
+  jobs.set(jobId, job);
+  job.cleanupTimer = setTimeout(() => {
+    if (job.queueTimer) clearInterval(job.queueTimer);
+    jobs.delete(jobId);
+  }, 60 * 60 * 1000);
+
+  const initialStatus = getGeminiQueueStatus();
+  const queuedCard = buildQueuedCard({ ...initialStatus, position: null, jobId });
+  if (cardMessageId) {
+    void updateCardFeishu({ cfg, messageId: cardMessageId, card: queuedCard }).catch(() => {});
+  }
+
   // Fire-and-forget: analyze in background
   void (async () => {
+    let completed = false;
     try {
       log(`[bitable-video] Starting Gemini analysis: gcsUri=${gcsUri}, mimeType=${mimeType}`);
       const analysis = await analyzeVideoFromGcs(gcsUri, mimeType, {
         prompt,
         log,
+        signal: abortController.signal,
+        onQueue: (info) => {
+          job.ticketId = info.ticketId;
+          if (info.position <= 0) {
+            const analyzingCard = buildAnalyzingCard(jobId);
+            if (cardMessageId) {
+              void updateCardFeishu({ cfg, messageId: cardMessageId, card: analyzingCard }).catch(() => {});
+            }
+            return;
+          }
+
+          if (!job.queueTimer) {
+            job.queueTimer = setInterval(() => {
+              if (abortController.signal.aborted) return;
+              if (!job.ticketId || !job.cardMessageId) return;
+              const s = getGeminiQueueStatus();
+              const pos = getGeminiQueuePosition(job.ticketId);
+              if (pos == null) {
+                if (job.queueTimer) clearInterval(job.queueTimer);
+                job.queueTimer = undefined;
+                const analyzingCard = buildAnalyzingCard(jobId);
+                void updateCardFeishu({ cfg, messageId: job.cardMessageId, card: analyzingCard }).catch(() => {});
+                return;
+              }
+              const card = buildQueuedCard({ ...s, position: pos, jobId });
+              void updateCardFeishu({ cfg, messageId: job.cardMessageId, card }).catch(() => {});
+            }, 4000);
+          }
+        },
       });
+      completed = true;
       log(`[bitable-video] Analysis complete, sending result card to ${target}`);
 
       const costStr = analysis.estimatedCostUsd != null
@@ -292,6 +441,13 @@ export async function handleBitableVideoCardAction(params: {
         }
       }
     } catch (err) {
+      if (abortController.signal.aborted) {
+        const card = buildCancelledCard();
+        if (cardMessageId) {
+          void updateCardFeishu({ cfg, messageId: cardMessageId, card }).catch(() => {});
+        }
+        return;
+      }
       log(`[bitable-video] Analysis or card send FAILED: ${String(err)}`);
       if (err instanceof Error) log(`[bitable-video] Stack: ${err.stack}`);
       try {
@@ -312,13 +468,12 @@ export async function handleBitableVideoCardAction(params: {
           replyToMessageId,
         });
       } catch { /* ignore */ }
+    } finally {
+      if (job.queueTimer) clearInterval(job.queueTimer);
+      if (job.cleanupTimer) clearTimeout(job.cleanupTimer);
+      jobs.delete(jobId);
     }
   })();
 
-  // Return analyzing card as callback response + API backup
-  const analyzingCard = buildAnalyzingCard();
-  if (cardMessageId) {
-    void updateCardFeishu({ cfg, messageId: cardMessageId, card: analyzingCard }).catch(() => {});
-  }
-  return analyzingCard;
+  return queuedCard;
 }
