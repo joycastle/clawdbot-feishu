@@ -7,6 +7,7 @@
  * Cache is persisted to a JSON file. Max 500 entries; evicts oldest 100 when full.
  */
 
+import os from "node:os";
 import { existsSync } from "node:fs";
 import { readFile, writeFile, mkdir } from "node:fs/promises";
 import { join } from "node:path";
@@ -25,11 +26,13 @@ export interface VideoCacheData {
   byFileToken: Record<string, CacheEntry>;
   /** Last cleanup timestamp */
   lastCleanup: number;
+  /** Last time bitable records were cleared (epoch ms) */
+  lastBitableRecordClear: number;
 }
 
 // ─── Constants ───────────────────────────────────────────────────────────────
 
-const CACHE_DIR = join(process.env.HOME ?? "/tmp", ".clawdbot");
+const CACHE_DIR = process.env.CLAWDBOT_DATA_DIR ?? join(os.homedir(), ".clawdbot");
 const CACHE_FILE = join(CACHE_DIR, "video-cache.json");
 const CACHE_TTL_MS = 15 * 24 * 60 * 60 * 1000;
 
@@ -43,7 +46,8 @@ const EVICT_COUNT = 100;
 let cache: VideoCacheData | null = null;
 
 function emptyCache(): VideoCacheData {
-  return { byFileToken: {}, lastCleanup: Date.now() };
+  const now = Date.now();
+  return { byFileToken: {}, lastCleanup: now, lastBitableRecordClear: now };
 }
 
 // ─── Load / Save ─────────────────────────────────────────────────────────────
@@ -54,10 +58,29 @@ export async function loadVideoCache(): Promise<VideoCacheData> {
     if (existsSync(CACHE_FILE)) {
       const raw = await readFile(CACHE_FILE, "utf-8");
       const parsed = JSON.parse(raw) as any;
+      const now = Date.now();
+      const parsedLastCleanup = parsed.lastCleanup;
+      const parsedLastBitableRecordClear = parsed.lastBitableRecordClear;
+      const hasValidLastCleanup =
+        typeof parsedLastCleanup === "number" && Number.isFinite(parsedLastCleanup) && parsedLastCleanup > 0;
+      const hasValidLastBitableRecordClear =
+        typeof parsedLastBitableRecordClear === "number" &&
+        Number.isFinite(parsedLastBitableRecordClear) &&
+        parsedLastBitableRecordClear > 0;
       cache = {
         byFileToken: parsed.byFileToken ?? {},
-        lastCleanup: parsed.lastCleanup ?? Date.now(),
+        lastCleanup:
+          hasValidLastCleanup
+            ? parsedLastCleanup
+            : now,
+        lastBitableRecordClear:
+          hasValidLastBitableRecordClear
+            ? parsedLastBitableRecordClear
+            : now,
       };
+      if (!hasValidLastCleanup || !hasValidLastBitableRecordClear) {
+        await saveVideoCache();
+      }
     } else {
       cache = emptyCache();
     }
@@ -160,7 +183,12 @@ export async function isCleanupDue(): Promise<boolean> {
 
 /** Full reset — clear all cache entries. */
 export async function resetVideoCache(): Promise<void> {
-  cache = emptyCache();
+  const c = await loadVideoCache();
+  cache = {
+    byFileToken: {},
+    lastCleanup: Date.now(),
+    lastBitableRecordClear: c.lastBitableRecordClear ?? Date.now(),
+  };
   await saveVideoCache();
 }
 
@@ -170,4 +198,15 @@ export async function getAllCachedGcsUris(): Promise<string[]> {
   const uris = new Set<string>();
   for (const v of Object.values(c.byFileToken)) uris.add(v.gcsUri);
   return [...uris];
+}
+
+export async function getLastBitableRecordClearAt(): Promise<number> {
+  const c = await loadVideoCache();
+  return c.lastBitableRecordClear;
+}
+
+export async function markBitableRecordsCleared(at: number = Date.now()): Promise<void> {
+  const c = await loadVideoCache();
+  c.lastBitableRecordClear = at;
+  await saveVideoCache();
 }

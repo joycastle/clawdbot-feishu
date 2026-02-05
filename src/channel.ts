@@ -15,6 +15,7 @@ import {
 } from "./directory.js";
 import { feishuOnboardingAdapter } from "./onboarding.js";
 import { clearAllBitableRecords } from "./big-video/bitable-video.js";
+import { getLastBitableRecordClearAt, markBitableRecordsCleared } from "./big-video/video-cache.js";
 
 const meta = {
   id: "feishu",
@@ -246,7 +247,7 @@ function startDailyBitableRecordClear(params: {
 
   let timer: ReturnType<typeof setTimeout> | null = null;
   let running = false;
-  let lastScheduledAt: number | null = null;
+  let lastRunAt: number | null = null;
   const intervalMs = 7 * 24 * 60 * 60 * 1000;
 
   const clearTimer = () => {
@@ -257,26 +258,26 @@ function startDailyBitableRecordClear(params: {
   const scheduleNext = () => {
     clearTimer();
     if (params.abortSignal.aborted) return;
+    if (lastRunAt == null) return;
 
-    const now = new Date();
-    const next = lastScheduledAt == null
-      ? (() => {
-          const d = new Date(now);
-          d.setHours(24, 0, 0, 0);
-          return d;
-        })()
-      : new Date(lastScheduledAt + intervalMs);
-    const delayMs = Math.max(0, next.getTime() - now.getTime());
+    const nextAt = lastRunAt + intervalMs;
+    const delayMs = Math.max(0, nextAt - Date.now());
 
     timer = setTimeout(() => {
       void (async () => {
         if (params.abortSignal.aborted) return;
         if (running) return;
         running = true;
-        lastScheduledAt = next.getTime();
+        const runAt = Date.now();
         try {
           const res = await clearAllBitableRecords({ cfg: params.cfg });
           log(`[bitable-clear] cleared records: deleted=${res.deleted}, total=${res.total}, batches=${res.batches}`);
+          lastRunAt = runAt;
+          try {
+            await markBitableRecordsCleared(runAt);
+          } catch (err) {
+            log(`[bitable-clear] failed to persist last run time: ${err}`);
+          }
         } catch (err) {
           log(`[bitable-clear] clear failed: ${err}`);
         } finally {
@@ -295,5 +296,13 @@ function startDailyBitableRecordClear(params: {
     { once: true },
   );
 
-  scheduleNext();
+  void (async () => {
+    try {
+      lastRunAt = await getLastBitableRecordClearAt();
+    } catch (err) {
+      lastRunAt = Date.now();
+      log(`[bitable-clear] failed to load last run time, defaulting to now: ${err}`);
+    }
+    scheduleNext();
+  })();
 }

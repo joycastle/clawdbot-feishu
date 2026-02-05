@@ -76,6 +76,213 @@ const PRICING = {
   "gemini-2.5-flash-preview-05-20": { input: 0.30, output: 2.50 },
 } as Record<string, { input: number; output: number }>;
 
+class Semaphore {
+  private readonly maxConcurrent: number;
+  private available: number;
+  private queue: Array<{
+    id: string;
+    resolve: () => void;
+    reject: (err: unknown) => void;
+    cleanup?: () => void;
+  }> = [];
+  private nextId = 1;
+
+  constructor(maxConcurrent: number) {
+    this.maxConcurrent = Math.max(1, Math.floor(maxConcurrent));
+    this.available = this.maxConcurrent;
+  }
+
+  getStatus(): { maxConcurrent: number; running: number; queued: number } {
+    const running = this.maxConcurrent - this.available;
+    return { maxConcurrent: this.maxConcurrent, running, queued: this.queue.length };
+  }
+
+  getQueuePosition(ticketId: string): number | null {
+    const idx = this.queue.findIndex((x) => x.id === ticketId);
+    if (idx < 0) return null;
+    return idx + 1;
+  }
+
+  request(params?: { signal?: AbortSignal }): {
+    ticketId: string;
+    wasQueued: boolean;
+    positionAtEnqueue: number;
+    granted: Promise<() => void>;
+  } {
+    const ticketId = `gemini_${this.nextId++}`;
+
+    if (this.available > 0) {
+      this.available -= 1;
+      return {
+        ticketId,
+        wasQueued: false,
+        positionAtEnqueue: 0,
+        granted: Promise.resolve(() => this.release()),
+      };
+    }
+
+    const positionAtEnqueue = this.queue.length + 1;
+    const granted = new Promise<() => void>((resolve, reject) => {
+      const entry = {
+        id: ticketId,
+        resolve: () => {
+          if (this.available > 0) {
+            this.available -= 1;
+            resolve(() => this.release());
+          } else {
+            reject(new Error("Semaphore invariant violated: no available permit"));
+          }
+        },
+        reject,
+        cleanup: undefined as undefined | (() => void),
+      };
+      this.queue.push(entry);
+
+      const signal = params?.signal;
+      if (signal) {
+        if (signal.aborted) {
+          this.cancel(ticketId, new Error("Aborted"));
+          return;
+        }
+        const onAbort = () => {
+          this.cancel(ticketId, new Error("Aborted"));
+        };
+        signal.addEventListener("abort", onAbort, { once: true });
+        entry.cleanup = () => signal.removeEventListener("abort", onAbort);
+      }
+    });
+
+    return { ticketId, wasQueued: true, positionAtEnqueue, granted };
+  }
+
+  cancel(ticketId: string, err: unknown): void {
+    const idx = this.queue.findIndex((x) => x.id === ticketId);
+    if (idx < 0) return;
+    const [entry] = this.queue.splice(idx, 1);
+    entry.cleanup?.();
+    entry.reject(err);
+  }
+
+  private release(): void {
+    this.available += 1;
+    const next = this.queue.shift();
+    if (next) {
+      next.cleanup?.();
+      next.resolve();
+    }
+  }
+}
+
+const GEMINI_MAX_CONCURRENT = (() => {
+  const v = Number.parseInt(process.env.GEMINI_MAX_CONCURRENT ?? "", 10);
+  if (Number.isFinite(v) && v > 0) return v;
+  return 2;
+})();
+
+const geminiSemaphore = new Semaphore(GEMINI_MAX_CONCURRENT);
+
+export function getGeminiQueueStatus(): { maxConcurrent: number; running: number; queued: number } {
+  return geminiSemaphore.getStatus();
+}
+
+export function getGeminiQueuePosition(ticketId: string): number | null {
+  return geminiSemaphore.getQueuePosition(ticketId);
+}
+
+function sleep(ms: number, signal?: AbortSignal): Promise<void> {
+  if (!signal) return new Promise((r) => setTimeout(r, ms));
+  if (signal.aborted) return Promise.reject(new Error("Aborted"));
+  return new Promise((resolve, reject) => {
+    const timer = setTimeout(() => {
+      signal.removeEventListener("abort", onAbort);
+      resolve();
+    }, ms);
+    const onAbort = () => {
+      clearTimeout(timer);
+      signal.removeEventListener("abort", onAbort);
+      reject(new Error("Aborted"));
+    };
+    signal.addEventListener("abort", onAbort, { once: true });
+  });
+}
+
+function parseRetryAfterMs(res: Response): number | null {
+  const ra = res.headers.get("retry-after");
+  if (!ra) return null;
+  const seconds = Number.parseFloat(ra);
+  if (Number.isFinite(seconds) && seconds > 0) return Math.ceil(seconds * 1000);
+  const date = Date.parse(ra);
+  if (Number.isFinite(date)) {
+    const ms = date - Date.now();
+    if (ms > 0) return ms;
+  }
+  return null;
+}
+
+function isRetryableStatus(status: number): boolean {
+  return status === 429 || status === 500 || status === 502 || status === 503 || status === 504;
+}
+
+async function fetchWithRetry(
+  url: string,
+  init: RequestInit,
+  opts: {
+    log?: (msg: string) => void;
+    maxRetries?: number;
+    baseDelayMs?: number;
+    maxDelayMs?: number;
+  } = {},
+): Promise<Response> {
+  const log = opts.log ?? (() => {});
+  const maxRetries = opts.maxRetries ?? 5;
+  const baseDelayMs = opts.baseDelayMs ?? 500;
+  const maxDelayMs = opts.maxDelayMs ?? 10_000;
+  const signal = init.signal;
+
+  let lastRes: Response | null = null;
+  let lastErr: unknown = null;
+
+  for (let attempt = 0; attempt <= maxRetries; attempt++) {
+    if (signal?.aborted) {
+      throw new Error("Aborted");
+    }
+    try {
+      const res = await fetch(url, init);
+      lastRes = res;
+      if (res.ok) return res;
+
+      if (attempt >= maxRetries || !isRetryableStatus(res.status)) {
+        return res;
+      }
+
+      const retryAfterMs = parseRetryAfterMs(res);
+      const exp = Math.min(maxDelayMs, baseDelayMs * (2 ** attempt));
+      const jitter = exp * (0.2 * Math.random());
+      const delayMs = Math.max(0, retryAfterMs ?? Math.round(exp + jitter));
+
+      log(`video-analyze: Gemini throttled (status=${res.status}), retry in ${delayMs}ms (attempt ${attempt + 1}/${maxRetries})`);
+      await res.arrayBuffer().catch(() => {});
+      await sleep(delayMs, signal);
+    } catch (err) {
+      lastErr = err;
+      if (attempt >= maxRetries) break;
+      if (signal?.aborted) {
+        throw new Error("Aborted");
+      }
+
+      const exp = Math.min(maxDelayMs, baseDelayMs * (2 ** attempt));
+      const jitter = exp * (0.2 * Math.random());
+      const delayMs = Math.max(0, Math.round(exp + jitter));
+
+      log(`video-analyze: Gemini request error, retry in ${delayMs}ms (attempt ${attempt + 1}/${maxRetries}): ${String(err)}`);
+      await sleep(delayMs, signal);
+    }
+  }
+
+  if (lastRes) return lastRes;
+  throw lastErr instanceof Error ? lastErr : new Error(String(lastErr));
+}
+
 // ─── Auth: JWT → OAuth2 Token ────────────────────────────────────────────────
 
 let cachedToken: { token: string; expiresAt: number } | null = null;
@@ -181,6 +388,8 @@ export async function analyzeVideo(
     prompt?: string;
     mimeType?: string;
     log?: (msg: string) => void;
+    signal?: AbortSignal;
+    onQueue?: (info: { ticketId: string; position: number; maxConcurrent: number; running: number; queued: number }) => void;
   },
 ): Promise<VideoAnalysisResult> {
   const log = options?.log ?? console.log;
@@ -248,70 +457,79 @@ export async function analyzeVideo(
 
   log(`video-analyze: calling Gemini API (model=${model})...`);
 
-  const res = await fetch(apiUrl, {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${accessToken}`,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify(requestBody),
-  });
-
-  if (!res.ok) {
-    const errText = await res.text();
-    throw new Error(`Gemini API call failed (${res.status}): ${errText}`);
+  const ticket = geminiSemaphore.request({ signal: options?.signal });
+  if (options?.onQueue) {
+    const s = geminiSemaphore.getStatus();
+    options?.onQueue?.({
+      ticketId: ticket.ticketId,
+      position: ticket.wasQueued ? ticket.positionAtEnqueue : 0,
+      maxConcurrent: s.maxConcurrent,
+      running: s.running,
+      queued: s.queued,
+    });
+  }
+  const release = await ticket.granted;
+  try {
+    const res = await fetchWithRetry(
+      apiUrl,
+      {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(requestBody),
+        signal: options?.signal,
+      },
+      { log },
+    );
+    if (!res.ok) {
+      const errText = await res.text();
+      throw new Error(`Gemini API call failed (${res.status}): ${errText}`);
+    }
+    const response = (await res.json()) as GeminiResponse;
+    const durationMs = Date.now() - startTime;
+    if (response.error) {
+      throw new Error(`Gemini API error: ${response.error.message} (${response.error.status})`);
+    }
+    const text =
+      response.candidates?.[0]?.content?.parts
+        ?.map((p) => p.text)
+        .filter(Boolean)
+        .join("\n") || "";
+    if (!text) {
+      throw new Error("Gemini returned empty response");
+    }
+    const usage = response.usageMetadata
+      ? {
+          promptTokens: response.usageMetadata.promptTokenCount || 0,
+          completionTokens: response.usageMetadata.candidatesTokenCount || 0,
+          totalTokens: response.usageMetadata.totalTokenCount || 0,
+        }
+      : undefined;
+    let estimatedCostUsd: number | undefined;
+    if (usage) {
+      const pricing = PRICING[model] || PRICING[DEFAULT_MODEL];
+      estimatedCostUsd =
+        (usage.promptTokens / 1_000_000) * pricing.input +
+        (usage.completionTokens / 1_000_000) * pricing.output;
+    }
+    log(
+      `video-analyze: complete in ${(durationMs / 1000).toFixed(1)}s ` +
+        `(tokens: ${usage?.promptTokens ?? "?"}→${usage?.completionTokens ?? "?"}, ` +
+        `cost: $${estimatedCostUsd?.toFixed(4) ?? "?"})`,
+    );
+    return {
+      text,
+      model,
+      usage,
+      durationMs,
+      estimatedCostUsd,
+    };
+  } finally {
+    release();
   }
 
-  const response = (await res.json()) as GeminiResponse;
-
-  const durationMs = Date.now() - startTime;
-
-  if (response.error) {
-    throw new Error(`Gemini API error: ${response.error.message} (${response.error.status})`);
-  }
-
-  // Extract text from response
-  const text =
-    response.candidates?.[0]?.content?.parts
-      ?.map((p) => p.text)
-      .filter(Boolean)
-      .join("\n") || "";
-
-  if (!text) {
-    throw new Error("Gemini returned empty response");
-  }
-
-  // Extract usage
-  const usage = response.usageMetadata
-    ? {
-        promptTokens: response.usageMetadata.promptTokenCount || 0,
-        completionTokens: response.usageMetadata.candidatesTokenCount || 0,
-        totalTokens: response.usageMetadata.totalTokenCount || 0,
-      }
-    : undefined;
-
-  // Estimate cost
-  let estimatedCostUsd: number | undefined;
-  if (usage) {
-    const pricing = PRICING[model] || PRICING[DEFAULT_MODEL];
-    estimatedCostUsd =
-      (usage.promptTokens / 1_000_000) * pricing.input +
-      (usage.completionTokens / 1_000_000) * pricing.output;
-  }
-
-  log(
-    `video-analyze: complete in ${(durationMs / 1000).toFixed(1)}s ` +
-      `(tokens: ${usage?.promptTokens ?? "?"}→${usage?.completionTokens ?? "?"}, ` +
-      `cost: $${estimatedCostUsd?.toFixed(4) ?? "?"})`,
-  );
-
-  return {
-    text,
-    model,
-    usage,
-    durationMs,
-    estimatedCostUsd,
-  };
 }
 
 /**
@@ -331,6 +549,8 @@ export async function analyzeVideoFromGcs(
     model?: string;
     prompt?: string;
     log?: (msg: string) => void;
+    signal?: AbortSignal;
+    onQueue?: (info: { ticketId: string; position: number; maxConcurrent: number; running: number; queued: number }) => void;
   },
 ): Promise<VideoAnalysisResult> {
   const log = options?.log ?? console.log;
@@ -377,64 +597,85 @@ export async function analyzeVideoFromGcs(
 
   log(`video-analyze: calling Gemini API via GCS (model=${model})...`);
 
-  const res = await fetch(apiUrl, {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${accessToken}`,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify(requestBody),
-  });
-
-  if (!res.ok) {
-    const errText = await res.text();
-    throw new Error(`Gemini API call failed (${res.status}): ${errText}`);
+  const ticket = geminiSemaphore.request({ signal: options?.signal });
+  if (options?.onQueue) {
+    const s = geminiSemaphore.getStatus();
+    options?.onQueue?.({
+      ticketId: ticket.ticketId,
+      position: ticket.wasQueued ? ticket.positionAtEnqueue : 0,
+      maxConcurrent: s.maxConcurrent,
+      running: s.running,
+      queued: s.queued,
+    });
   }
+  const release = await ticket.granted;
+  try {
+    const res = await fetchWithRetry(
+      apiUrl,
+      {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(requestBody),
+        signal: options?.signal,
+      },
+      { log },
+    );
 
-  const response = (await res.json()) as GeminiResponse;
-  const durationMs = Date.now() - startTime;
+    if (!res.ok) {
+      const errText = await res.text();
+      throw new Error(`Gemini API call failed (${res.status}): ${errText}`);
+    }
 
-  if (response.error) {
-    throw new Error(`Gemini API error: ${response.error.message} (${response.error.status})`);
+    const response = (await res.json()) as GeminiResponse;
+    const durationMs = Date.now() - startTime;
+
+    if (response.error) {
+      throw new Error(`Gemini API error: ${response.error.message} (${response.error.status})`);
+    }
+
+    const text =
+      response.candidates?.[0]?.content?.parts
+        ?.map((p) => p.text)
+        .filter(Boolean)
+        .join("\n") || "";
+
+    if (!text) {
+      throw new Error("Gemini returned empty response");
+    }
+
+    const usage = response.usageMetadata
+      ? {
+          promptTokens: response.usageMetadata.promptTokenCount || 0,
+          completionTokens: response.usageMetadata.candidatesTokenCount || 0,
+          totalTokens: response.usageMetadata.totalTokenCount || 0,
+        }
+      : undefined;
+
+    let estimatedCostUsd: number | undefined;
+    if (usage) {
+      const pricing = PRICING[model] || PRICING[DEFAULT_MODEL];
+      estimatedCostUsd =
+        (usage.promptTokens / 1_000_000) * pricing.input +
+        (usage.completionTokens / 1_000_000) * pricing.output;
+    }
+
+    log(
+      `video-analyze: GCS complete in ${(durationMs / 1000).toFixed(1)}s ` +
+        `(tokens: ${usage?.promptTokens ?? "?"}→${usage?.completionTokens ?? "?"}, ` +
+        `cost: $${estimatedCostUsd?.toFixed(4) ?? "?"})`,
+    );
+
+    return {
+      text,
+      model,
+      usage,
+      durationMs,
+      estimatedCostUsd,
+    };
+  } finally {
+    release();
   }
-
-  const text =
-    response.candidates?.[0]?.content?.parts
-      ?.map((p) => p.text)
-      .filter(Boolean)
-      .join("\n") || "";
-
-  if (!text) {
-    throw new Error("Gemini returned empty response");
-  }
-
-  const usage = response.usageMetadata
-    ? {
-        promptTokens: response.usageMetadata.promptTokenCount || 0,
-        completionTokens: response.usageMetadata.candidatesTokenCount || 0,
-        totalTokens: response.usageMetadata.totalTokenCount || 0,
-      }
-    : undefined;
-
-  let estimatedCostUsd: number | undefined;
-  if (usage) {
-    const pricing = PRICING[model] || PRICING[DEFAULT_MODEL];
-    estimatedCostUsd =
-      (usage.promptTokens / 1_000_000) * pricing.input +
-      (usage.completionTokens / 1_000_000) * pricing.output;
-  }
-
-  log(
-    `video-analyze: GCS complete in ${(durationMs / 1000).toFixed(1)}s ` +
-      `(tokens: ${usage?.promptTokens ?? "?"}→${usage?.completionTokens ?? "?"}, ` +
-      `cost: $${estimatedCostUsd?.toFixed(4) ?? "?"})`,
-  );
-
-  return {
-    text,
-    model,
-    usage,
-    durationMs,
-    estimatedCostUsd,
-  };
 }
