@@ -11,7 +11,7 @@ import { handleMediaCardAction, isMediaConfirmAction, buildProcessingCard, build
 import { handleVoteCardAction, isVoteAction } from "./vote.js";
 import { handleBitableVideoCardAction, isBitableVideoAction } from "./big-video/bitable-video-confirm.js";
 import { probeFeishu } from "./probe.js";
-import { analyzeVideo } from "./video-analyze.js";
+import { analyzeVideo, resolveVideoProvider } from "./video-analyze.js";
 import { sendCardFeishu, updateCardFeishu } from "./send.js";
 import { formatFileSize } from "./cost-estimator.js";
 
@@ -212,7 +212,11 @@ async function monitorWebSocket(params: {
                     // Init GCS config in case analyzeVideo needs to auto-escalate to GCS for >20MB videos
                     const { initGcsConfig } = await import("./big-video/gcs-upload.js");
                     initGcsConfig(cfg);
-                    const result = await analyzeVideo(videoMedia.path, { log });
+                    const videoProvider = (() => {
+                      try { return resolveVideoProvider(cfg); }
+                      catch { return undefined; }
+                    })();
+                    const result = await analyzeVideo(videoMedia.path, { log, provider: videoProvider });
 
                     // Build result card
                     const costStr = result.estimatedCostUsd != null

@@ -12,7 +12,7 @@
 import type { ClawdbotConfig } from "clawdbot/plugin-sdk";
 import { sendCardFeishu, updateCardFeishu } from "../send.js";
 import { formatFileSize } from "../cost-estimator.js";
-import { analyzeVideoFromGcs, getGeminiQueuePosition, getGeminiQueueStatus, setCredentialsPath } from "../video-analyze.js";
+import { analyzeVideoFromGcs, getGeminiQueuePosition, getGeminiQueueStatus, setCredentialsPath, resolveVideoProvider } from "../video-analyze.js";
 import { initGcsConfig } from "./gcs-upload.js";
 
 type BitableVideoJob = {
@@ -374,11 +374,18 @@ export async function handleBitableVideoCardAction(params: {
   void (async () => {
     let completed = false;
     try {
-      log(`[bitable-video] Starting Gemini analysis: gcsUri=${gcsUri}, mimeType=${mimeType}`);
+      // Resolve video provider from config (vertex or wjark)
+      const videoProvider = (() => {
+        try { return resolveVideoProvider(cfg); }
+        catch { return { type: "vertex" as const }; }
+      })();
+      const providerName = videoProvider.type === "wjark" ? "万界方舟" : "Vertex AI";
+      log(`[bitable-video] Starting analysis via ${providerName}: gcsUri=${gcsUri}, mimeType=${mimeType}`);
       const analysis = await analyzeVideoFromGcs(gcsUri, mimeType, {
         prompt,
         log,
         signal: abortController.signal,
+        provider: videoProvider,
         onQueue: (info) => {
           job.ticketId = info.ticketId;
           if (info.position <= 0) {

@@ -407,6 +407,87 @@ export async function clearGcsBucket(): Promise<number> {
   return deleted;
 }
 
+// ─── Signed URL Generation ───────────────────────────────────────────────────
+
+/**
+ * Generate a V4 signed URL for a GCS object.
+ * Allows anonymous GET access for the specified duration.
+ * Used when third-party APIs (e.g. 万界方舟) need to fetch video from GCS.
+ *
+ * @param gcsUri - GCS URI like gs://bucket/object
+ * @param expirationSeconds - URL validity duration (default: 1 hour)
+ * @returns HTTPS signed URL
+ */
+export function generateSignedUrl(
+  gcsUri: string,
+  expirationSeconds: number = 3600,
+): string {
+  const match = gcsUri.match(/^gs:\/\/([^/]+)\/(.+)$/);
+  if (!match) throw new Error(`Invalid GCS URI: ${gcsUri}`);
+  const [, bucket, objectPath] = match;
+
+  const sa = loadServiceAccount();
+  const now = new Date();
+
+  const pad = (n: number) => String(n).padStart(2, "0");
+  const datestamp = `${now.getUTCFullYear()}${pad(now.getUTCMonth() + 1)}${pad(now.getUTCDate())}`;
+  const datetime = `${datestamp}T${pad(now.getUTCHours())}${pad(now.getUTCMinutes())}${pad(now.getUTCSeconds())}Z`;
+
+  const credentialScope = `${datestamp}/auto/storage/goog4_request`;
+  const credential = `${sa.client_email}/${credentialScope}`;
+
+  const host = "storage.googleapis.com";
+  // Encode each path segment individually, keep slashes
+  const encodedObject = objectPath
+    .split("/")
+    .map((s) => encodeURIComponent(s))
+    .join("/");
+  const canonicalUri = `/${bucket}/${encodedObject}`;
+
+  // Query params must be sorted by name
+  const queryParams: [string, string][] = [
+    ["X-Goog-Algorithm", "GOOG4-RSA-SHA256"],
+    ["X-Goog-Credential", credential],
+    ["X-Goog-Date", datetime],
+    ["X-Goog-Expires", String(expirationSeconds)],
+    ["X-Goog-SignedHeaders", "host"],
+  ];
+  queryParams.sort((a, b) => a[0].localeCompare(b[0]));
+
+  const canonicalQueryString = queryParams
+    .map(([k, v]) => `${encodeURIComponent(k)}=${encodeURIComponent(v)}`)
+    .join("&");
+
+  const canonicalHeaders = `host:${host}\n`;
+
+  const canonicalRequest = [
+    "GET",
+    canonicalUri,
+    canonicalQueryString,
+    canonicalHeaders,
+    "host",
+    "UNSIGNED-PAYLOAD",
+  ].join("\n");
+
+  const hashedRequest = crypto
+    .createHash("sha256")
+    .update(canonicalRequest)
+    .digest("hex");
+
+  const stringToSign = [
+    "GOOG4-RSA-SHA256",
+    datetime,
+    credentialScope,
+    hashedRequest,
+  ].join("\n");
+
+  const signer = crypto.createSign("RSA-SHA256");
+  signer.update(stringToSign);
+  const signature = signer.sign(sa.private_key, "hex");
+
+  return `https://${host}${canonicalUri}?${canonicalQueryString}&X-Goog-Signature=${signature}`;
+}
+
 /** Extract object name from gs:// URI. */
 export function objectNameFromUri(gcsUri: string): string {
   const match = gcsUri.match(/^gs:\/\/[^/]+\/(.+)$/);

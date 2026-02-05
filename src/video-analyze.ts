@@ -61,6 +61,40 @@ export interface VideoAnalysisResult {
   estimatedCostUsd?: number;
 }
 
+// ─── Provider Types ──────────────────────────────────────────────────────────
+
+export interface WjarkProviderConfig {
+  type: "wjark";
+  apiKey: string;
+  baseUrl?: string; // defaults to https://maas-openapi.wanjiedata.com/api
+}
+
+export interface VertexProviderConfig {
+  type: "vertex";
+}
+
+export type VideoProviderConfig = WjarkProviderConfig | VertexProviderConfig;
+
+/**
+ * Resolve video analysis provider from feishu channel config.
+ * Reads `videoProvider`, `wjarkApiKey`, `wjarkBaseUrl` from cfg.channels.feishu.
+ * Defaults to Vertex AI if not configured.
+ */
+export function resolveVideoProvider(cfg: any): VideoProviderConfig {
+  const feishuCfg = cfg?.channels?.feishu as Record<string, unknown> | undefined;
+  const providerType = feishuCfg?.videoProvider as string | undefined;
+  if (providerType === "wjark") {
+    const apiKey = feishuCfg?.wjarkApiKey as string;
+    if (!apiKey) throw new Error("wjarkApiKey is required when videoProvider is 'wjark'");
+    return {
+      type: "wjark",
+      apiKey,
+      baseUrl: (feishuCfg?.wjarkBaseUrl as string) || undefined,
+    };
+  }
+  return { type: "vertex" };
+}
+
 // ─── Configuration ───────────────────────────────────────────────────────────
 
 const DEFAULT_MODEL = "gemini-3-flash-preview";
@@ -374,6 +408,52 @@ function inferMimeType(filePath: string): string {
   return mimeMap[ext] || "video/mp4";
 }
 
+// ─── Provider API Config Helper ──────────────────────────────────────────────
+
+/**
+ * Resolve API URL and headers based on provider config.
+ * - vertex: Vertex AI endpoint + OAuth2 Bearer token
+ * - wjark: 万界方舟 endpoint + API Key
+ */
+async function getProviderApiConfig(
+  model: string,
+  provider?: VideoProviderConfig,
+): Promise<{ url: string; headers: Record<string, string> }> {
+  if (provider?.type === "wjark") {
+    const baseUrl = provider.baseUrl || "https://maas-openapi.wanjiedata.com/api";
+    return {
+      url: `${baseUrl}/v1beta/models/${model}:generateContent`,
+      headers: {
+        Authorization: provider.apiKey,
+        "Content-Type": "application/json",
+      },
+    };
+  }
+
+  // Default: Vertex AI
+  const credentials = loadCredentials();
+  const projectId = credentials.project_id || process.env.GOOGLE_CLOUD_PROJECT;
+  const location = process.env.GOOGLE_CLOUD_LOCATION || "global";
+
+  if (!projectId) {
+    throw new Error("Google Cloud project ID not found in credentials or environment");
+  }
+
+  const accessToken = await getAccessToken(credentials);
+  const apiHost =
+    location === "global"
+      ? "aiplatform.googleapis.com"
+      : `${location}-aiplatform.googleapis.com`;
+
+  return {
+    url: `https://${apiHost}/v1/projects/${projectId}/locations/${location}/publishers/google/models/${model}:generateContent`,
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+      "Content-Type": "application/json",
+    },
+  };
+}
+
 /**
  * Analyze a video file using Vertex AI Gemini API.
  *
@@ -389,25 +469,18 @@ export async function analyzeVideo(
     mimeType?: string;
     log?: (msg: string) => void;
     signal?: AbortSignal;
+    provider?: VideoProviderConfig;
     onQueue?: (info: { ticketId: string; position: number; maxConcurrent: number; running: number; queued: number }) => void;
   },
 ): Promise<VideoAnalysisResult> {
   const log = options?.log ?? console.log;
   const model = options?.model ?? DEFAULT_MODEL;
+  const provider = options?.provider;
   const prompt =
     options?.prompt ??
     "请详细分析这个视频的内容。描述视频中发生了什么，包括画面、文字、操作流程等关键信息。如果是应用或游戏录屏，请描述功能和界面交互。";
 
   const startTime = Date.now();
-
-  // Load credentials and get access token
-  const credentials = loadCredentials();
-  const projectId = credentials.project_id || process.env.GOOGLE_CLOUD_PROJECT;
-  const location = process.env.GOOGLE_CLOUD_LOCATION || "global";
-
-  if (!projectId) {
-    throw new Error("Google Cloud project ID not found in credentials or environment");
-  }
 
   log(`video-analyze: loading video from ${videoPath}`);
 
@@ -416,30 +489,34 @@ export async function analyzeVideo(
   const fileSizeMb = stat.size / (1024 * 1024);
   log(`video-analyze: video size = ${fileSizeMb.toFixed(1)} MB`);
 
-  if (fileSizeMb > MAX_VIDEO_SIZE_MB) {
-    // Auto-escalate to GCS path for videos > 20MB (inline base64 limit)
-    log(`video-analyze: video exceeds ${MAX_VIDEO_SIZE_MB}MB inline limit, auto-escalating to GCS path`);
+  // For wjark provider: always use GCS + signed URL (fileData mode),
+  // because 万界方舟 API may not support inlineData for video.
+  // For Vertex AI: use GCS only for videos > 20MB, otherwise inline base64.
+  const forceGcsUpload = provider?.type === "wjark" || fileSizeMb > MAX_VIDEO_SIZE_MB;
+
+  if (forceGcsUpload) {
+    const reason = fileSizeMb > MAX_VIDEO_SIZE_MB
+      ? `video exceeds ${MAX_VIDEO_SIZE_MB}MB inline limit`
+      : "万界方舟 requires fileData mode (GCS + signed URL)";
+    log(`video-analyze: ${reason}, uploading to GCS first`);
     const mimeType = options?.mimeType ?? inferMimeType(videoPath);
     const { initGcsConfig, uploadToGcs } = await import("./big-video/gcs-upload.js");
 
-    // initGcsConfig needs the full config but we may not have it here;
-    // uploadToGcs uses env/defaults if initGcsConfig was already called by the caller.
-    // The caller (monitor.ts) should have already called initGcsConfig.
     const objectName = `video/auto-${Date.now()}-${path.basename(videoPath)}`;
     log(`video-analyze: uploading ${fileSizeMb.toFixed(1)}MB to GCS...`);
     const uploadResult = await uploadToGcs({ filePath: videoPath, mimeType, objectName });
     log(`video-analyze: uploaded to ${uploadResult.gcsUri}`);
 
-    return analyzeVideoFromGcs(uploadResult.gcsUri, mimeType, options);
+    return analyzeVideoFromGcs(uploadResult.gcsUri, mimeType, { ...options, provider });
   }
 
   const mimeType = options?.mimeType ?? inferMimeType(videoPath);
 
-  // Get access token
+  // Vertex AI: inline base64 for small videos
   log(`video-analyze: authenticating with Vertex AI...`);
-  const accessToken = await getAccessToken(credentials);
 
-  // Inline base64 upload
+  const { url: apiUrl, headers: apiHeaders } = await getProviderApiConfig(model, provider);
+
   const videoBuffer = fs.readFileSync(videoPath);
   const videoBase64 = videoBuffer.toString("base64");
 
@@ -460,13 +537,7 @@ export async function analyzeVideo(
     },
   };
 
-  // Build API URL — handle "global" location specially
-  const apiHost = location === "global"
-    ? "aiplatform.googleapis.com"
-    : `${location}-aiplatform.googleapis.com`;
-  const apiUrl = `https://${apiHost}/v1/projects/${projectId}/locations/${location}/publishers/google/models/${model}:generateContent`;
-
-  log(`video-analyze: calling Gemini API (model=${model})...`);
+  log(`video-analyze: calling Vertex AI (model=${model})...`);
 
   const ticket = geminiSemaphore.request({ signal: options?.signal });
   if (options?.onQueue) {
@@ -485,10 +556,7 @@ export async function analyzeVideo(
       apiUrl,
       {
         method: "POST",
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
-          "Content-Type": "application/json",
-        },
+        headers: apiHeaders,
         body: JSON.stringify(requestBody),
         signal: options?.signal,
       },
@@ -496,12 +564,12 @@ export async function analyzeVideo(
     );
     if (!res.ok) {
       const errText = await res.text();
-      throw new Error(`Gemini API call failed (${res.status}): ${errText}`);
+      throw new Error(`Vertex AI API call failed (${res.status}): ${errText}`);
     }
     const response = (await res.json()) as GeminiResponse;
     const durationMs = Date.now() - startTime;
     if (response.error) {
-      throw new Error(`Gemini API error: ${response.error.message} (${response.error.status})`);
+      throw new Error(`Vertex AI API error: ${response.error.message} (${response.error.status})`);
     }
     const text =
       response.candidates?.[0]?.content?.parts
@@ -509,7 +577,7 @@ export async function analyzeVideo(
         .filter(Boolean)
         .join("\n") || "";
     if (!text) {
-      throw new Error("Gemini returned empty response");
+      throw new Error(`Vertex AI returned empty response`);
     }
     const usage = response.usageMetadata
       ? {
@@ -544,9 +612,12 @@ export async function analyzeVideo(
 }
 
 /**
- * Analyze a video from GCS URI using Vertex AI Gemini API.
- * Unlike analyzeVideo(), this uses fileData with GCS URI instead of inline base64,
- * supporting videos up to 2GB.
+ * Analyze a video from GCS URI using Gemini API (Vertex AI or 万界方舟).
+ * Unlike analyzeVideo(), this uses fileData with GCS URI / signed URL
+ * instead of inline base64, supporting videos up to 2GB.
+ *
+ * When provider is "wjark", the GCS URI is converted to a signed URL
+ * since 万界方舟 cannot access gs:// URIs directly.
  *
  * @param gcsUri - GCS URI like gs://bucket/object
  * @param mimeType - MIME type of the video
@@ -561,35 +632,38 @@ export async function analyzeVideoFromGcs(
     prompt?: string;
     log?: (msg: string) => void;
     signal?: AbortSignal;
+    provider?: VideoProviderConfig;
     onQueue?: (info: { ticketId: string; position: number; maxConcurrent: number; running: number; queued: number }) => void;
   },
 ): Promise<VideoAnalysisResult> {
   const log = options?.log ?? console.log;
   const model = options?.model ?? DEFAULT_MODEL;
+  const provider = options?.provider;
   const prompt =
     options?.prompt ??
     "请详细分析这个视频的内容。描述视频中发生了什么，包括画面、文字、操作流程等关键信息。如果是应用或游戏录屏，请描述功能和界面交互。";
 
   const startTime = Date.now();
+  const providerName = provider?.type === "wjark" ? "万界方舟" : "Vertex AI";
 
-  const credentials = loadCredentials();
-  const projectId = credentials.project_id || process.env.GOOGLE_CLOUD_PROJECT;
-  const location = process.env.GOOGLE_CLOUD_LOCATION || "global";
+  log(`video-analyze: analyzing from GCS URI ${gcsUri} (provider: ${providerName})`);
 
-  if (!projectId) {
-    throw new Error("Google Cloud project ID not found in credentials or environment");
+  // For 万界方舟: convert GCS URI to signed URL (third-party can't access gs://)
+  let fileUri = gcsUri;
+  if (provider?.type === "wjark") {
+    const { generateSignedUrl } = await import("./big-video/gcs-upload.js");
+    fileUri = generateSignedUrl(gcsUri, 3600); // 1 hour validity
+    log(`video-analyze: generated signed URL for 万界方舟 (expires in 1h)`);
   }
 
-  log(`video-analyze: analyzing from GCS URI ${gcsUri}`);
-
-  const accessToken = await getAccessToken(credentials);
+  const { url: apiUrl, headers: apiHeaders } = await getProviderApiConfig(model, provider);
 
   const requestBody = {
     contents: [
       {
         role: "user",
         parts: [
-          { fileData: { mimeType, fileUri: gcsUri } },
+          { fileData: { mimeType, fileUri } },
           { text: prompt },
         ],
       },
@@ -601,12 +675,7 @@ export async function analyzeVideoFromGcs(
     },
   };
 
-  const apiHost = location === "global"
-    ? "aiplatform.googleapis.com"
-    : `${location}-aiplatform.googleapis.com`;
-  const apiUrl = `https://${apiHost}/v1/projects/${projectId}/locations/${location}/publishers/google/models/${model}:generateContent`;
-
-  log(`video-analyze: calling Gemini API via GCS (model=${model})...`);
+  log(`video-analyze: calling ${providerName} via GCS (model=${model})...`);
 
   const ticket = geminiSemaphore.request({ signal: options?.signal });
   if (options?.onQueue) {
@@ -625,10 +694,7 @@ export async function analyzeVideoFromGcs(
       apiUrl,
       {
         method: "POST",
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
-          "Content-Type": "application/json",
-        },
+        headers: apiHeaders,
         body: JSON.stringify(requestBody),
         signal: options?.signal,
       },
@@ -637,14 +703,14 @@ export async function analyzeVideoFromGcs(
 
     if (!res.ok) {
       const errText = await res.text();
-      throw new Error(`Gemini API call failed (${res.status}): ${errText}`);
+      throw new Error(`Vertex AI API call failed (${res.status}): ${errText}`);
     }
 
     const response = (await res.json()) as GeminiResponse;
     const durationMs = Date.now() - startTime;
 
     if (response.error) {
-      throw new Error(`Gemini API error: ${response.error.message} (${response.error.status})`);
+      throw new Error(`Vertex AI API error: ${response.error.message} (${response.error.status})`);
     }
 
     const text =
@@ -654,7 +720,7 @@ export async function analyzeVideoFromGcs(
         .join("\n") || "";
 
     if (!text) {
-      throw new Error("Gemini returned empty response");
+      throw new Error(`Vertex AI returned empty response`);
     }
 
     const usage = response.usageMetadata
