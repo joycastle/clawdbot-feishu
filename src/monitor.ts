@@ -14,6 +14,7 @@ import { probeFeishu } from "./probe.js";
 import { analyzeVideo, resolveVideoProvider } from "./video-analyze.js";
 import { sendCardFeishu, updateCardFeishu } from "./send.js";
 import { formatFileSize } from "./cost-estimator.js";
+import { startFeishuProjectApi } from "./feishu-project-api.js";
 
 export type MonitorFeishuOpts = {
   config?: ClawdbotConfig;
@@ -48,6 +49,9 @@ export async function monitorFeishuProvider(opts: MonitorFeishuOpts = {}): Promi
 
   const log = opts.runtime?.log ?? console.log;
   const error = opts.runtime?.error ?? console.error;
+
+  // 启动飞书项目 HTTP API
+  startFeishuProjectApi(feishuCfg, log);
 
   if (feishuCfg) {
     botOpenId = await fetchBotOpenId(feishuCfg);
