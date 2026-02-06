@@ -97,6 +97,11 @@ export const FeishuConfigSchema = z
     bitableTableToken: z.string().optional(), // bitable table id for video attachment table
     gcsBucket: z.string().optional(), // GCS bucket name for video uploads (default: larkbot-storage)
     gcsCredentialsPath: z.string().optional(), // path to GCS/Vertex AI service account JSON
+    videoProvider: z.enum(["vertex", "gemini"]).optional(), // video analysis provider
+    // ── 飞书项目 (project.feishu.cn) ──
+    projectPluginId: z.string().optional(), // 飞书项目插件 ID
+    projectPluginSecret: z.string().optional(), // 飞书项目插件 Secret
+    projectUserKey: z.string().optional(), // 默认用户 Key（用于 API 调用）
   })
   .strict()
   .superRefine((value, ctx) => {
