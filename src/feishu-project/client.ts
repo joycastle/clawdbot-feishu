@@ -1,19 +1,30 @@
 /**
  * 飞书项目 API 客户端
+ * 
+ * 封装 token 管理、缓存、以及所有 API 模块
  */
 
+import type { RequestContext } from './api/base.js';
 import type {
   PluginTokenResponse,
   Project,
   ProjectDetail,
   WorkItemType,
-  ApiResponse,
-} from './types.js';
+} from './api/types.js';
+
+// API 模块
+import * as projectApi from './api/project.js';
+import * as workitemApi from './api/workitem.js';
+import * as workflowApi from './api/workflow.js';
+import * as subtaskApi from './api/subtask.js';
+import * as relationApi from './api/relation.js';
+import * as manhourApi from './api/manhour.js';
+import * as fieldApi from './api/field.js';
+import * as templateApi from './api/template.js';
+import * as commentApi from './api/comment.js';
 
 const BASE_URL = 'https://project.feishu.cn/open_api';
-
-// 默认 token 提前刷新时间（秒）
-const TOKEN_REFRESH_BUFFER = 300;
+const TOKEN_REFRESH_BUFFER = 300; // 提前 5 分钟刷新
 
 export interface FeishuProjectClientOptions {
   pluginId: string;
@@ -30,47 +41,74 @@ export class FeishuProjectClient {
   private pluginToken: string | null = null;
   private tokenExpiresAt: number = 0;
 
-  // 缓存：项目列表 (project_key -> Project)
+  // 缓存
   private projectCache: Map<string, Project> = new Map();
   private projectCacheTime: number = 0;
-  private readonly PROJECT_CACHE_TTL = 3600 * 1000; // 1小时
-
-  // 缓存：项目详情 (project_key -> ProjectDetail)
   private projectDetailCache: Map<string, ProjectDetail> = new Map();
   private projectDetailCacheTime: Map<string, number> = new Map();
-  private readonly DETAIL_CACHE_TTL = 1800 * 1000; // 30分钟
-
-  // 缓存：工作项类型 (project_key -> WorkItemType[])
   private workItemTypesCache: Map<string, WorkItemType[]> = new Map();
   private workItemTypesCacheTime: Map<string, number> = new Map();
+
+  // 缓存 TTL
+  private readonly PROJECT_CACHE_TTL = 3600 * 1000; // 1小时
+  private readonly DETAIL_CACHE_TTL = 1800 * 1000; // 30分钟
   private readonly TYPES_CACHE_TTL = 3600 * 1000; // 1小时
+
+  // API 模块
+  readonly project: typeof projectApi;
+  readonly workitem: typeof workitemApi;
+  readonly workflow: typeof workflowApi;
+  readonly subtask: typeof subtaskApi;
+  readonly relation: typeof relationApi;
+  readonly manhour: typeof manhourApi;
+  readonly field: typeof fieldApi;
+  readonly template: typeof templateApi;
+  readonly comment: typeof commentApi;
 
   constructor(options: FeishuProjectClientOptions) {
     this.pluginId = options.pluginId;
     this.pluginSecret = options.pluginSecret;
     this.userKey = options.userKey;
+
+    // 绑定 API 模块
+    this.project = projectApi;
+    this.workitem = workitemApi;
+    this.workflow = workflowApi;
+    this.subtask = subtaskApi;
+    this.relation = relationApi;
+    this.manhour = manhourApi;
+    this.field = fieldApi;
+    this.template = templateApi;
+    this.comment = commentApi;
   }
 
   /**
-   * 获取有效的 Plugin Token
-   * 自动处理过期刷新
+   * 获取请求上下文（供 API 调用使用）
+   */
+  getContext(): RequestContext {
+    return {
+      getToken: () => this.getPluginToken(),
+      userKey: this.userKey,
+    };
+  }
+
+  /**
+   * 获取有效的 Plugin Token（自动刷新）
    */
   async getPluginToken(): Promise<string> {
     const now = Date.now();
 
-    // Token 有效且未过期
     if (this.pluginToken && now < this.tokenExpiresAt - TOKEN_REFRESH_BUFFER * 1000) {
       return this.pluginToken;
     }
 
-    // 刷新 Token
     const resp = await fetch(`${BASE_URL}/authen/plugin_token`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         plugin_id: this.pluginId,
         plugin_secret: this.pluginSecret,
-        type: 0, // plugin token
+        type: 0,
       }),
     });
 
@@ -91,53 +129,24 @@ export class FeishuProjectClient {
     return this.pluginToken;
   }
 
-  /**
-   * 发起 API 请求
-   */
-  private async request<T>(
-    method: string,
-    path: string,
-    body?: Record<string, unknown>
-  ): Promise<ApiResponse<T>> {
-    const token = await this.getPluginToken();
-
-    const options: RequestInit = {
-      method,
-      headers: {
-        'Content-Type': 'application/json',
-        'X-PLUGIN-TOKEN': token,
-        'X-USER-KEY': this.userKey,
-      },
-    };
-
-    if (body && (method === 'POST' || method === 'PUT')) {
-      options.body = JSON.stringify(body);
-    }
-
-    const url = path.startsWith('http') ? path : `${BASE_URL}${path}`;
-    const resp = await fetch(url, options);
-    return resp.json();
-  }
+  // ============ 便捷方法（带缓存） ============
 
   /**
-   * 获取项目列表
-   * 带缓存，返回 project_key -> Project 映射
+   * 获取项目列表（带缓存）
    */
   async getProjects(forceRefresh = false): Promise<Map<string, Project>> {
     const now = Date.now();
 
-    // 缓存有效
     if (!forceRefresh && this.projectCache.size > 0 && now - this.projectCacheTime < this.PROJECT_CACHE_TTL) {
       return this.projectCache;
     }
 
-    const resp = await this.request<Project[]>('GET', '/projects');
+    const resp = await this.project.getProjects(this.getContext());
 
     if (resp.err_code !== 0) {
       throw new Error(`Failed to get projects: ${resp.err_msg}`);
     }
 
-    // 更新缓存
     this.projectCache.clear();
     for (const project of resp.data || []) {
       this.projectCache.set(project.project_key, project);
@@ -157,20 +166,18 @@ export class FeishuProjectClient {
   }
 
   /**
-   * 获取项目详情
-   * 带缓存
+   * 获取项目详情（带缓存）
    */
   async getProjectDetail(projectKey: string, forceRefresh = false): Promise<ProjectDetail> {
     const now = Date.now();
     const cacheTime = this.projectDetailCacheTime.get(projectKey) || 0;
 
-    // 缓存有效
     if (!forceRefresh && now - cacheTime < this.DETAIL_CACHE_TTL) {
       const cached = this.projectDetailCache.get(projectKey);
       if (cached) return cached;
     }
 
-    const resp = await this.request<ProjectDetail>('GET', `/projects/detail?project_key=${projectKey}`);
+    const resp = await this.project.getProjectDetail(this.getContext(), projectKey);
 
     if (resp.err_code !== 0) {
       throw new Error(`Failed to get project detail: ${resp.err_msg}`);
@@ -180,7 +187,6 @@ export class FeishuProjectClient {
       throw new Error('No project detail in response');
     }
 
-    // 更新缓存
     this.projectDetailCache.set(projectKey, resp.data);
     this.projectDetailCacheTime.set(projectKey, now);
 
@@ -188,34 +194,32 @@ export class FeishuProjectClient {
   }
 
   /**
-   * 获取项目下的工作项类型
-   * 带缓存
+   * 获取工作项类型（带缓存）
    */
   async getWorkItemTypes(projectKey: string, forceRefresh = false): Promise<WorkItemType[]> {
     const now = Date.now();
     const cacheTime = this.workItemTypesCacheTime.get(projectKey) || 0;
 
-    // 缓存有效
     if (!forceRefresh && now - cacheTime < this.TYPES_CACHE_TTL) {
       const cached = this.workItemTypesCache.get(projectKey);
       if (cached) return cached;
     }
 
-    const resp = await this.request<WorkItemType[]>('GET', `/${projectKey}/work_item/all-types`);
+    const resp = await this.workitem.getWorkItemTypes(this.getContext(), projectKey);
 
     if (resp.err_code !== 0) {
       throw new Error(`Failed to get work item types: ${resp.err_msg}`);
     }
 
     const types = resp.data || [];
-
-    // 更新缓存
     this.workItemTypesCache.set(projectKey, types);
     this.workItemTypesCacheTime.set(projectKey, now);
 
     console.log(`[FeishuProject] Cached ${types.length} work item types for ${projectKey}`);
     return types;
   }
+
+  // ============ 缓存管理 ============
 
   /**
    * 清除所有缓存
