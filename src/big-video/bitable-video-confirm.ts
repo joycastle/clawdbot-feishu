@@ -15,6 +15,7 @@ import { sendCardFeishu, updateCardFeishu } from "../send.js";
 import { formatFileSize } from "../cost-estimator.js";
 import { analyzeVideoFromGcs, getGeminiQueuePosition, getGeminiQueueStatus, setCredentialsPath, resolveVideoProvider } from "../video-analyze.js";
 import { initGcsConfig } from "./gcs-upload.js";
+import { endInFlightJob, isFeishuAdmin, startInFlightJob } from "../dev-lock.js";
 
 type BitableVideoJob = {
   jobId: string;
@@ -343,6 +344,7 @@ export async function handleBitableVideoCardAction(params: {
   if (feishuCfg?.gcsCredentialsPath) setCredentialsPath(feishuCfg.gcsCredentialsPath as string);
 
   const jobId = `bv_${Date.now()}_${Math.random().toString(16).slice(2)}`;
+  const inFlightKey = `feishu:bitable-video:${jobId}`;
   const abortController = new AbortController();
 
   const job: BitableVideoJob = {
@@ -354,9 +356,12 @@ export async function handleBitableVideoCardAction(params: {
     replyToMessageId,
   };
   jobs.set(jobId, job);
+  const senderIsAdmin = senderOpenId ? isFeishuAdmin({ cfg, senderId: senderOpenId }) : false;
+  startInFlightJob({ key: inFlightKey, senderId: senderOpenId || "unknown", isAdmin: senderIsAdmin });
   job.cleanupTimer = setTimeout(() => {
     if (job.queueTimer) clearInterval(job.queueTimer);
     jobs.delete(jobId);
+    endInFlightJob(inFlightKey);
   }, 60 * 60 * 1000);
 
   const initialStatus = getGeminiQueueStatus();
@@ -496,6 +501,7 @@ export async function handleBitableVideoCardAction(params: {
       if (job.queueTimer) clearInterval(job.queueTimer);
       if (job.cleanupTimer) clearTimeout(job.cleanupTimer);
       jobs.delete(jobId);
+      endInFlightJob(inFlightKey);
     }
   })();
 

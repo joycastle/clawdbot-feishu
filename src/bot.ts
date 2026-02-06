@@ -16,12 +16,23 @@ import {
   isFeishuGroupAllowed,
 } from "./policy.js";
 import { createFeishuReplyDispatcher } from "./reply-dispatcher.js";
-import { getMessageFeishu } from "./send.js";
+import { getMessageFeishu, sendMarkdownCardFeishu, sendMessageFeishu } from "./send.js";
 import { downloadImageFeishu, downloadMessageResourceFeishu } from "./media.js";
 import { sendMediaConfirmCard } from "./media-confirm.js";
 // Video analysis is now handled by the LLM agent via bitable-video-cli.ts
 // instead of hard-coded regex interception. See bitable-video-cli.ts.
 import fs from "fs";
+import {
+  disableDevLock,
+  enableDevLock,
+  getDevLockSnapshot,
+  getUsageSnapshot,
+  isDevLockEnabled,
+  isFeishuAdmin,
+  markFeishuUserActive,
+  startInFlightJob,
+  endInFlightJob,
+} from "./dev-lock.js";
 
 export type FeishuMessageEvent = {
   sender: {
@@ -533,6 +544,104 @@ export function parseFeishuMessageEvent(
   };
 }
 
+function parseDurationToken(token?: string): number | null | undefined {
+  const raw = (token ?? "").trim();
+  if (!raw) return undefined;
+  const lowered = raw.toLowerCase();
+  if (["0", "none", "null", "forever", "permanent", "永久", "长期"].includes(lowered)) return null;
+
+  const m = /^(\d+)(ms|s|m|h|d)?$/.exec(lowered);
+  if (!m) return undefined;
+
+  const n = Number(m[1]);
+  if (!Number.isFinite(n) || n <= 0) return undefined;
+  const unit = m[2] ?? "m";
+  if (unit === "ms") return n;
+  if (unit === "s") return n * 1000;
+  if (unit === "m") return n * 60 * 1000;
+  if (unit === "h") return n * 60 * 60 * 1000;
+  if (unit === "d") return n * 24 * 60 * 60 * 1000;
+  return undefined;
+}
+
+function formatRemainingMs(ms: number | null): string {
+  if (ms == null) return "永久";
+  const s = Math.max(0, Math.floor(ms / 1000));
+  if (s < 60) return `${s}s`;
+  const m = Math.floor(s / 60);
+  if (m < 60) return `${m}m`;
+  const h = Math.floor(m / 60);
+  if (h < 24) return `${h}h`;
+  const d = Math.floor(h / 24);
+  return `${d}d`;
+}
+
+function buildUsageText(cfg: ClawdbotConfig): string {
+  const usageNoAdmin = getUsageSnapshot({ excludeAdmins: true });
+  const usageAll = getUsageSnapshot({ excludeAdmins: false });
+  return [
+    `当前使用者（不含管理员，最近10分钟活跃）：${usageNoAdmin.activeUsers}`,
+    `生成中用户（不含管理员）：${usageNoAdmin.inFlightUsers}`,
+    `生成中任务（不含管理员）：${usageNoAdmin.inFlightJobs}`,
+    "",
+    `含管理员：活跃 ${usageAll.activeUsers}｜生成中用户 ${usageAll.inFlightUsers}｜生成中任务 ${usageAll.inFlightJobs}`,
+  ].join("\n");
+}
+
+function tryHandleAdminCommand(params: { cfg: ClawdbotConfig; senderId: string; text: string }): string | null {
+  const text = params.text.trim();
+  if (!text) return null;
+
+  const usageQuery = /(当前)?(使用者人数|使用人数|在线人数|活跃人数|当前是否还有生成中的对话|生成中(的)?(对话|任务)?)/.test(text);
+  if (usageQuery) {
+    return buildUsageText(params.cfg);
+  }
+
+  if (!/^开发锁(\s|$)/.test(text)) return null;
+
+  const rest = text.replace(/^开发锁/, "").trim();
+  if (!rest || /^(状态|\?|help|帮助)$/i.test(rest)) {
+    const snap = getDevLockSnapshot();
+    const usage = buildUsageText(params.cfg);
+    if (!snap.enabled) {
+      return [`开发锁：关闭`, "", usage].join("\n");
+    }
+    return [
+      `开发锁：开启`,
+      snap.remainingMs != null ? `剩余：${formatRemainingMs(snap.remainingMs)}` : `剩余：永久`,
+      snap.reason ? `原因：${snap.reason}` : undefined,
+      "",
+      usage,
+    ].filter(Boolean).join("\n");
+  }
+
+  const parts = rest.split(/\s+/g).filter(Boolean);
+  const op = (parts[0] ?? "").toLowerCase();
+
+  if (["关", "关闭", "off", "false", "0"].includes(op)) {
+    disableDevLock();
+    const snap = getDevLockSnapshot();
+    return snap.enabled ? "开发锁关闭失败" : "开发锁已关闭";
+  }
+
+  if (["开", "开启", "on", "true", "1"].includes(op)) {
+    const ttlToken = parts[1];
+    const ttlMsParsed = parseDurationToken(ttlToken);
+    const ttlMs = ttlMsParsed === undefined ? 2 * 60 * 60 * 1000 : ttlMsParsed;
+    const reason = parts.length >= 3 ? parts.slice(2).join(" ") : null;
+    enableDevLock({ enabledBy: params.senderId, ttlMs, reason });
+    const snap = getDevLockSnapshot();
+    if (!snap.enabled) return "开发锁开启失败";
+    return [
+      `开发锁已开启`,
+      snap.remainingMs != null ? `剩余：${formatRemainingMs(snap.remainingMs)}` : `剩余：永久`,
+      snap.reason ? `原因：${snap.reason}` : undefined,
+    ].filter(Boolean).join("\n");
+  }
+
+  return null;
+}
+
 export async function handleFeishuMessage(params: {
   cfg: ClawdbotConfig;
   event: FeishuMessageEvent;
@@ -558,6 +667,12 @@ export async function handleFeishuMessage(params: {
     0,
     feishuCfg?.historyLimit ?? cfg.messages?.groupChat?.historyLimit ?? DEFAULT_GROUP_HISTORY_LIMIT,
   );
+
+  const senderIdForAuth = ctx.senderOpenId || ctx.senderId;
+  const senderIsAdmin = senderIdForAuth ? isFeishuAdmin({ cfg, senderId: senderIdForAuth }) : false;
+  if (ctx.senderOpenId) {
+    markFeishuUserActive({ userId: ctx.senderOpenId, isAdmin: senderIsAdmin });
+  }
 
   if (isGroup) {
     const groupPolicy = feishuCfg?.groupPolicy ?? "open";
@@ -586,6 +701,13 @@ export async function handleFeishuMessage(params: {
     // Allow video/media messages through without @mention — users can't @mention in media messages
     const isMediaMessage = ["video", "media", "audio", "image", "file"].includes(ctx.contentType);
     if (requireMention && !ctx.mentionedBot && !isMediaMessage) {
+      if (senderIsAdmin && ctx.contentType === "text") {
+        const reply = tryHandleAdminCommand({ cfg, senderId: senderIdForAuth, text: ctx.content });
+        if (reply) {
+          await sendMessageFeishu({ cfg, to: `chat:${ctx.chatId}`, text: reply, replyToMessageId: ctx.messageId });
+          return;
+        }
+      }
       log(`feishu: message in group ${ctx.chatId} did not mention bot, recording to history`);
       if (chatHistories) {
         // Thread-aware history key: messages in a topic get their own history
@@ -622,6 +744,30 @@ export async function handleFeishuMessage(params: {
       }
     }
   }
+
+  const target = isGroup ? `chat:${ctx.chatId}` : `user:${ctx.senderOpenId}`;
+
+  if (senderIsAdmin && ctx.contentType === "text") {
+    const reply = tryHandleAdminCommand({ cfg, senderId: senderIdForAuth, text: ctx.content });
+    if (reply) {
+      await sendMessageFeishu({ cfg, to: target, text: reply, replyToMessageId: ctx.messageId });
+      return;
+    }
+  }
+
+  if (!senderIsAdmin && !skipMediaConfirm && isDevLockEnabled()) {
+    if (!isGroup && !ctx.senderOpenId) return;
+    await sendMessageFeishu({
+      cfg,
+      to: target,
+      text: "后端更新中，请稍后重试",
+      replyToMessageId: ctx.messageId,
+    });
+    return;
+  }
+
+  const inFlightKey = `feishu:dispatch:${ctx.messageId}`;
+  startInFlightJob({ key: inFlightKey, senderId: ctx.senderOpenId || "unknown", isAdmin: senderIsAdmin });
 
   try {
     const core = getFeishuRuntime();
@@ -960,5 +1106,7 @@ export async function handleFeishuMessage(params: {
     log(`feishu: dispatch complete (queuedFinal=${queuedFinal}, replies=${counts.final})`);
   } catch (err) {
     error(`feishu: failed to dispatch message: ${String(err)}`);
+  } finally {
+    endInFlightJob(inFlightKey);
   }
 }

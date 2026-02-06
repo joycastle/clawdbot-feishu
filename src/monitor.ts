@@ -14,6 +14,7 @@ import { probeFeishu } from "./probe.js";
 import { analyzeVideo, resolveVideoProvider } from "./video-analyze.js";
 import { sendCardFeishu, updateCardFeishu } from "./send.js";
 import { formatFileSize } from "./cost-estimator.js";
+import { isDevLockEnabled, isFeishuAdmin, markFeishuUserActive, startInFlightJob, endInFlightJob } from "./dev-lock.js";
 
 export type MonitorFeishuOpts = {
   config?: ClawdbotConfig;
@@ -174,6 +175,22 @@ async function monitorWebSocket(params: {
         const actionValue = actionData.action?.value as Record<string, unknown> | undefined;
         log(`feishu: received card action callback`);
 
+        const operatorId = actionData.operator?.open_id || actionData.operator?.user_id || "";
+        const operatorIsAdmin = operatorId ? isFeishuAdmin({ cfg, senderId: operatorId }) : false;
+        if (operatorId) {
+          markFeishuUserActive({ userId: operatorId, isAdmin: operatorIsAdmin });
+        }
+
+        const actionName = actionValue?.action as string | undefined;
+        if (isDevLockEnabled() && !operatorIsAdmin) {
+          const allowDuringLock = actionName === "cancel_media" ||
+            actionName === "cancel_bitable_video" ||
+            actionName === "cancel_bitable_video_job";
+          if (!allowDuringLock) {
+            return { toast: { type: "info" as const, content: "后端更新中，请稍后重试" } };
+          }
+        }
+
         // Route to the appropriate handler based on action type
         if (isMediaConfirmAction(actionValue)) {
           const action = actionValue?.action as string | undefined;
@@ -225,6 +242,15 @@ async function monitorWebSocket(params: {
             if (hasVideo) {
               // Fire-and-forget: run video analysis without blocking the event loop
               const confirmedRef = confirmed;
+              const inFlightKey = `feishu:media-video:${confirmedRef.id}`;
+              const senderIsAdmin = confirmedRef.senderOpenId
+                ? isFeishuAdmin({ cfg, senderId: confirmedRef.senderOpenId })
+                : false;
+              startInFlightJob({
+                key: inFlightKey,
+                senderId: confirmedRef.senderOpenId || "unknown",
+                isAdmin: senderIsAdmin,
+              });
               log(`feishu: starting async video analysis (pendingId=${confirmedRef.id})`);
               // Update card to "processing" via delayed PATCH (after callback response completes).
               void (async () => {
@@ -358,6 +384,9 @@ async function monitorWebSocket(params: {
                     skipMediaConfirm: true,
                     preResolvedMediaList: confirmedRef.mediaList,
                   });
+                }
+                finally {
+                  endInFlightJob(inFlightKey);
                 }
               })();
               // Delayed PATCH to processing card (after callback response completes)

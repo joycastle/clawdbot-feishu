@@ -18,7 +18,7 @@ export async function request<T>(
   ctx: RequestContext,
   method: string,
   path: string,
-  body?: Record<string, unknown>
+  body?: unknown
 ): Promise<ApiResponse<T>> {
   const token = await ctx.getToken();
 
@@ -37,7 +37,7 @@ export async function request<T>(
 
   const url = path.startsWith('http') ? path : `${BASE_URL}${path}`;
   const resp = await fetch(url, options);
-  return resp.json();
+  return (await resp.json()) as ApiResponse<T>;
 }
 
 /**
