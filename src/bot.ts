@@ -592,10 +592,7 @@ function tryHandleAdminCommand(params: { cfg: ClawdbotConfig; senderId: string; 
   const text = params.text.trim();
   if (!text) return null;
 
-  const usageQuery = /(当前)?(使用者人数|使用人数|在线人数|活跃人数|当前是否还有生成中的对话|生成中(的)?(对话|任务)?)/.test(text);
-  if (usageQuery) {
-    return buildUsageText(params.cfg);
-  }
+  // 使用状态查询已移除硬编码匹配，改由 agent 通过 dev-lock-cli.ts usage 调用
 
   if (!/^开发锁(\s|$)/.test(text)) return null;
 
