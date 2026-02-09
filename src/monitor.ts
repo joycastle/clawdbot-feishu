@@ -7,17 +7,17 @@ import type { FeishuConfig } from "./types.js";
 import { createFeishuWSClient, createEventDispatcher } from "./client.js";
 import { resolveFeishuCredentials } from "./accounts.js";
 import { handleFeishuMessage, type FeishuMessageEvent, type FeishuBotAddedEvent } from "./bot.js";
-import { handleMediaCardAction, isMediaConfirmAction, buildProcessingCard, buildCancelledCard, buildExpiredCard, type CardActionEvent } from "./media-confirm.js";
-import { handleVoteCardAction, isVoteAction } from "./vote.js";
+import { handleMediaCardAction, isMediaConfirmAction, buildProcessingCard, buildCancelledCard, buildExpiredCard, type CardActionEvent } from "./features/media-confirm.js";
+import { handleVoteCardAction, isVoteAction } from "./features/vote.js";
 import { handleBitableVideoCardAction, isBitableVideoAction } from "./big-video/bitable-video-confirm.js";
 import { probeFeishu } from "./probe.js";
-import { analyzeVideo, resolveVideoProvider } from "./video-analyze.js";
+import { analyzeVideo, resolveVideoProvider } from "./features/video-analyze.js";
 import { sendCardFeishu, updateCardFeishu } from "./api/send.js";
-import { formatFileSize } from "./cost-estimator.js";
-import { isDevLockEnabled, isFeishuAdmin, markFeishuUserActive, startInFlightJob, endInFlightJob } from "./dev-lock.js";
-import { startFeishuProjectApi } from "./api/feishu-project.js";
-import { startFeishuTaskApi } from "./api/feishu-task.js";
-import { startFeishuBitableApi } from "./api/feishu-bitable.js";
+import { formatFileSize } from "./features/cost-estimator.js";
+import { isDevLockEnabled, isFeishuAdmin, markFeishuUserActive, startInFlightJob, endInFlightJob } from "./features/dev-lock.js";
+import { startFeishuProjectApi } from "./services/project-api.js";
+import { startFeishuTaskApi } from "./services/task-api.js";
+import { startFeishuBitableApi } from "./services/bitable-api.js";
 
 export type MonitorFeishuOpts = {
   config?: ClawdbotConfig;

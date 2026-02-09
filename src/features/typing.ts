@@ -1,6 +1,6 @@
 import type { ClawdbotConfig } from "clawdbot/plugin-sdk";
-import type { FeishuConfig } from "./types.js";
-import { createFeishuClient } from "./client.js";
+import type { FeishuConfig } from "../types.js";
+import { createFeishuClient } from "../client.js";
 
 // Feishu emoji types for typing indicator
 // See: https://open.feishu.cn/document/server-docs/im-v1/message-reaction/emojis-introduce

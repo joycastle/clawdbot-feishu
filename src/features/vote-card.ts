@@ -8,9 +8,9 @@
  */
 
 import type { ClawdbotConfig } from "clawdbot/plugin-sdk";
-import type { FeishuConfig } from "./types.js";
+import type { FeishuConfig } from "../types.js";
 import type { VoteData } from "./vote-store.js";
-import { createFeishuClient } from "./client.js";
+import { createFeishuClient } from "../client.js";
 
 // ─── Name Cache ──────────────────────────────────────────────────────────────
 

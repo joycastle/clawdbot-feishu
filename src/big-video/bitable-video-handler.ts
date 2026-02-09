@@ -33,7 +33,7 @@ import {
   isCleanupDue,
   resetVideoCache,
 } from "./video-cache.js";
-import { setCredentialsPath } from "../video-analyze.js";
+import { setCredentialsPath } from "../features/video-analyze.js";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 

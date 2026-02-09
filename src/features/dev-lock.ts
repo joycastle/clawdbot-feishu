@@ -1,5 +1,5 @@
 import type { ClawdbotConfig } from "clawdbot/plugin-sdk";
-import type { FeishuConfig } from "./types.js";
+import type { FeishuConfig } from "../types.js";
 
 type DevLockState = {
   enabled: boolean;

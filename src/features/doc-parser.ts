@@ -2,8 +2,8 @@
  * Feishu Document Parser
  * Detects Feishu document URLs in message text and fetches their content via API.
  */
-import { createFeishuClient } from "./client.js";
-import type { FeishuConfig } from "./types.js";
+import { createFeishuClient } from "../client.js";
+import type { FeishuConfig } from "../types.js";
 
 /** Regex to match Feishu/Lark document URLs */
 const FEISHU_DOC_URL_RE =

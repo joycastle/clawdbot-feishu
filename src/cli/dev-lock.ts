@@ -13,7 +13,7 @@ import {
   disableDevLock,
   getDevLockSnapshot,
   getUsageSnapshot,
-} from './dev-lock.js';
+} from '../features/dev-lock.js';
 
 const args = process.argv.slice(2);
 const cmd = args[0] || 'status';

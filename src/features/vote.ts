@@ -15,12 +15,12 @@
  */
 
 import type { ClawdbotConfig } from "clawdbot/plugin-sdk";
-import type { FeishuConfig } from "./types.js";
+import type { FeishuConfig } from "../types.js";
 import type { VoteData } from "./vote-store.js";
 import { loadVoteData, saveVoteData, withLock } from "./vote-store.js";
 import { buildVoteCard, resolveNames } from "./vote-card.js";
-import { sendCardFeishu, updateCardFeishu } from "./api/send.js";
-import { createFeishuClient } from "./client.js";
+import { sendCardFeishu, updateCardFeishu } from "../api/send.js";
+import { createFeishuClient } from "../client.js";
 
 // ─── Group Members ───────────────────────────────────────────────────────────
 

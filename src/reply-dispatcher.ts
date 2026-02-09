@@ -13,7 +13,7 @@ import {
   addTypingIndicator,
   removeTypingIndicator,
   type TypingIndicatorState,
-} from "./typing.js";
+} from "./features/typing.js";
 
 /**
  * Detect if text contains markdown elements that benefit from card rendering.

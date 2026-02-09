@@ -8,12 +8,12 @@ import {
 } from "clawdbot/plugin-sdk";
 import type { FeishuConfig, FeishuMessageContext, FeishuMediaInfo } from "./types.js";
 import { getFeishuRuntime } from "./runtime.js";
-import { enrichMessageWithDocs } from "./doc-parser.js";
+import { enrichMessageWithDocs } from "./features/doc-parser.js";
 import { resolveFeishuGroupConfig, resolveFeishuReplyPolicy, resolveFeishuAllowlistMatch, isFeishuGroupAllowed } from "./policy.js";
 import { createFeishuReplyDispatcher } from "./reply-dispatcher.js";
 import { getMessageFeishu, sendMarkdownCardFeishu, sendMessageFeishu } from "./api/send.js";
 import { downloadImageFeishu, downloadMessageResourceFeishu } from "./api/media.js";
-import { sendMediaConfirmCard } from "./media-confirm.js";
+import { sendMediaConfirmCard } from "./features/media-confirm.js";
 // Video analysis is now handled by the LLM agent via bitable-video-cli.ts
 // instead of hard-coded regex interception. See bitable-video-cli.ts.
 import fs from "fs";
@@ -27,7 +27,7 @@ import {
   markFeishuUserActive,
   startInFlightJob,
   endInFlightJob,
-} from "./dev-lock.js";
+} from "./features/dev-lock.js";
 
 export type FeishuMessageEvent = {
   sender: {
