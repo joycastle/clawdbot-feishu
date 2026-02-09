@@ -238,13 +238,14 @@ export interface SearchParams {
 export interface SearchGroup {
   conjunction?: 'AND' | 'OR';
   search_params?: SearchParam[];
+  search_groups?: SearchGroup[];  // 支持嵌套
 }
 
 /** 单个搜索条件 */
 export interface SearchParam {
-  key: string;
+  param_key: string;  // 字段key，如 name, owner, current_status_operator
   value: string | string[] | number | number[];
-  operator?: string;
+  operator?: string;  // ~(模糊), =(精确), HAS ANY OF, != 等
 }
 
 /** 展开选项 */
