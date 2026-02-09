@@ -7,7 +7,7 @@
  */
 
 import * as http from 'node:http';
-import { FeishuProjectClient } from '../feishu-project/client.js';
+import { FeishuProjectClient } from '../features/feishu-project/client.js';
 import type { FeishuConfig } from '../types.js';
 
 const PORT = 18793;

@@ -11,11 +11,11 @@
  */
 
 import type { ClawdbotConfig } from "clawdbot/plugin-sdk";
-import { sendCardFeishu, updateCardFeishu } from "../api/send.js";
-import { formatFileSize } from "../features/cost-estimator.js";
-import { analyzeVideoFromGcs, getGeminiQueuePosition, getGeminiQueueStatus, setCredentialsPath, resolveVideoProvider } from "../features/video-analyze.js";
+import { sendCardFeishu, updateCardFeishu } from "../../api/send.js";
+import { formatFileSize } from "../cost-estimator.js";
+import { analyzeVideoFromGcs, getGeminiQueuePosition, getGeminiQueueStatus, setCredentialsPath, resolveVideoProvider } from "../video-analyze.js";
 import { initGcsConfig } from "./gcs-upload.js";
-import { endInFlightJob, isFeishuAdmin, startInFlightJob } from "../features/dev-lock.js";
+import { endInFlightJob, isFeishuAdmin, startInFlightJob } from "../dev-lock.js";
 
 type BitableVideoJob = {
   jobId: string;

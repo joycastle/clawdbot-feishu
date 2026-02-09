@@ -15,12 +15,12 @@
  */
 
 import type { ClawdbotConfig } from "clawdbot/plugin-sdk";
-import type { FeishuConfig } from "../types.js";
-import type { VoteData } from "./vote-store.js";
-import { loadVoteData, saveVoteData, withLock } from "./vote-store.js";
-import { buildVoteCard, resolveNames } from "./vote-card.js";
-import { sendCardFeishu, updateCardFeishu } from "../api/send.js";
-import { createFeishuClient } from "../client.js";
+import type { FeishuConfig } from "../../types.js";
+import type { VoteData } from "./store.js";
+import { loadVoteData, saveVoteData, withLock } from "./store.js";
+import { buildVoteCard, resolveNames } from "./card.js";
+import { sendCardFeishu, updateCardFeishu } from "../../api/send.js";
+import { createFeishuClient } from "../../client.js";
 
 // ─── Group Members ───────────────────────────────────────────────────────────
 
@@ -51,8 +51,8 @@ const patchTimers = new Map<string, ReturnType<typeof setTimeout>>();
 const PATCH_DELAY_MS = 40;
 
 // Re-exports for external consumers
-export type { VoteData } from "./vote-store.js";
-export { cleanupOldPolls } from "./vote-store.js";
+export type { VoteData } from "./store.js";
+export { cleanupOldPolls } from "./store.js";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 

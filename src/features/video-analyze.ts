@@ -500,7 +500,7 @@ export async function analyzeVideo(
       : "万界方舟 requires fileData mode (GCS + signed URL)";
     log(`video-analyze: ${reason}, uploading to GCS first`);
     const mimeType = options?.mimeType ?? inferMimeType(videoPath);
-    const { initGcsConfig, uploadToGcs } = await import("../big-video/gcs-upload.js");
+    const { initGcsConfig, uploadToGcs } = await import("./big-video/gcs-upload.js");
 
     const objectName = `video/auto-${Date.now()}-${path.basename(videoPath)}`;
     log(`video-analyze: uploading ${fileSizeMb.toFixed(1)}MB to GCS...`);
@@ -651,7 +651,7 @@ export async function analyzeVideoFromGcs(
   // For 万界方舟: convert GCS URI to signed URL (third-party can't access gs://)
   let fileUri = gcsUri;
   if (provider?.type === "wjark") {
-    const { generateSignedUrl } = await import("../big-video/gcs-upload.js");
+    const { generateSignedUrl } = await import("./big-video/gcs-upload.js");
     fileUri = generateSignedUrl(gcsUri, 3600); // 1 hour validity
     log(`video-analyze: generated signed URL for 万界方舟 (expires in 1h)`);
   }

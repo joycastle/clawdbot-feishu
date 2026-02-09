@@ -6,8 +6,8 @@
  * Finds video attachments automatically by scanning all attachment-type fields.
  */
 
-import type { FeishuConfig } from "../types.js";
-import { createFeishuClient } from "../client.js";
+import type { FeishuConfig } from "../../types.js";
+import { createFeishuClient } from "../../client.js";
 import { Readable } from "node:stream";
 
 // ─── Types ───────────────────────────────────────────────────────────────────

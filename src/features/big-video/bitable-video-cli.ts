@@ -18,9 +18,9 @@ import fs from "node:fs";
 import os from "node:os";
 import { handleUploadOnly } from "./bitable-video-handler.js";
 import { sendBitableVideoConfirmCard } from "./bitable-video-confirm.js";
-import { estimateMediaCost } from "../features/cost-estimator.js";
+import { estimateMediaCost } from "../cost-estimator.js";
 import { initGcsConfig } from "./gcs-upload.js";
-import { setCredentialsPath } from "../features/video-analyze.js";
+import { setCredentialsPath } from "../video-analyze.js";
 
 const args = process.argv.slice(2);
 let targetArg: string | undefined;

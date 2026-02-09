@@ -8,8 +8,8 @@ import { createFeishuWSClient, createEventDispatcher } from "./client.js";
 import { resolveFeishuCredentials } from "./accounts.js";
 import { handleFeishuMessage, type FeishuMessageEvent, type FeishuBotAddedEvent } from "./bot.js";
 import { handleMediaCardAction, isMediaConfirmAction, buildProcessingCard, buildCancelledCard, buildExpiredCard, type CardActionEvent } from "./features/media-confirm.js";
-import { handleVoteCardAction, isVoteAction } from "./features/vote.js";
-import { handleBitableVideoCardAction, isBitableVideoAction } from "./big-video/bitable-video-confirm.js";
+import { handleVoteCardAction, isVoteAction } from "./features/vote/index.js";
+import { handleBitableVideoCardAction, isBitableVideoAction } from "./features/big-video/bitable-video-confirm.js";
 import { probeFeishu } from "./probe.js";
 import { analyzeVideo, resolveVideoProvider } from "./features/video-analyze.js";
 import { sendCardFeishu, updateCardFeishu } from "./api/send.js";
@@ -272,7 +272,7 @@ async function monitorWebSocket(params: {
                   );
                   if (videoMedia) {
                     // Init GCS config in case analyzeVideo needs to auto-escalate to GCS for >20MB videos
-                    const { initGcsConfig } = await import("./big-video/gcs-upload.js");
+                    const { initGcsConfig } = await import("./features/big-video/gcs-upload.js");
                     initGcsConfig(cfg);
                     const videoProvider = (() => {
                       try { return resolveVideoProvider(cfg); }
