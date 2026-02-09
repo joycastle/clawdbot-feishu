@@ -1,8 +1,9 @@
 import type { ChannelOutboundAdapter } from "clawdbot/plugin-sdk";
 import { getFeishuRuntime } from "./runtime.js";
-import { sendMessageFeishu, sendPostFeishu } from "./send.js";
+import { sendMessageFeishu, sendPostFeishu, sendCardFeishu } from "./send.js";
 import { sendMediaFeishu } from "./media.js";
 import { createPoll } from "./vote.js";
+import { containsMarkdownTable, textToTableCard } from "./table-card.js";
 
 /** Check if text contains fenced code blocks */
 function hasCodeBlocks(text: string): boolean {
@@ -15,6 +16,15 @@ export const feishuOutbound: ChannelOutboundAdapter = {
   chunkerMode: "markdown",
   textChunkLimit: 4000,
   sendText: async ({ cfg, to, text }) => {
+    // Auto-detect markdown tables → use card for proper table rendering
+    if (containsMarkdownTable(text)) {
+      const card = textToTableCard(text);
+      if (card) {
+        const result = await sendCardFeishu({ cfg, to, card });
+        return { channel: "feishu", ...result };
+      }
+    }
+
     // Auto-detect code blocks → use post (rich text) format for proper code_block rendering
     if (hasCodeBlocks(text)) {
       const result = await sendPostFeishu({ cfg, to, text });
