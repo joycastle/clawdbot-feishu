@@ -154,16 +154,24 @@ async function handleRequest(req: http.IncomingMessage, res: http.ServerResponse
 
     // ==================== 工作项 ====================
 
+    // GET /workitems - 获取工作项列表
+    // 使用 search/params 接口（比 filter 更稳定）
     if (path === '/workitems' && req.method === 'GET') {
       const pageNum = parseInt(query.pageNum as string, 10) || 1;
       const pageSize = parseInt(query.pageSize as string, 10) || 20;
-      const resp = await client.workitem.filterWorkItems(ctx, projectKey, {
-        work_item_type_key: typeKey,
+      const resp = await client.workitem.searchByParams(ctx, projectKey, typeKey, {
         page_num: pageNum,
         page_size: pageSize,
       });
       if (resp.err_code !== 0) { errorResponse(res, resp.err_msg, 400); return; }
-      jsonResponse(res, { projectKey, typeKey, ...resp.data });
+      // 兼容旧格式：items -> workItems
+      const data = resp.data as any;
+      jsonResponse(res, { 
+        projectKey, 
+        typeKey, 
+        workItems: data || [],
+        pagination: { page_num: pageNum, page_size: pageSize }
+      });
       return;
     }
 
@@ -176,17 +184,36 @@ async function handleRequest(req: http.IncomingMessage, res: http.ServerResponse
       return;
     }
 
+    // POST /search - 搜索工作项
+    // 支持两种方式:
+    //   1. 简单模式: { keyword: "xxx", typeKey: "story" } -> 按名称模糊搜索
+    //   2. 高级模式: { search_group: {...}, typeKey: "story" } -> 完整搜索条件
     if (path === '/search' && req.method === 'POST') {
       const body = parseJson(await readBody(req));
       if (!body) { errorResponse(res, 'Invalid JSON'); return; }
-      const resp = await client.workitem.searchByParams(ctx, projectKey, {
-        work_item_type_key: body.typeKey as string || typeKey,
-        search_key: body.keyword as string,
+      
+      const workItemTypeKey = body.typeKey as string || typeKey;
+      
+      // 构建搜索参数
+      let searchGroup = body.search_group;
+      if (!searchGroup && body.keyword) {
+        // 简单模式：用 ~ 做名称模糊匹配
+        searchGroup = {
+          conjunction: 'AND',
+          search_params: [
+            { param_key: 'name', value: body.keyword as string, operator: '~' }
+          ],
+          search_groups: []
+        };
+      }
+      
+      const resp = await client.workitem.searchByParams(ctx, projectKey, workItemTypeKey, {
+        search_group: searchGroup,
         page_num: body.pageNum as number || 1,
         page_size: body.pageSize as number || 20,
       });
       if (resp.err_code !== 0) { errorResponse(res, resp.err_msg, 400); return; }
-      jsonResponse(res, { projectKey, ...resp.data });
+      jsonResponse(res, { projectKey, typeKey: workItemTypeKey, ...resp.data });
       return;
     }
 
