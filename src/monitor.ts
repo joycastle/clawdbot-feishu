@@ -16,6 +16,8 @@ import { sendCardFeishu, updateCardFeishu } from "./send.js";
 import { formatFileSize } from "./cost-estimator.js";
 import { isDevLockEnabled, isFeishuAdmin, markFeishuUserActive, startInFlightJob, endInFlightJob } from "./dev-lock.js";
 import { startFeishuProjectApi } from "./feishu-project-api.js";
+import { startFeishuTaskApi } from "./feishu-task-api.js";
+import { startFeishuBitableApi } from "./feishu-bitable-api.js";
 
 export type MonitorFeishuOpts = {
   config?: ClawdbotConfig;
@@ -53,6 +55,12 @@ export async function monitorFeishuProvider(opts: MonitorFeishuOpts = {}): Promi
 
   // 启动飞书项目 HTTP API
   startFeishuProjectApi(feishuCfg, log);
+
+  // 启动飞书任务 HTTP API
+  startFeishuTaskApi(feishuCfg, log);
+
+  // 启动飞书多维表格 HTTP API
+  startFeishuBitableApi(feishuCfg, log);
 
   if (feishuCfg) {
     botOpenId = await fetchBotOpenId(feishuCfg);
