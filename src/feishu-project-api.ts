@@ -522,6 +522,108 @@ async function handleRequest(req: http.IncomingMessage, res: http.ServerResponse
 
     // ==================== 关联关系 ====================
 
+    // POST /workitem/:typeKey/:id/search_by_relation
+    // 查询某个工作项（如版本）关联的其他工作项
+    // 例: POST /workitem/version/6479555049/search_by_relation
+    //     body: { "relationKey": "planning_version", "targetTypeKey": "story" }
+    const searchByRelationMatch = path.match(/^\/workitem\/([^/]+)\/(\d+)\/search_by_relation$/);
+    if (searchByRelationMatch && req.method === 'POST') {
+      const sourceTypeKey = searchByRelationMatch[1];
+      const workItemId = searchByRelationMatch[2];
+      const body = parseJson(await readBody(req));
+      if (!body) { errorResponse(res, 'Invalid JSON'); return; }
+      
+      const relationKey = body.relationKey as string || 'planning_version';
+      const targetTypeKey = body.targetTypeKey as string || 'story';
+      
+      // 直接调用飞书项目 API
+      const token = await client!.getPluginToken();
+      const resp = await fetch(
+        `https://project.feishu.cn/open_api/${projectKey}/work_item/${sourceTypeKey}/${workItemId}/search_by_relation`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-PLUGIN-TOKEN': token,
+            'X-USER-KEY': client!.getContext().userKey,
+          },
+          body: JSON.stringify({
+            relation_key: relationKey,
+            relation_work_item_type_key: targetTypeKey,
+          }),
+        }
+      );
+      
+      const data = await resp.json() as any;
+      if (data.err_code) {
+        errorResponse(res, data.err_msg || 'API error', 400);
+        return;
+      }
+      
+      jsonResponse(res, {
+        projectKey,
+        sourceType: sourceTypeKey,
+        sourceId: workItemId,
+        relationKey,
+        targetType: targetTypeKey,
+        items: data.data || [],
+        total: (data.data || []).length,
+      });
+      return;
+    }
+
+    // 便捷端点: GET /version/:id/stories (查版本关联的需求)
+    const versionStoriesMatch = path.match(/^\/version\/(\d+)\/stories$/);
+    if (versionStoriesMatch && req.method === 'GET') {
+      const versionId = versionStoriesMatch[1];
+      const token = await client!.getPluginToken();
+      const resp = await fetch(
+        `https://project.feishu.cn/open_api/${projectKey}/work_item/version/${versionId}/search_by_relation`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-PLUGIN-TOKEN': token,
+            'X-USER-KEY': client!.getContext().userKey,
+          },
+          body: JSON.stringify({
+            relation_key: 'planning_version',
+            relation_work_item_type_key: 'story',
+          }),
+        }
+      );
+      const data = await resp.json() as any;
+      if (data.err_code) { errorResponse(res, data.err_msg, 400); return; }
+      jsonResponse(res, { versionId, stories: data.data || [], total: (data.data || []).length });
+      return;
+    }
+
+    // 便捷端点: GET /version/:id/issues (查版本关联的缺陷)
+    const versionIssuesMatch = path.match(/^\/version\/(\d+)\/issues$/);
+    if (versionIssuesMatch && req.method === 'GET') {
+      const versionId = versionIssuesMatch[1];
+      const token = await client!.getPluginToken();
+      const resp = await fetch(
+        `https://project.feishu.cn/open_api/${projectKey}/work_item/version/${versionId}/search_by_relation`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-PLUGIN-TOKEN': token,
+            'X-USER-KEY': client!.getContext().userKey,
+          },
+          body: JSON.stringify({
+            relation_key: 'planning_version',
+            relation_work_item_type_key: 'issue',
+          }),
+        }
+      );
+      const data = await resp.json() as any;
+      if (data.err_code) { errorResponse(res, data.err_msg, 400); return; }
+      jsonResponse(res, { versionId, issues: data.data || [], total: (data.data || []).length });
+      return;
+    }
+
     // GET /workitem/:id/relations
     const relationsMatch = path.match(/^\/workitem\/(\d+)\/relations$/);
     if (relationsMatch && req.method === 'GET') {
