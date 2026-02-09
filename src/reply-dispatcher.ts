@@ -7,7 +7,8 @@ import {
   type ReplyPayload,
 } from "clawdbot/plugin-sdk";
 import { getFeishuRuntime } from "./runtime.js";
-import { sendMessageFeishu, sendMarkdownCardFeishu } from "./api/send.js";
+import { sendMessageFeishu, sendMarkdownCardFeishu, sendCardFeishu } from "./api/send.js";
+import { containsMarkdownTable, textToTableCard } from "./features/table-card.js";
 import type { FeishuConfig } from "./types.js";
 import {
   addTypingIndicator,
@@ -106,6 +107,21 @@ export function createFeishuReplyDispatcher(params: CreateFeishuReplyDispatcherP
         // Check render mode: auto (default), raw, or card
         const feishuCfg = cfg.channels?.feishu as FeishuConfig | undefined;
         const renderMode = feishuCfg?.renderMode ?? "auto";
+
+        // Priority 1: Check for markdown tables → use table card for proper rendering
+        if (containsMarkdownTable(text)) {
+          const tableCard = textToTableCard(text);
+          if (tableCard) {
+            params.runtime.log?.(`feishu deliver: sending table card to ${chatId}`);
+            await sendCardFeishu({
+              cfg,
+              to: chatId,
+              card: tableCard,
+              replyToMessageId,
+            });
+            return;
+          }
+        }
 
         // Determine if we should use card for this message
         const useCard =
