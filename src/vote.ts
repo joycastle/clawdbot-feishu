@@ -19,7 +19,7 @@ import type { FeishuConfig } from "./types.js";
 import type { VoteData } from "./vote-store.js";
 import { loadVoteData, saveVoteData, withLock } from "./vote-store.js";
 import { buildVoteCard, resolveNames } from "./vote-card.js";
-import { sendCardFeishu, updateCardFeishu } from "./send.js";
+import { sendCardFeishu, updateCardFeishu } from "./api/send.js";
 import { createFeishuClient } from "./client.js";
 
 // ─── Group Members ───────────────────────────────────────────────────────────

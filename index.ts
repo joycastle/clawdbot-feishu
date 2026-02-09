@@ -11,21 +11,21 @@ export {
   updateCardFeishu,
   editMessageFeishu,
   getMessageFeishu,
-} from "./src/send.js";
+} from "./src/api/send.js";
 export {
   uploadImageFeishu,
   uploadFileFeishu,
   sendImageFeishu,
   sendFileFeishu,
   sendMediaFeishu,
-} from "./src/media.js";
+} from "./src/api/media.js";
 export { probeFeishu } from "./src/probe.js";
 export {
   addReactionFeishu,
   removeReactionFeishu,
   listReactionsFeishu,
   FeishuEmoji,
-} from "./src/reactions.js";
+} from "./src/api/reactions.js";
 export { feishuPlugin } from "./src/channel.js";
 export { createPoll, handleVoteCardAction, isVoteAction, getPoll, cleanupOldPolls } from "./src/vote.js";
 export { handleUploadOnly } from "./src/big-video/bitable-video-handler.js";

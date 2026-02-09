@@ -1,7 +1,7 @@
 import type { ChannelOutboundAdapter } from "clawdbot/plugin-sdk";
 import { getFeishuRuntime } from "./runtime.js";
-import { sendMessageFeishu, sendPostFeishu, sendCardFeishu } from "./send.js";
-import { sendMediaFeishu } from "./media.js";
+import { sendMessageFeishu, sendCardFeishu, updateCardFeishu, sendPostFeishu, editMessageFeishu } from "./api/send.js";
+import { uploadImageFeishu, uploadFileFeishu, sendImageFeishu, sendFileFeishu, sendMediaFeishu } from "./api/media.js";
 import { createPoll } from "./vote.js";
 import { containsMarkdownTable, textToTableCard } from "./table-card.js";
 

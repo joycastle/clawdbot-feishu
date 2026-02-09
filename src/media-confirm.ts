@@ -13,7 +13,7 @@
 
 import type { ClawdbotConfig, HistoryEntry } from "clawdbot/plugin-sdk";
 import { estimateMediaCost, formatFileSize, type CostEstimate } from "./cost-estimator.js";
-import { sendCardFeishu, updateCardFeishu } from "./send.js";
+import { sendCardFeishu, updateCardFeishu } from "./api/send.js";
 import type { FeishuMessageEvent } from "./bot.js";
 import type { FeishuMediaInfo } from "./types.js";
 

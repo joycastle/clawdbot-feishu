@@ -1,7 +1,7 @@
 import type { ClawdbotConfig } from "clawdbot/plugin-sdk";
-import type { FeishuConfig } from "./types.js";
-import { createFeishuClient } from "./client.js";
-import { resolveReceiveIdType, normalizeFeishuTarget } from "./targets.js";
+import type { FeishuConfig } from "../types.js";
+import { createFeishuClient } from "../client.js";
+import { resolveReceiveIdType, normalizeFeishuTarget } from "../targets.js";
 import fs from "fs";
 import path from "path";
 import os from "os";

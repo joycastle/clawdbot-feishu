@@ -7,8 +7,8 @@
  */
 
 import * as http from 'node:http';
-import { FeishuProjectClient } from './feishu-project/client.js';
-import type { FeishuConfig } from './types.js';
+import { FeishuProjectClient } from '../feishu-project/client.js';
+import type { FeishuConfig } from '../types.js';
 
 const PORT = 18793;
 let server: http.Server | null = null;

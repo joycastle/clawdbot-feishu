@@ -7,7 +7,7 @@ import {
   type ReplyPayload,
 } from "clawdbot/plugin-sdk";
 import { getFeishuRuntime } from "./runtime.js";
-import { sendMessageFeishu, sendMarkdownCardFeishu } from "./send.js";
+import { sendMessageFeishu, sendMarkdownCardFeishu } from "./api/send.js";
 import type { FeishuConfig } from "./types.js";
 import {
   addTypingIndicator,

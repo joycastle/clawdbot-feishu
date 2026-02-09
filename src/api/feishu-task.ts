@@ -5,8 +5,8 @@
 
 import * as http from 'http';
 import * as Lark from '@larksuiteoapi/node-sdk';
-import type { FeishuConfig } from './types.js';
-import { createFeishuClient } from './client.js';
+import type { FeishuConfig } from '../types.js';
+import { createFeishuClient } from '../client.js';
 
 const PORT = 18794;
 

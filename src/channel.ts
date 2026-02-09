@@ -6,7 +6,7 @@ import { feishuOutbound } from "./outbound.js";
 import { probeFeishu } from "./probe.js";
 import { resolveFeishuGroupToolPolicy } from "./policy.js";
 import { normalizeFeishuTarget, looksLikeFeishuId, formatFeishuTarget } from "./targets.js";
-import { sendMessageFeishu } from "./send.js";
+import { sendMessageFeishu } from "./api/send.js";
 import {
   listFeishuDirectoryPeers,
   listFeishuDirectoryGroups,

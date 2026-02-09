@@ -12,12 +12,12 @@ import { handleVoteCardAction, isVoteAction } from "./vote.js";
 import { handleBitableVideoCardAction, isBitableVideoAction } from "./big-video/bitable-video-confirm.js";
 import { probeFeishu } from "./probe.js";
 import { analyzeVideo, resolveVideoProvider } from "./video-analyze.js";
-import { sendCardFeishu, updateCardFeishu } from "./send.js";
+import { sendCardFeishu, updateCardFeishu } from "./api/send.js";
 import { formatFileSize } from "./cost-estimator.js";
 import { isDevLockEnabled, isFeishuAdmin, markFeishuUserActive, startInFlightJob, endInFlightJob } from "./dev-lock.js";
-import { startFeishuProjectApi } from "./feishu-project-api.js";
-import { startFeishuTaskApi } from "./feishu-task-api.js";
-import { startFeishuBitableApi } from "./feishu-bitable-api.js";
+import { startFeishuProjectApi } from "./api/feishu-project.js";
+import { startFeishuTaskApi } from "./api/feishu-task.js";
+import { startFeishuBitableApi } from "./api/feishu-bitable.js";
 
 export type MonitorFeishuOpts = {
   config?: ClawdbotConfig;
