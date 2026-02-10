@@ -81,7 +81,7 @@ async function handleRequest(req: http.IncomingMessage, res: http.ServerResponse
           due: body.due as { timestamp?: string; is_all_day?: boolean } | undefined,
           members: body.members as Array<{ id?: string; type?: string; role?: string }> | undefined,
           origin: {
-            platform_i18n_name: JSON.stringify({ zh_cn: '王总', en_us: 'Wang' }),
+            platform_i18n_name: { zh_cn: '王总', en_us: 'Wang' },
           },
           extra: body.extra as string | undefined,
           tasklist_guid: body.tasklist_guid as string | undefined,
@@ -173,6 +173,28 @@ async function handleRequest(req: http.IncomingMessage, res: http.ServerResponse
           return;
         }
         jsonResponse(res, { success: true });
+        return;
+      }
+
+      // POST /task/:task_guid/members - 添加成员
+      if (method === 'POST' && subPath === '/members') {
+        const body = await parseBody(req);
+        if (!body.members || !Array.isArray(body.members)) {
+          errorResponse(res, 'Missing "members" array in request body');
+          return;
+        }
+
+        const result = await v2.task.addMembers({
+          path: { task_guid: taskGuid },
+          data: { members: body.members },
+          params: { user_id_type: 'open_id' },
+        });
+
+        if (result.code !== 0) {
+          errorResponse(res, result.msg || 'Failed to add members', 400);
+          return;
+        }
+        jsonResponse(res, result.data?.task);
         return;
       }
 
