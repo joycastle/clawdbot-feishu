@@ -57,7 +57,7 @@ async function getHistoryMessages(
   token: string,
   chatId: string,
   count: number
-): Promise<Array<{ time: string; sender: string; type: string; content: string }>> {
+): Promise<Array<{ messageId: string; time: string; sender: string; type: string; content: string }>> {
   const url = new URL("https://open.feishu.cn/open-apis/im/v1/messages");
   url.searchParams.set("container_id_type", "chat");
   url.searchParams.set("container_id", chatId);
@@ -72,8 +72,9 @@ async function getHistoryMessages(
     throw new Error(`Failed to get history: ${data.msg || data.code}`);
   }
 
-  const messages: Array<{ time: string; sender: string; type: string; content: string }> = [];
+  const messages: Array<{ messageId: string; time: string; sender: string; type: string; content: string }> = [];
   for (const item of data.data?.items || []) {
+    const messageId = item.message_id || "";
     const time = new Date(parseInt(item.create_time)).toISOString().replace("T", " ").slice(0, 19);
     const sender = item.sender?.id || "unknown";
     const type = item.msg_type;
@@ -134,7 +135,7 @@ async function getHistoryMessages(
       content = "[消息已撤回]";
     }
 
-    messages.push({ time, sender, type, content });
+    messages.push({ messageId, time, sender, type, content });
   }
 
   // 反转顺序，让旧消息在前
@@ -185,7 +186,7 @@ async function main() {
   console.log(`\n=== 会话历史 (最近 ${messages.length} 条) ===\n`);
   for (const msg of messages) {
     const senderShort = msg.sender.slice(-8);
-    console.log(`[${msg.time}] ${senderShort}: ${msg.content}`);
+    console.log(`[${msg.time}] ${senderShort} [${msg.messageId}]: ${msg.content}`);
   }
 }
 
