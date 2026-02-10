@@ -188,6 +188,42 @@ async function getMerges(spreadsheetToken: string, sheetId: string): Promise<Mer
   }));
 }
 
+/** 搜索单元格内容 */
+async function findInSheet(
+  spreadsheetToken: string,
+  sheetId: string,
+  searchText: string,
+  range?: string, // e.g., "B1:B200"，如果不传则搜索整个 sheet
+): Promise<{ matchedCells: string[]; rowsCount: number }> {
+  if (!client) throw new Error('Client not initialized');
+
+  // range 必须带 sheet_id 前缀
+  const fullRange = range ? `${sheetId}!${range}` : `${sheetId}`;
+
+  const res = await (client as any).request({
+    method: 'POST',
+    url: `/open-apis/sheets/v3/spreadsheets/${spreadsheetToken}/sheets/${sheetId}/find`,
+    data: {
+      find_condition: {
+        range: fullRange,
+        match_case: false,
+        match_entire_cell: false,
+        search_by_regex: false,
+      },
+      find: searchText,
+    },
+  }) as { code: number; msg?: string; data?: { find_result?: { matched_cells?: string[]; rows_count?: number } } };
+
+  if (res.code !== 0) {
+    throw new Error(`Find failed: ${res.msg}`);
+  }
+
+  return {
+    matchedCells: res.data?.find_result?.matched_cells ?? [],
+    rowsCount: res.data?.find_result?.rows_count ?? 0,
+  };
+}
+
 /** 读取指定范围的数据 */
 async function readRange(
   spreadsheetToken: string,
@@ -436,6 +472,24 @@ async function handleRequest(req: http.IncomingMessage, res: http.ServerResponse
         colCount: values[0]?.length ?? 0,
         values,
       });
+      return;
+    }
+
+    // ==================== 搜索 ====================
+
+    if (path === '/find' && req.method === 'GET') {
+      const token = query.token as string;
+      const sheetId = query.sheetId as string;
+      const text = query.text as string;
+      const range = query.range as string; // 可选
+
+      if (!token || !sheetId || !text) {
+        errorResponse(res, 'Missing token, sheetId, or text parameter');
+        return;
+      }
+
+      const result = await findInSheet(token, sheetId, text, range);
+      jsonResponse(res, result);
       return;
     }
 
