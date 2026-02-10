@@ -71,17 +71,28 @@ async function getWikiNodes(
   return response.data?.items || [];
 }
 
-/** 获取单个节点信息 */
-async function getWikiNode(client: lark.Client, token: string): Promise<any> {
-  const response = await client.wiki.spaceNode.getNode({
-    params: { token },
-  }) as any;
+/** 获取单个节点信息（通过 HTTP 直接调用，因为 SDK 没有这个方法） */
+async function getWikiNode(cfg: FeishuConfig, token: string): Promise<any> {
+  // 获取 tenant_access_token
+  const tokenResp = await fetch("https://open.feishu.cn/open-apis/auth/v3/tenant_access_token/internal", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ app_id: cfg.appId, app_secret: cfg.appSecret }),
+  });
+  const tokenData = await tokenResp.json() as any;
+  const accessToken = tokenData.tenant_access_token;
   
-  if (response.code !== 0) {
-    throw new Error(`Failed to get wiki node: ${response.msg}`);
+  // 获取 wiki 节点信息
+  const nodeResp = await fetch(`https://open.feishu.cn/open-apis/wiki/v2/spaces/get_node?token=${token}`, {
+    headers: { Authorization: `Bearer ${accessToken}` },
+  });
+  const nodeData = await nodeResp.json() as any;
+  
+  if (nodeData.code !== 0) {
+    throw new Error(`Failed to get wiki node: ${nodeData.msg}`);
   }
   
-  return response.data?.node;
+  return nodeData.data?.node;
 }
 
 // ─── Docx API ─────────────────────────────────────────────────────────────────
@@ -159,7 +170,8 @@ function errorResponse(res: http.ServerResponse, message: string, status = 500) 
 async function handleRequest(
   req: http.IncomingMessage,
   res: http.ServerResponse,
-  client: lark.Client
+  client: lark.Client,
+  cfg: FeishuConfig
 ) {
   const url = new URL(req.url || "/", `http://${req.headers.host}`);
   const path = url.pathname;
@@ -209,7 +221,7 @@ async function handleRequest(
       if (!token) {
         return errorResponse(res, "token parameter required", 400);
       }
-      const node = await getWikiNode(client, token);
+      const node = await getWikiNode(cfg, token);
       return jsonResponse(res, { node });
     }
 
@@ -240,8 +252,40 @@ async function handleRequest(
       
       const parsed = parseFeishuUrl(docUrl);
       
-      if (parsed.type === "docx" || parsed.type === "wiki") {
-        // Wiki 节点的内容也是 docx 格式，用相同的 API
+      // Wiki 需要先获取节点信息，找到真正的文档类型
+      if (parsed.type === "wiki") {
+        const node = await getWikiNode(cfg, parsed.token);
+        const objType = node.obj_type; // docx, sheet, bitable, etc.
+        const objToken = node.obj_token;
+        
+        if (objType === "docx" || objType === "doc") {
+          const content = await getDocxRawContent(client, objToken);
+          return jsonResponse(res, { 
+            type: "wiki", 
+            wikiToken: parsed.token,
+            objType,
+            objToken,
+            title: node.title,
+            content 
+          });
+        }
+        
+        // 其他类型返回节点信息和提示
+        return jsonResponse(res, { 
+          type: "wiki",
+          wikiToken: parsed.token,
+          objType,
+          objToken,
+          title: node.title,
+          hint: objType === "sheet" 
+            ? "Use sheets-api (port 18796) with objToken" 
+            : objType === "bitable"
+            ? "Use bitable-api (port 18795) with objToken"
+            : `Object type: ${objType}`
+        });
+      }
+      
+      if (parsed.type === "docx") {
         const content = await getDocxRawContent(client, parsed.token);
         return jsonResponse(res, { type: parsed.type, token: parsed.token, content });
       }
@@ -282,7 +326,7 @@ export function startDocsApi(cfg: FeishuConfig | undefined, log?: (...args: unkn
   const client = createClient(cfg);
 
   server = http.createServer((req, res) => {
-    handleRequest(req, res, client).catch((err) => {
+    handleRequest(req, res, client, cfg).catch((err) => {
       console.error("[docs-api] Unhandled error:", err);
       errorResponse(res, "Internal server error");
     });
