@@ -15,6 +15,7 @@ import { analyzeVideo, resolveVideoProvider } from "./features/video-analyze.js"
 import { sendCardFeishu, updateCardFeishu } from "./api/send.js";
 import { formatFileSize } from "./features/cost-estimator.js";
 import { isDevLockEnabled, isFeishuAdmin, markFeishuUserActive, startInFlightJob, endInFlightJob } from "./features/dev-lock.js";
+import { handleMemberAdded, type MemberAddedEvent } from "./features/welcome.js";
 import { startFeishuProjectApi } from "./services/project-api.js";
 import { startFeishuTaskApi } from "./services/task-api.js";
 import { startFeishuBitableApi } from "./services/bitable-api.js";
@@ -188,6 +189,17 @@ async function monitorWebSocket(params: {
       } catch (err) {
         error(`feishu: error handling bot removed event: ${String(err)}`);
       }
+    },
+    "im.chat.member.user.added_v1": async (data) => {
+      // 新成员入群事件 - 欢迎新人
+      void (async () => {
+        try {
+          const event = data as unknown as MemberAddedEvent;
+          await handleMemberAdded({ cfg, event, botOpenId, log });
+        } catch (err) {
+          error(`feishu: error handling member added event: ${String(err)}`);
+        }
+      })();
     },
     "card.action.trigger": async (data) => {
       try {
