@@ -21,7 +21,7 @@ import { startFeishuTaskApi } from "./services/task-api.js";
 import { startFeishuBitableApi } from "./services/bitable-api.js";
 import { startSheetsApi } from "./services/sheets-api.js";
 import { startCronApi } from "./services/cron-api.js";
-import { startDocsApi } from "./services/docs-api.js";
+import { startDocsRouter } from "./services/docs-router.js";
 
 export type MonitorFeishuOpts = {
   config?: ClawdbotConfig;
@@ -72,8 +72,8 @@ export async function monitorFeishuProvider(opts: MonitorFeishuOpts = {}): Promi
   // 启动飞书定时任务 HTTP API (当前已禁用)
   startCronApi(log);
 
-  // 启动飞书云文档 HTTP API (Wiki + Docx)
-  startDocsApi(feishuCfg, log);
+  // 启动飞书文档统一路由 (Wiki → docx/sheet/bitable + 独立文档)
+  startDocsRouter(feishuCfg, log);
 
   if (feishuCfg) {
     botOpenId = await fetchBotOpenId(feishuCfg);

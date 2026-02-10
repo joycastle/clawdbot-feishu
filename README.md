@@ -98,11 +98,38 @@ The Feishu plugin exposes several HTTP APIs on localhost for the AI Agent to per
 
 | Service | Port | Description |
 |---------|------|-------------|
-| **Cron API** | `18797` | Schedule tasks (delayed, absolute time, periodic). |
-| **Sheets API** | `18792` | Read/write Feishu Sheets (supports merged cells, search). |
-| **Project API**| `18793` | Manage Feishu Projects. |
+| **Docs API** | `18798` | **Unified document reader** - read any Feishu doc with one endpoint. |
+| **Sheets API** | `18796` | Read/write Feishu Spreadsheets. |
+| **Bitable API**| `18795` | Read/write Feishu Bitables (multi-dimensional tables). |
+| **Project API**| `18793` | Manage Feishu Projects (work items, issues). |
 | **Task API**   | `18794` | Manage Feishu Tasks. |
-| **Bitable API**| `18795` | Manage Feishu Bitables. |
+| **Cron API** | `18797` | Schedule tasks (delayed, absolute time, periodic). |
+
+### Docs API - Unified Document Reader
+
+The Docs API provides a single endpoint to read any type of Feishu document.
+
+```bash
+# Read any Feishu document URL
+curl "http://127.0.0.1:18798/read?url=<feishu_document_url>"
+```
+
+**Supported URL formats:**
+- Wiki: `https://xxx.feishu.cn/wiki/xxxtoken`
+- Docx: `https://xxx.feishu.cn/docx/xxxtoken`
+- Sheet: `https://xxx.feishu.cn/sheets/xxxtoken`
+- Bitable: `https://xxx.feishu.cn/base/xxxtoken?table=tblxxx`
+
+**How it works:**
+1. Parses the URL to detect document type
+2. For Wiki URLs, resolves the actual content type (docx/sheet/bitable)
+3. Automatically calls the appropriate API (Sheets API or Bitable API)
+4. Returns unified response with content
+
+**Response examples:**
+- Docx: `{ type: "docx", content: "..." }`
+- Sheet: `{ type: "sheet", sheets: [...], data: [...] }`
+- Bitable: `{ type: "bitable", tables: [...], data: [...] }`
 
 ### Cron API Usage
 
