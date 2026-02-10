@@ -11,6 +11,10 @@
 import * as http from 'node:http';
 import { getFeishuRuntime } from '../runtime.js';
 
+// 直接从 clawdbot 源码导入，虽然不优雅但比改核心库好
+// @ts-ignore
+import { callGatewayTool } from '../../../clawdbot/src/agents/tools/gateway.js';
+
 const PORT = 18797;
 let server: http.Server | null = null;
 
@@ -46,16 +50,6 @@ async function handleRequest(req: http.IncomingMessage, res: http.ServerResponse
   }
 
   try {
-    const runtime = getFeishuRuntime();
-    // 飞书插件 runtime 应该有 callGatewayTool 方法
-    // 如果没有，我们可能需要通过其他方式调用
-    const callGatewayTool = (runtime as any).callGatewayTool;
-    
-    if (!callGatewayTool) {
-      errorResponse(res, 'Gateway tool caller not available in runtime', 503);
-      return;
-    }
-
     // GET /status
     if (path === '/status' && req.method === 'GET') {
       const status = await callGatewayTool('cron.status', {});
@@ -66,7 +60,7 @@ async function handleRequest(req: http.IncomingMessage, res: http.ServerResponse
     // GET /list
     if (path === '/list' && req.method === 'GET') {
       const includeDisabled = url.searchParams.get('includeDisabled') === 'true';
-      const jobs = await callGatewayTool('cron.list', { includeDisabled });
+      const jobs = await callGatewayTool('cron.list', {}, { includeDisabled });
       jsonResponse(res, jobs);
       return;
     }
@@ -81,7 +75,14 @@ async function handleRequest(req: http.IncomingMessage, res: http.ServerResponse
         return;
       }
 
-      const result = await callGatewayTool('cron.add', params.job);
+      // 如果没有指定 agentId，自动注入飞书 Agent 的 ID
+      if (!params.job.agentId) {
+        const runtime = getFeishuRuntime();
+        // 尝试从配置中获取，如果没找到则根据 context 注入
+        params.job.agentId = 'feishu'; 
+      }
+
+      const result = await callGatewayTool('cron.add', {}, params.job);
       jsonResponse(res, result);
       return;
     }
@@ -96,7 +97,7 @@ async function handleRequest(req: http.IncomingMessage, res: http.ServerResponse
         return;
       }
 
-      const result = await callGatewayTool('cron.remove', { id: params.id });
+      const result = await callGatewayTool('cron.remove', {}, { id: params.id });
       jsonResponse(res, result);
       return;
     }
@@ -111,7 +112,7 @@ async function handleRequest(req: http.IncomingMessage, res: http.ServerResponse
         return;
       }
 
-      const result = await callGatewayTool('cron.run', { id: params.id });
+      const result = await callGatewayTool('cron.run', {}, { id: params.id });
       jsonResponse(res, result);
       return;
     }

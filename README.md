@@ -92,6 +92,29 @@ channels:
 - User and group directory lookup
 - **Card render mode**: Optional markdown rendering with syntax highlighting
 
+## Services
+
+The Feishu plugin exposes several HTTP APIs on localhost for the AI Agent to perform advanced actions.
+
+| Service | Port | Description |
+|---------|------|-------------|
+| **Cron API** | `18797` | Schedule tasks (delayed, absolute time, periodic). |
+| **Sheets API** | `18792` | Read/write Feishu Sheets (supports merged cells, search). |
+| **Project API**| `18793` | Manage Feishu Projects. |
+| **Task API**   | `18794` | Manage Feishu Tasks. |
+| **Bitable API**| `18795` | Manage Feishu Bitables. |
+
+### Cron API Usage
+
+Claude can use the Cron API to set reminders or schedule tasks.
+
+- **Add Task**: `POST /add` with body `{ "job": { ... } }`
+  - Supports `schedule: { kind: "at", at: "2026-02-10 15:00:00" }` for absolute time.
+  - Supports `schedule: { kind: "every", everyMs: 60000 }` for periodic tasks.
+- **List Tasks**: `GET /list`
+- **Remove Task**: `POST /remove` with body `{ "id": "job_id" }`
+- **Run Immediately**: `POST /run` with body `{ "id": "job_id" }`
+
 ## License
 
 MIT
