@@ -9,6 +9,8 @@
 | `project-api.ts` | 18793 | 飞书项目 API（工作项、缺陷、需求、子任务等） |
 | `task-api.ts` | 18794 | 飞书任务 API（待办任务） |
 | `bitable-api.ts` | 18795 | 多维表格 API（Bitable 增删改查） |
+| `sheets-api.ts` | 18796 | 飞书电子表格 API（读取、合并单元格、日期转换） |
+| `cron-api.ts` | 18797 | 定时任务 API（添加/列表/删除定时提醒、延时任务） |
 
 ## 使用方法
 
@@ -31,6 +33,16 @@ curl http://127.0.0.1:18794/status
 
 # 多维表格 - 检查状态
 curl http://127.0.0.1:18795/status
+
+# 定时任务 - 添加延时提醒
+curl -X POST http://127.0.0.1:18797/add \
+  -H "Content-Type: application/json" \
+  -d '{
+    "job": {
+      "schedule": "in 10 seconds",
+      "text": "时间到了！记得去开会"
+    }
+  }'
 ```
 
 ## 详细文档

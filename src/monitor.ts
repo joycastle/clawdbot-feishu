@@ -19,6 +19,7 @@ import { startFeishuProjectApi } from "./services/project-api.js";
 import { startFeishuTaskApi } from "./services/task-api.js";
 import { startFeishuBitableApi } from "./services/bitable-api.js";
 import { startSheetsApi } from "./services/sheets-api.js";
+import { startCronApi } from "./services/cron-api.js";
 
 export type MonitorFeishuOpts = {
   config?: ClawdbotConfig;
@@ -65,6 +66,9 @@ export async function monitorFeishuProvider(opts: MonitorFeishuOpts = {}): Promi
 
   // 启动飞书电子表格 HTTP API
   startSheetsApi(feishuCfg);
+
+  // 启动飞书定时任务 HTTP API
+  startCronApi(log);
 
   if (feishuCfg) {
     botOpenId = await fetchBotOpenId(feishuCfg);

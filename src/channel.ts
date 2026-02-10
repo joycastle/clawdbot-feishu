@@ -64,6 +64,10 @@ export const feishuPlugin: ChannelPlugin<ResolvedFeishuAccount> = {
       `  - \`curl -X POST http://127.0.0.1:18791/workitem -H "Content-Type: application/json" -d '{"typeKey":"issue","name":"标题"}'\` - 创建工作项`,
       `  - \`curl -X POST http://127.0.0.1:18791/workitem/123/comment -H "Content-Type: application/json" -d '{"content":"评论内容"}'\` - 添加评论`,
       `  - 用户说"查一下缺陷"、"看看有什么任务"、"帮我建个bug"等，识别意图后调用对应 API`,
+      `- **定时提醒/延时任务 (localhost:18797)**: 当用户要求在某个时间提醒、或者几分钟/几小时后执行任务时，用 curl 调用：`,
+      `  - \`curl -X POST http://127.0.0.1:18797/add -H "Content-Type: application/json" -d '{"job":{"schedule":"in 5 minutes","text":"提醒内容"}}'\` - 添加延时任务（支持 "in 5 minutes", "at 14:00" 等）`,
+      `  - \`curl http://127.0.0.1:18797/list\` - 查看当前所有定时任务`,
+      `  - \`curl -X POST http://127.0.0.1:18797/remove -H "Content-Type: application/json" -d '{"id":"job_id"}'\` - 删除任务`,
     ],
   },
   actions: {
