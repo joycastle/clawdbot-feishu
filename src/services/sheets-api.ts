@@ -213,9 +213,17 @@ async function findInSheet(
     : `${sheetId}!A1:Z1000`; // 默认搜索范围扩大到 1000 行
 
   try {
-    const res = await (client as any).sheets.v3.spreadsheetSheet.find({
-      path: { spreadsheet_token: spreadsheetToken, sheet_id: sheetId },
-      data: {
+    // 用 HTTP 直接调用飞书 API（SDK 的 find 方法有 bug）
+    const token = await (client as any).tokenManager.getTenantAccessToken();
+    const apiUrl = `https://open.feishu.cn/open-apis/sheets/v3/spreadsheets/${spreadsheetToken}/sheets/${sheetId}/find`;
+    
+    const httpRes = await fetch(apiUrl, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
         find_condition: {
           range: fullRange,
           match_case: matchCase,
@@ -223,8 +231,10 @@ async function findInSheet(
           search_by_regex: useRegex,
         },
         find: searchText,
-      },
+      }),
     });
+
+    const res = await httpRes.json() as { code: number; msg: string; data?: { find_result?: { matched_cells?: string[]; rows?: number[]; rows_count?: number } } };
 
     if (res.code !== 0) {
       throw new Error(`Find failed: ${res.msg}`);
