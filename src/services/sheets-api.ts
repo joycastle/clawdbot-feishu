@@ -188,27 +188,39 @@ async function getMerges(spreadsheetToken: string, sheetId: string): Promise<Mer
   }));
 }
 
+interface FindOptions {
+  range?: string;
+  matchCase?: boolean;
+  matchEntireCell?: boolean;
+  useRegex?: boolean;
+  includeData?: boolean; // 是否包含匹配行的数据
+}
+
 /** 搜索单元格内容 */
 async function findInSheet(
   spreadsheetToken: string,
   sheetId: string,
   searchText: string,
-  range?: string, // e.g., "B1:B200"，如果不传则搜索整个 sheet
-): Promise<{ matchedCells: string[]; rowsCount: number }> {
+  options: FindOptions = {},
+): Promise<{ matchedCells: string[]; rows: number[]; rowsCount: number; data?: unknown[][] }> {
   if (!client) throw new Error('Client not initialized');
+
+  const { range, matchCase = false, matchEntireCell = false, useRegex = false, includeData = false } = options;
 
   // range 如果已经带了 sheet_id 前缀就直接用，否则加上
   const fullRange = range
     ? (range.includes('!') ? range : `${sheetId}!${range}`)
-    : sheetId;
+    : `${sheetId}!A1:Z1000`; // 默认搜索范围扩大到 1000 行
 
-  // 直接用 SDK 的 sheets.v3.spreadsheetSheet.find
   try {
     const res = await (client as any).sheets.v3.spreadsheetSheet.find({
       path: { spreadsheet_token: spreadsheetToken, sheet_id: sheetId },
       data: {
         find_condition: {
           range: fullRange,
+          match_case: matchCase,
+          match_entire_cell: matchEntireCell,
+          search_by_regex: useRegex,
         },
         find: searchText,
       },
@@ -218,14 +230,114 @@ async function findInSheet(
       throw new Error(`Find failed: ${res.msg}`);
     }
 
+    const findResult = res.data?.find_result;
+    const rows: number[] = findResult?.rows ?? [];
+    const matchedCells: string[] = findResult?.matched_cells ?? [];
+
+    let data: unknown[][] | undefined;
+    if (includeData && rows.length > 0) {
+      // 获取去重后的行索引，并读取这些行的数据
+      const uniqueRows = Array.from(new Set(rows)).sort((a, b) => a - b);
+      // 为简单起见，我们读取包含所有匹配行的最小范围
+      const minRow = uniqueRows[0];
+      const maxRow = uniqueRows[uniqueRows.length - 1];
+      const dataRange = `A${minRow + 1}:Z${maxRow + 1}`;
+      const allValues = await readRange(spreadsheetToken, sheetId, dataRange);
+      
+      // 只保留匹配的行
+      data = uniqueRows.map(r => allValues[r - minRow] || []);
+    }
+
     return {
-      matchedCells: res.data?.find_result?.matched_cells ?? [],
-      rowsCount: res.data?.find_result?.rows_count ?? 0,
+      matchedCells,
+      rows,
+      rowsCount: findResult?.rows_count ?? 0,
+      data,
     };
   } catch (err) {
     console.error('[sheets-api] findInSheet error:', err);
     throw err;
   }
+}
+
+/** 解析 A1 范围字符串为数字索引 */
+function parseRange(range: string): { startRow: number; endRow: number; startCol: number; endCol: number } {
+  const [start, end] = range.split(':');
+  
+  const parseCell = (cell: string) => {
+    const colMatch = cell.match(/[A-Z]+/);
+    const rowMatch = cell.match(/[0-9]+/);
+    
+    let col = 0;
+    if (colMatch) {
+      const colStr = colMatch[0];
+      for (let i = 0; i < colStr.length; i++) {
+        col = col * 26 + (colStr.charCodeAt(i) - 64);
+      }
+      col -= 1; // 0-indexed
+    }
+    
+    const row = rowMatch ? parseInt(rowMatch[0]) - 1 : 0; // 0-indexed
+    return { row, col };
+  };
+
+  const startIdx = parseCell(start);
+  const endIdx = end ? parseCell(end) : startIdx;
+  
+  return {
+    startRow: startIdx.row,
+    endRow: endIdx.row,
+    startCol: startIdx.col,
+    endCol: endIdx.col,
+  };
+}
+
+/** 填充合并单元格的值 */
+async function fillMergedValues(
+  spreadsheetToken: string,
+  sheetId: string,
+  values: unknown[][],
+  rangeStr: string,
+  merges: MergeInfo[],
+): Promise<unknown[][]> {
+  const { startRow: rangeStartRow, startCol: rangeStartCol } = parseRange(rangeStr);
+  const result = values.map(row => [...row]);
+
+  for (const merge of merges) {
+    // 检查合并单元格是否与当前读取范围有交集
+    const intersectStartRow = Math.max(merge.startRow, rangeStartRow);
+    const intersectEndRow = Math.min(merge.endRow, rangeStartRow + values.length - 1);
+    const intersectStartCol = Math.max(merge.startCol, rangeStartCol);
+    const intersectEndCol = Math.min(merge.endCol, rangeStartCol + (values[0]?.length || 0) - 1);
+
+    if (intersectStartRow <= intersectEndRow && intersectStartCol <= intersectEndCol) {
+      // 找到合并单元格的源值（左上角）
+      let sourceValue: unknown = null;
+      if (merge.startRow >= rangeStartRow && merge.startRow < rangeStartRow + values.length &&
+          merge.startCol >= rangeStartCol && merge.startCol < rangeStartCol + (values[0]?.length || 0)) {
+        sourceValue = values[merge.startRow - rangeStartRow][merge.startCol - rangeStartCol];
+      } else {
+        // 源值在当前范围外，尝试读取它
+        const cell = await readCell(spreadsheetToken, sheetId, merge.startRow, merge.startCol, merges);
+        sourceValue = cell.value;
+      }
+
+      // 如果源值不为空，填充交集区域
+      if (sourceValue !== null && sourceValue !== undefined && sourceValue !== '') {
+        for (let r = intersectStartRow; r <= intersectEndRow; r++) {
+          for (let c = intersectStartCol; c <= intersectEndCol; c++) {
+            const relativeRow = r - rangeStartRow;
+            const relativeCol = c - rangeStartCol;
+            if (result[relativeRow][relativeCol] === null || result[relativeRow][relativeCol] === '') {
+              result[relativeRow][relativeCol] = sourceValue;
+            }
+          }
+        }
+      }
+    }
+  }
+
+  return result;
 }
 
 /** 读取指定范围的数据 */
@@ -296,12 +408,16 @@ async function findRowByValue(
   sheetId: string,
   searchCol: number, // 搜索哪一列
   searchValue: string,
-  startRow = 0,
-  endRow = 500,
+  options: { startRow?: number; endRow?: number; merges?: MergeInfo[] } = {},
 ): Promise<number | null> {
+  const { startRow = 0, endRow = 500, merges } = options;
   const colLetter = String.fromCharCode(65 + searchCol);
   const range = `${colLetter}${startRow + 1}:${colLetter}${endRow + 1}`;
-  const values = await readRange(spreadsheetToken, sheetId, range);
+  let values = await readRange(spreadsheetToken, sheetId, range);
+
+  if (merges) {
+    values = await fillMergedValues(spreadsheetToken, sheetId, values, range, merges);
+  }
 
   for (let i = 0; i < values.length; i++) {
     const cellValue = values[i]?.[0];
@@ -317,14 +433,17 @@ async function findColByDate(
   spreadsheetToken: string,
   sheetId: string,
   dateSerial: number,
-  headerRow = 0,
-  startCol = 0,
-  endCol = 50,
+  options: { headerRow?: number; startCol?: number; endCol?: number; merges?: MergeInfo[] } = {},
 ): Promise<number | null> {
+  const { headerRow = 0, startCol = 0, endCol = 50, merges } = options;
   const startLetter = String.fromCharCode(65 + startCol);
   const endLetter = String.fromCharCode(65 + Math.min(endCol, 25)); // 最多到 Z
   const range = `${startLetter}${headerRow + 1}:${endLetter}${headerRow + 1}`;
-  const values = await readRange(spreadsheetToken, sheetId, range);
+  let values = await readRange(spreadsheetToken, sheetId, range);
+
+  if (merges) {
+    values = await fillMergedValues(spreadsheetToken, sheetId, values, range, merges);
+  }
 
   if (!values[0]) return null;
 
@@ -456,7 +575,14 @@ async function handleRequest(req: http.IncomingMessage, res: http.ServerResponse
         return;
       }
 
-      const values = await readRange(token, sheetId, range);
+      let values = await readRange(token, sheetId, range);
+
+      // 如果请求了处理合并单元格
+      const handleMerges = query.handleMerges === 'true';
+      if (handleMerges) {
+        const merges = await getMerges(token, sheetId);
+        values = await fillMergedValues(token, sheetId, values, range, merges);
+      }
 
       // 如果请求了日期转换
       const convertDates = query.convertDates === 'true';
@@ -485,14 +611,21 @@ async function handleRequest(req: http.IncomingMessage, res: http.ServerResponse
       const token = query.token as string;
       const sheetId = query.sheetId as string;
       const text = query.text as string;
-      const range = query.range as string; // 可选
+      
+      const options: FindOptions = {
+        range: query.range as string,
+        matchCase: query.matchCase === 'true',
+        matchEntireCell: query.matchEntireCell === 'true',
+        useRegex: query.useRegex === 'true',
+        includeData: query.includeData === 'true',
+      };
 
       if (!token || !sheetId || !text) {
         errorResponse(res, 'Missing token, sheetId, or text parameter');
         return;
       }
 
-      const result = await findInSheet(token, sheetId, text, range);
+      const result = await findInSheet(token, sheetId, text, options);
       jsonResponse(res, result);
       return;
     }
@@ -537,8 +670,11 @@ async function handleRequest(req: http.IncomingMessage, res: http.ServerResponse
       const targetDate = date || new Date().toISOString().split('T')[0];
       const targetSerial = dateToExcelSerial(targetDate);
 
+      // 0. 获取合并单元格信息
+      const merges = await getMerges(token, sheetId);
+
       // 1. 找人名所在的行
-      const nameRow = await findRowByValue(token, sheetId, nameCol, name);
+      const nameRow = await findRowByValue(token, sheetId, nameCol, name, { merges });
       if (nameRow === null) {
         jsonResponse(res, {
           found: false,
@@ -548,7 +684,7 @@ async function handleRequest(req: http.IncomingMessage, res: http.ServerResponse
       }
 
       // 2. 找日期所在的列
-      const dateCol = await findColByDate(token, sheetId, targetSerial, dateRow);
+      const dateCol = await findColByDate(token, sheetId, targetSerial, { headerRow: dateRow, merges });
       if (dateCol === null) {
         jsonResponse(res, {
           found: false,
@@ -557,14 +693,11 @@ async function handleRequest(req: http.IncomingMessage, res: http.ServerResponse
         return;
       }
 
-      // 3. 获取合并单元格信息
-      const merges = await getMerges(token, sheetId);
-
-      // 4. 读取交叉点的值（考虑合并单元格）
+      // 3. 读取交叉点的值（考虑合并单元格）
       // 同时读取人名下面几行的内容（因为一个人可能有多行任务）
       const results: { row: number; value: unknown; fromMerge: boolean; mergeRange?: string }[] = [];
 
-      // 往下读最多 5 行，直到遇到另一个人名
+      // 往下读最多 10 行，直到遇到另一个人名
       for (let r = nameRow; r < nameRow + 10; r++) {
         // 检查这一行 B 列是否有新的人名（跳过第一行）
         if (r > nameRow) {
