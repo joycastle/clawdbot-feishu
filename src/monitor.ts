@@ -18,6 +18,7 @@ import { isDevLockEnabled, isFeishuAdmin, markFeishuUserActive, startInFlightJob
 import { startFeishuProjectApi } from "./services/project-api.js";
 import { startFeishuTaskApi } from "./services/task-api.js";
 import { startFeishuBitableApi } from "./services/bitable-api.js";
+import { startSheetsApi } from "./services/sheets-api.js";
 
 export type MonitorFeishuOpts = {
   config?: ClawdbotConfig;
@@ -61,6 +62,9 @@ export async function monitorFeishuProvider(opts: MonitorFeishuOpts = {}): Promi
 
   // 启动飞书多维表格 HTTP API
   startFeishuBitableApi(feishuCfg, log);
+
+  // 启动飞书电子表格 HTTP API
+  startSheetsApi(feishuCfg);
 
   if (feishuCfg) {
     botOpenId = await fetchBotOpenId(feishuCfg);
