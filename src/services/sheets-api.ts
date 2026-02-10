@@ -197,8 +197,10 @@ async function findInSheet(
 ): Promise<{ matchedCells: string[]; rowsCount: number }> {
   if (!client) throw new Error('Client not initialized');
 
-  // range 必须带 sheet_id 前缀
-  const fullRange = range ? `${sheetId}!${range}` : sheetId;
+  // range 如果已经带了 sheet_id 前缀就直接用，否则加上
+  const fullRange = range
+    ? (range.includes('!') ? range : `${sheetId}!${range}`)
+    : sheetId;
 
   // 直接用 SDK 的 sheets.v3.spreadsheetSheet.find
   try {
