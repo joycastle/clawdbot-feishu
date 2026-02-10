@@ -198,30 +198,32 @@ async function findInSheet(
   if (!client) throw new Error('Client not initialized');
 
   // range 必须带 sheet_id 前缀
-  const fullRange = range ? `${sheetId}!${range}` : `${sheetId}`;
+  const fullRange = range ? `${sheetId}!${range}` : sheetId;
 
-  // 使用 SDK 的 sheets.v3 API
-  const res = await (client as any).sheets.v3.spreadsheetSheet.find({
-    path: { spreadsheet_token: spreadsheetToken, sheet_id: sheetId },
-    data: {
-      find_condition: {
-        range: fullRange,
-        match_case: false,
-        match_entire_cell: false,
-        search_by_regex: false,
+  // 直接用 SDK 的 sheets.v3.spreadsheetSheet.find
+  try {
+    const res = await (client as any).sheets.v3.spreadsheetSheet.find({
+      path: { spreadsheet_token: spreadsheetToken, sheet_id: sheetId },
+      data: {
+        find_condition: {
+          range: fullRange,
+        },
+        find: searchText,
       },
-      find: searchText,
-    },
-  }) as { code: number; msg?: string; data?: { find_result?: { matched_cells?: string[]; rows_count?: number } } };
+    });
 
-  if (res.code !== 0) {
-    throw new Error(`Find failed: ${res.msg}`);
+    if (res.code !== 0) {
+      throw new Error(`Find failed: ${res.msg}`);
+    }
+
+    return {
+      matchedCells: res.data?.find_result?.matched_cells ?? [],
+      rowsCount: res.data?.find_result?.rows_count ?? 0,
+    };
+  } catch (err) {
+    console.error('[sheets-api] findInSheet error:', err);
+    throw err;
   }
-
-  return {
-    matchedCells: res.data?.find_result?.matched_cells ?? [],
-    rowsCount: res.data?.find_result?.rows_count ?? 0,
-  };
 }
 
 /** 读取指定范围的数据 */
