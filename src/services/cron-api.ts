@@ -2,16 +2,22 @@
  * 飞书定时任务 HTTP API
  * 监听 localhost:18797，供 Agent 调用
  * 
- * 注意：由于跨仓库源码引用可能导致环境依赖问题（路径、编译环境等），
- * 目前已将功能代码全部注释。待环境确定后可根据实际情况恢复。
+ * 功能：
+ * - 添加定时任务（延时任务、周期任务）
+ * - 查看任务状态
+ * - 删除任务
  */
 
-/*
 import * as http from 'node:http';
-import { getFeishuRuntime } from '../runtime.js';
+import * as path from 'node:path';
+import { fileURLToPath } from 'node:url';
+import { createRequire } from 'node:module';
 
-// @ts-ignore
-import { callGatewayTool } from '../../../clawdbot/src/agents/tools/gateway.js';
+// 从 node_modules 引用 clawdbot 的 gateway 工具
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const require = createRequire(import.meta.url);
+const gatewayPath = path.resolve(__dirname, '../../node_modules/clawdbot/dist/agents/tools/gateway.js');
+const { callGatewayTool } = require(gatewayPath);
 
 const PORT = 18797;
 let server: http.Server | null = null;
@@ -73,10 +79,9 @@ async function handleRequest(req: http.IncomingMessage, res: http.ServerResponse
         return;
       }
 
-      // 如果没有指定 agentId，自动注入飞书 Agent 的 ID
+      // 如果没有指定 agentId，自动注入
       if (!params.job.agentId) {
-        const runtime = getFeishuRuntime();
-        params.job.agentId = 'feishu'; 
+        params.job.agentId = 'main'; 
       }
 
       const result = await callGatewayTool('cron.add', {}, params.job);
@@ -124,12 +129,10 @@ async function handleRequest(req: http.IncomingMessage, res: http.ServerResponse
     }
   }
 }
-*/
 
 export async function startCronApi(log?: (msg: string) => void): Promise<void> {
   const logger = log ?? console.log;
-  logger('[cron-api] Service is currently disabled due to environment compatibility concerns.');
-  /*
+  
   if (server) {
     logger('[cron-api] Already running');
     return;
@@ -145,15 +148,12 @@ export async function startCronApi(log?: (msg: string) => void): Promise<void> {
   server.listen(PORT, '127.0.0.1', () => {
     logger(`[cron-api] Listening on http://127.0.0.1:${PORT}`);
   });
-  */
 }
 
 export async function stopCronApi(): Promise<void> {
-  /*
   if (server) {
     server.close();
     server = null;
     console.log('[cron-api] Stopped');
   }
-  */
 }
