@@ -200,9 +200,9 @@ async function findInSheet(
   // range 必须带 sheet_id 前缀
   const fullRange = range ? `${sheetId}!${range}` : `${sheetId}`;
 
-  const res = await (client as any).request({
-    method: 'POST',
-    url: `/open-apis/sheets/v3/spreadsheets/${spreadsheetToken}/sheets/${sheetId}/find`,
+  // 使用 SDK 的 sheets.v3 API
+  const res = await (client as any).sheets.v3.spreadsheetSheet.find({
+    path: { spreadsheet_token: spreadsheetToken, sheet_id: sheetId },
     data: {
       find_condition: {
         range: fullRange,
