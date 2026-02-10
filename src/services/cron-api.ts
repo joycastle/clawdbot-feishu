@@ -2,16 +2,14 @@
  * 飞书定时任务 HTTP API
  * 监听 localhost:18797，供 Agent 调用
  * 
- * 功能：
- * - 添加定时任务（延时任务、周期任务）
- * - 查看任务状态
- * - 删除任务
+ * 注意：由于跨仓库源码引用可能导致环境依赖问题（路径、编译环境等），
+ * 目前已将功能代码全部注释。待环境确定后可根据实际情况恢复。
  */
 
+/*
 import * as http from 'node:http';
 import { getFeishuRuntime } from '../runtime.js';
 
-// 直接从 clawdbot 源码导入，虽然不优雅但比改核心库好
 // @ts-ignore
 import { callGatewayTool } from '../../../clawdbot/src/agents/tools/gateway.js';
 
@@ -78,7 +76,6 @@ async function handleRequest(req: http.IncomingMessage, res: http.ServerResponse
       // 如果没有指定 agentId，自动注入飞书 Agent 的 ID
       if (!params.job.agentId) {
         const runtime = getFeishuRuntime();
-        // 尝试从配置中获取，如果没找到则根据 context 注入
         params.job.agentId = 'feishu'; 
       }
 
@@ -118,15 +115,21 @@ async function handleRequest(req: http.IncomingMessage, res: http.ServerResponse
     }
 
     errorResponse(res, `Not Found: ${path}`, 404);
-  } catch (err) {
-    console.error('[cron-api] Error:', err);
-    errorResponse(res, String(err), 500);
+  } catch (err: any) {
+    if (err?.message?.includes('connect ECONNREFUSED')) {
+      errorResponse(res, 'Gateway not running (ECONNREFUSED). Please make sure clawdbot is started.', 503);
+    } else {
+      console.error('[cron-api] Error:', err);
+      errorResponse(res, String(err), 500);
+    }
   }
 }
+*/
 
 export async function startCronApi(log?: (msg: string) => void): Promise<void> {
   const logger = log ?? console.log;
-
+  logger('[cron-api] Service is currently disabled due to environment compatibility concerns.');
+  /*
   if (server) {
     logger('[cron-api] Already running');
     return;
@@ -142,12 +145,15 @@ export async function startCronApi(log?: (msg: string) => void): Promise<void> {
   server.listen(PORT, '127.0.0.1', () => {
     logger(`[cron-api] Listening on http://127.0.0.1:${PORT}`);
   });
+  */
 }
 
 export async function stopCronApi(): Promise<void> {
+  /*
   if (server) {
     server.close();
     server = null;
     console.log('[cron-api] Stopped');
   }
+  */
 }

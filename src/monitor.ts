@@ -67,8 +67,8 @@ export async function monitorFeishuProvider(opts: MonitorFeishuOpts = {}): Promi
   // 启动飞书电子表格 HTTP API
   startSheetsApi(feishuCfg);
 
-  // 启动飞书定时任务 HTTP API
-  startCronApi(log);
+  // 启动飞书定时任务 HTTP API (当前已禁用)
+  // startCronApi(log);
 
   if (feishuCfg) {
     botOpenId = await fetchBotOpenId(feishuCfg);
