@@ -22,6 +22,7 @@ import { startFeishuBitableApi } from "./services/bitable-api.js";
 import { startSheetsApi } from "./services/sheets-api.js";
 import { startCronApi } from "./services/cron-api.js";
 import { startDocsRouter } from "./services/docs-router.js";
+import { startBroadcastApi } from "./services/broadcast-api.js";
 
 export type MonitorFeishuOpts = {
   config?: ClawdbotConfig;
@@ -74,6 +75,9 @@ export async function monitorFeishuProvider(opts: MonitorFeishuOpts = {}): Promi
 
   // 启动飞书文档统一路由 (Wiki → docx/sheet/bitable + 独立文档)
   startDocsRouter(feishuCfg, log);
+
+  // 启动 Session 广播服务
+  startBroadcastApi();
 
   if (feishuCfg) {
     botOpenId = await fetchBotOpenId(feishuCfg);

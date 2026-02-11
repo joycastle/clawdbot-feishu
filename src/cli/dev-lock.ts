@@ -52,12 +52,25 @@ if (cmd === 'status') {
   const snap = getDevLockSnapshot();
   console.log(JSON.stringify({ success: !snap.enabled }, null, 2));
 } else if (cmd === 'usage') {
-  const usage = getUsageSnapshot({ excludeAdmins: false });
-  const usageNoAdmin = getUsageSnapshot({ excludeAdmins: true });
-  console.log(JSON.stringify({
-    all: usage,
-    excludeAdmins: usageNoAdmin,
-  }, null, 2));
+  // 调用 broadcast-api 获取真实数据（因为状态在主进程内存里）
+  fetch('http://127.0.0.1:18799/usage')
+    .then(res => res.json())
+    .then(data => {
+      if (data.ok) {
+        console.log(JSON.stringify({
+          all: data.all,
+          excludeAdmins: data.excludeAdmins,
+          devLock: data.devLock,
+        }, null, 2));
+      } else {
+        console.error('Error:', data.error || 'Unknown error');
+        process.exit(1);
+      }
+    })
+    .catch(err => {
+      console.error('Failed to connect to broadcast-api (18799):', err.message);
+      process.exit(1);
+    });
 } else {
   console.error('Unknown command:', cmd);
   process.exit(1);

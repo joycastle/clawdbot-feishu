@@ -6,6 +6,7 @@
 
 | 文件 | 端口 | 说明 |
 |------|------|------|
+| `broadcast-api.ts` | 18799 | Session 广播服务 - 调用 sessions_send |
 | `docs-router.ts` | 18798 | **文档统一入口** - 一个接口读取所有飞书文档 |
 | `wiki.ts` | - | Wiki 知识库解析（被 docs-router 调用） |
 | `docx.ts` | - | Docx 文档读取（被 docs-router 调用） |
