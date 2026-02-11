@@ -6,20 +6,30 @@
  *   npx tsx src/cli/log-analyze.ts --pid 791542412 --time "2026-02-02 06:08:39 UTC"
  *   npx tsx src/cli/log-analyze.ts --pid 791542412 --time "2026-02-02 16:33:55 -07:00"
  *   npx tsx src/cli/log-analyze.ts --pid 791542412 --time "2026-02-02 16:33:55 -07:00" --download-only
+ *   npx tsx src/cli/log-analyze.ts --pid 791542412 --time "2026-02-02 06:08:39 UTC" --full
  * 
  * 参数:
  *   --pid          玩家 ID
  *   --time         反馈时间 (UTC 或带时区的本地时间)
  *   --env          环境 (production/test/develop, 默认 production)
  *   --download-only 只下载不分析
+ *   --full         完整分析模式：文件 > 10MB 时走 GCS + Gemini 完整分析
  */
 
 import { S3Client, ListObjectsV2Command, GetObjectCommand } from '@aws-sdk/client-s3';
+import { Storage } from '@google-cloud/storage';
+import { VertexAI } from '@google-cloud/vertexai';
 import { createWriteStream, existsSync, mkdirSync, rmSync, readdirSync, statSync, readFileSync } from 'fs';
 import { pipeline } from 'stream/promises';
 import { Readable } from 'stream';
 import { join, basename, dirname } from 'path';
 import { fileURLToPath } from 'url';
+
+// GCS + Vertex AI 配置
+const GCS_BUCKET = 'larkbot-storage';
+const GCS_SA_PATH = '/home/ubuntu/.clawdbot/credentials/google-vertex-sa.json';
+const VERTEX_PROJECT = 'larkbot-485707';
+const VERTEX_LOCATION = 'global';
 
 // 从配置文件加载 AWS 凭证
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -278,16 +288,75 @@ function findRelevantLogs(files: string[], feedbackTime: Date, tzStr: string): s
   return relevant.slice(0, 2).map(r => r.file);
 }
 
+// 上传文件到 GCS
+async function uploadToGCS(localPath: string): Promise<string> {
+  const storage = new Storage({
+    keyFilename: GCS_SA_PATH,
+    projectId: VERTEX_PROJECT,
+  });
+  const bucket = storage.bucket(GCS_BUCKET);
+  const filename = `logs/${Date.now()}_${basename(localPath)}`;
+  
+  await bucket.upload(localPath, { destination: filename });
+  return `gs://${GCS_BUCKET}/${filename}`;
+}
+
+// 用 Gemini 完整分析日志
+async function analyzeWithGemini(gcsUri: string, playerInfo: any, feedbackTime: string): Promise<string> {
+  const vertexAI = new VertexAI({
+    project: VERTEX_PROJECT,
+    location: VERTEX_LOCATION,
+    googleAuthOptions: {
+      keyFilename: GCS_SA_PATH,
+    },
+  });
+
+  const model = vertexAI.getGenerativeModel({ model: 'gemini-2.0-flash-001' });
+
+  const prompt = `你是一个游戏客户端日志分析专家。请分析这个玩家的日志文件。
+
+玩家信息：
+- 昵称: ${playerInfo.nickname || 'Unknown'}
+- 地区: ${playerInfo.region || 'N/A'}
+- 等级: ${playerInfo.level || 'N/A'}
+- 反馈时间: ${feedbackTime}
+
+请完整分析日志内容，重点关注：
+1. 设备信息（机型、内存、版本号等）
+2. 严重错误（Exception、崩溃、内存不足等）
+3. 性能问题（Long frame time、卡顿等）
+4. 网络问题（连接失败、超时等）
+5. 任何可能与玩家反馈相关的异常
+
+输出格式：
+- 设备信息表格
+- 问题列表（按严重程度排序）
+- 结论和建议`;
+
+  const result = await model.generateContent({
+    contents: [{
+      role: 'user',
+      parts: [
+        { fileData: { mimeType: 'text/plain', fileUri: gcsUri } },
+        { text: prompt },
+      ],
+    }],
+  });
+
+  return result.response.candidates?.[0]?.content?.parts?.[0]?.text || '分析失败';
+}
+
 // 主函数
 async function main() {
   const args = process.argv.slice(2);
-  let pid = '', time = '', env = 'production', downloadOnly = false;
+  let pid = '', time = '', env = 'production', downloadOnly = false, fullMode = false;
 
   for (let i = 0; i < args.length; i++) {
     if (args[i] === '--pid') pid = args[++i];
     else if (args[i] === '--time') time = args[++i];
     else if (args[i] === '--env') env = args[++i];
     else if (args[i] === '--download-only') downloadOnly = true;
+    else if (args[i] === '--full') fullMode = true;
   }
 
   if (!pid || !time) {
@@ -295,6 +364,7 @@ async function main() {
     console.log('示例:');
     console.log('  npx tsx src/cli/log-analyze.ts --pid 791542412 --time "2026-02-02 06:08:39 UTC"');
     console.log('  npx tsx src/cli/log-analyze.ts --pid 791542412 --time "2026-02-02 16:33:55 -07:00"');
+    console.log('  npx tsx src/cli/log-analyze.ts --pid 791542412 --time "2026-02-02 06:08:39 UTC" --full');
     process.exit(1);
   }
 
@@ -342,12 +412,30 @@ async function main() {
 
   // 5. 分析
   console.log('5. 分析日志...\n');
-  const analyses = relevant.map(f => analyzeLog(f));
 
-  // 6. 报告
-  console.log('='.repeat(60));
-  const report = generateReport(playerInfo, analyses, time, tzStr);
-  console.log(report);
+  if (fullMode) {
+    // --full 模式：直接走 GCS + Gemini 完整分析
+    console.log('   [完整分析模式] 使用 GCS + Gemini\n');
+    
+    for (const file of relevant) {
+      const size = statSync(file).size;
+      const sizeMB = (size / 1024 / 1024).toFixed(1);
+      console.log(`   上传 ${basename(file)} (${sizeMB}MB) 到 GCS...`);
+      const gcsUri = await uploadToGCS(file);
+      console.log(`   GCS URI: ${gcsUri}`);
+      
+      console.log('   调用 Gemini 分析...\n');
+      console.log('='.repeat(60));
+      const geminiReport = await analyzeWithGemini(gcsUri, playerInfo, time);
+      console.log(geminiReport);
+    }
+  } else {
+    // 默认模式：本地 grep 分析
+    const analyses = relevant.map(f => analyzeLog(f));
+    console.log('='.repeat(60));
+    const report = generateReport(playerInfo, analyses, time, tzStr);
+    console.log(report);
+  }
 }
 
 main().catch(console.error);
