@@ -6,7 +6,7 @@
 
 | 文件 | 说明 |
 |------|------|
-| `bitable-video-cli.ts` | CLI 入口，Agent 调用这个来触发分析 |
+| `bitable-video-cli_core.ts` | CLI 核心实现（外部入口在 `cli/bitable-video.ts`） |
 | `bitable-video-confirm.ts` | 确认卡片处理，用户点确认后开始分析 |
 | `bitable-video-handler.ts` | 上传处理，从多维表格下载视频上传到 GCS |
 | `bitable-video.ts` | 多维表格操作，读取视频记录 |
@@ -16,7 +16,7 @@
 ## 使用流程
 
 ```
-1. Agent 调用 bitable-video-cli.ts
+1. Agent 调用 cli/bitable-video.ts
 2. 从多维表格下载视频 → 上传到 GCS
 3. 发送确认卡片给用户
 4. 用户点击确认
@@ -27,7 +27,8 @@
 ## CLI 用法
 
 ```bash
-npx tsx src/features/big-video/bitable-video-cli.ts \
+# 推荐：通过 cli/ 入口调用
+npx tsx src/cli/bitable-video.ts \
   --target <latest|number> \
   --prompt "分析需求" \
   --to "user:<open_id>" \

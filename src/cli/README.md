@@ -8,6 +8,7 @@
 |------|------|------|
 | `dev-lock.ts` | 开发锁管理 | 重启/更新前检查用户状态，避免打断别人 |
 | `history.ts` | 聊天历史查询 | 获取会话历史消息，解决跨 session 失忆问题 |
+| `bitable-video.ts` | 多维表格视频分析 | 大视频分析 CLI 入口（实现在 features/big-video/） |
 | `reaction.ts` | 消息表情反应 | 给消息加 emoji 反应 |
 | `announcement.ts` | 群公告查询 | 获取群聊公告内容 |
 | `pin.ts` | 置顶消息管理 | 查询/置顶/取消置顶消息 |
