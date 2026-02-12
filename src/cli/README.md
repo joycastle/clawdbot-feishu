@@ -8,7 +8,14 @@
 |------|------|------|
 | `dev-lock.ts` | 开发锁管理 | 重启/更新前检查用户状态，避免打断别人 |
 | `history.ts` | 聊天历史查询 | 获取会话历史消息，解决跨 session 失忆问题 |
-| `test-history.ts` | 历史查询测试 | 开发测试用，可删除 |
+| `reaction.ts` | 消息表情反应 | 给消息加 emoji 反应 |
+| `announcement.ts` | 群公告查询 | 获取群聊公告内容 |
+| `pin.ts` | 置顶消息管理 | 查询/置顶/取消置顶消息 |
+| `send.ts` | 发送消息 | 直接发送飞书消息 |
+| `log-analyze.ts` | 日志分析 | 分析玩家游戏日志 |
+| `gcs-gemini-analyze.ts` | GCS 视频分析 | 通过 GCS + Gemini 分析大文件 |
+| `write-sheet.ts` | 电子表格写入 | 写入飞书电子表格 |
+| `check-perm.ts` | 权限检查 | 检查应用权限配置 |
 
 ## 使用方法
 
@@ -45,7 +52,41 @@ npx tsx src/cli/history.ts --message <message_id> --count 20
 npx tsx src/cli/history.ts --chat <chat_id> --count 20
 ```
 
+### 表情反应
+
+```bash
+cd /home/ubuntu/.clawdbot/extensions/feishu
+
+# 给消息加反应
+npx tsx src/cli/reaction.ts add --message <message_id> --emoji THUMBSUP
+
+# 常用 emoji: THUMBSUP, OK, DONE, LAUGH, SWEAT, HEART, THINKING
+```
+
+### 群公告
+
+```bash
+cd /home/ubuntu/.clawdbot/extensions/feishu
+
+# 查看群公告
+npx tsx src/cli/announcement.ts --chat <chat_id>
+
+# 查看原始 JSON
+npx tsx src/cli/announcement.ts --chat <chat_id> --raw
+```
+
+### 日志分析
+
+```bash
+cd /home/ubuntu/.clawdbot/extensions/feishu
+
+# 分析玩家日志
+npx tsx src/cli/log-analyze.ts <日志文件路径>
+```
+
 ## 使用场景
 
 - **开发锁**：重启/更新服务前，先检查有没有人在用
 - **聊天历史**：收到突兀消息时，拉历史补充上下文
+- **表情反应**：简单确认、表达情绪，比打字更轻量
+- **群公告**：了解群规则和重要通知
