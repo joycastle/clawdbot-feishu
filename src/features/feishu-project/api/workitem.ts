@@ -69,10 +69,11 @@ export async function createWorkItem(
   data: {
     work_item_type_key: string;
     name: string;
-    template_id?: string;
+    template_id?: number;
     field_value_pairs?: FieldValuePair[];
   }
-): Promise<ApiResponse<{ work_item_id: number }>> {
+): Promise<ApiResponse<number>> {
+  // 飞书 API 返回 data 直接是 work_item_id 数字
   return request(ctx, 'POST', `/${projectKey}/work_item/create`, data);
 }
 

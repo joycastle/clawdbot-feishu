@@ -266,11 +266,13 @@ async function handleRequest(req: http.IncomingMessage, res: http.ServerResponse
       const resp = await client.workitem.createWorkItem(ctx, projectKey, {
         work_item_type_key: itemTypeKey,
         name,
-        template_id: body.templateId as string,
+        template_id: body.templateId ? Number(body.templateId) : undefined,
         field_value_pairs: body.fields as Array<{ field_key: string; field_value: unknown }>,
       });
       if (resp.err_code !== 0) { errorResponse(res, resp.err_msg, 400); return; }
-      jsonResponse(res, { success: true, workItemId: resp.data?.work_item_id }, 201);
+      // 飞书 API 返回 data 直接是 work_item_id 数字
+      const workItemId = typeof resp.data === 'number' ? resp.data : (resp.data as any)?.work_item_id;
+      jsonResponse(res, { success: true, workItemId }, 201);
       return;
     }
 
