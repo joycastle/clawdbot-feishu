@@ -128,13 +128,13 @@ src/
 | 需求 | 位置 | 说明 |
 |------|------|------|
 | 分析小视频（≤100MB） | `features/video-analyze.ts` | `analyzeVideo`, `analyzeVideoFromGcs` |
-| 分析多维表格大视频 | `features/big-video/bitable-video-cli.ts` | CLI 入口，见下方用法 |
+| 分析多维表格大视频 | `cli/bitable-video.ts` | CLI 入口，见下方用法 |
 | 视频分析配置 | `features/video-analyze.ts` | `resolveVideoProvider`, `setCredentialsPath` |
 | GCS 上传 | `features/big-video/gcs-upload.ts` | `uploadToGcs`, `streamUploadToGcs` |
 
 **大视频分析 CLI 用法：**
 ```bash
-npx tsx src/features/big-video/bitable-video-cli.ts \
+npx tsx src/cli/bitable-video.ts \
   --target <latest|number> \
   --prompt "分析需求" \
   --to "user:<open_id>" \
