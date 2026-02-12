@@ -1,0 +1,125 @@
+{
+  "meta": {
+    "lastTouchedVersion": "2026.1.24-3",
+    "lastTouchedAt": "2026-02-11T13:49:21.444Z"
+  },
+  "wizard": {
+    "lastRunAt": "2026-01-29T04:49:33.573Z",
+    "lastRunVersion": "2026.1.24-3",
+    "lastRunCommand": "doctor",
+    "lastRunMode": "local"
+  },
+  "logging": {
+    "file": "/home/ubuntu/.clawdbot/logs/clawdbot-YYYY-MM-DD.log"
+  },
+  "auth": {
+    "profiles": {
+      "anthropic:default": {
+        "provider": "anthropic",
+        "mode": "token"
+      },
+      "google-vertex:default": {
+        "provider": "google-vertex",
+        "mode": "oauth"
+      }
+    }
+  },
+  "agents": {
+    "defaults": {
+      "model": {
+        "primary": "anthropic/claude-opus-4-5",
+        "fallbacks": []
+      },
+      "imageModel": {
+        "primary": "google-vertex/gemini-3-flash-preview",
+        "fallbacks": [
+          "google-vertex/gemini-2.5-flash"
+        ]
+      },
+      "models": {
+        "google/gemini-2.5-flash-lite": {},
+        "anthropic/claude-opus-4-5": {
+          "alias": "opus"
+        },
+        "google-vertex/gemini-2.5-flash-lite": {},
+        "google-vertex/gemini-2.5-pro": {},
+        "google-vertex/gemini-3-pro-preview": {},
+        "google-vertex/gemini-2.5-flash": {},
+        "google-vertex/gemini-3-flash-preview": {}
+      },
+      "workspace": "/home/ubuntu/clawd",
+      "contextPruning": {
+        "mode": "cache-ttl",
+        "ttl": "1h"
+      },
+      "compaction": {
+        "mode": "safeguard"
+      },
+      "heartbeat": {
+        "every": "1h"
+      },
+      "maxConcurrent": 24,
+      "subagents": {
+        "maxConcurrent": 48
+      }
+    }
+  },
+  "tools": {
+    "web": {
+      "search": {
+        "apiKey": "BSAu3Cw-Yvor_PU704mN1ugfFQjttdp"
+      }
+    }
+  },
+  "messages": {
+    "ackReactionScope": "group-mentions"
+  },
+  "commands": {
+    "native": "auto",
+    "nativeSkills": "auto",
+    "restart": true
+  },
+  "channels": {},
+  "gateway": {
+    "port": 18789,
+    "mode": "local",
+    "bind": "loopback",
+    "auth": {
+      "mode": "token",
+      "token": "YOUR_GATEWAY_TOKEN"
+    },
+    "tailscale": {
+      "mode": "off",
+      "resetOnExit": false
+    }
+  },
+  "skills": {
+    "install": {
+      "nodeManager": "npm"
+    },
+    "entries": {
+      "openai-image-gen": {
+        "apiKey": "YOUR_OPENAI_API_KEY"
+      },
+      "openai-whisper-api": {
+        "apiKey": "YOUR_OPENAI_API_KEY"
+      }
+    }
+  },
+  "plugins": {
+    "entries": {
+      "feishu": {
+        "enabled": true
+      }
+    },
+    "installs": {
+      "feishu": {
+        "source": "npm",
+        "spec": "@m1heng-clawd/feishu",
+        "installPath": "/home/ubuntu/.clawdbot/extensions/feishu",
+        "version": "0.1.1",
+        "installedAt": "2026-01-29T04:40:22.256Z"
+      }
+    }
+  }
+}
