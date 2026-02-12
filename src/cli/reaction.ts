@@ -1,4 +1,5 @@
 #!/usr/bin/env npx tsx
+import { getConfigPath } from "../utils/paths.js";
 /**
  * CLI to add/remove/list reactions on Feishu messages.
  * Usage:
@@ -13,7 +14,7 @@ import { parseArgs } from "node:util";
 import { addReactionFeishu, removeReactionFeishu, listReactionsFeishu, FeishuEmoji } from "../api/reactions.js";
 
 function loadConfig() {
-  const configPath = path.join(process.env.HOME || "", ".clawdbot", "clawdbot.json");
+  const configPath = getConfigPath();
   return JSON.parse(fs.readFileSync(configPath, "utf-8"));
 }
 

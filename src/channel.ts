@@ -1,5 +1,6 @@
 import type { ChannelPlugin, ClawdbotConfig } from "clawdbot/plugin-sdk";
 import { DEFAULT_ACCOUNT_ID, PAIRING_APPROVED_MESSAGE } from "clawdbot/plugin-sdk";
+import { getFeishuExtDir } from "./utils/paths.js";
 import type { ResolvedFeishuAccount, FeishuConfig } from "./types.js";
 import { resolveFeishuAccount, resolveFeishuCredentials } from "./accounts.js";
 import { feishuOutbound } from "./outbound.js";
@@ -52,10 +53,12 @@ export const feishuPlugin: ChannelPlugin<ResolvedFeishuAccount> = {
     reply: true,
   },
   agentPrompt: {
-    messageToolHints: () => [
+    messageToolHints: () => {
+      const extDir = getFeishuExtDir();
+      return [
       "- Feishu targeting: omit `target` to reply to the current conversation (auto-inferred). Explicit targets: `user:open_id` or `chat:chat_id`.",
       "- Feishu supports interactive cards for rich messages.",
-      `- **Bitable Video Analysis (ONE COMMAND)**: When a user wants to analyze a video from the bitable (多维表格), run: \`npx tsx /home/ubuntu/.clawdbot/extensions/feishu/src/features/big-video/bitable-video-cli.ts --target <latest|number> --prompt "用户的分析需求" --to "user:<sender_open_id>" --reply-to "<message_id>" --sender "<sender_open_id>"\`. This uploads the video and sends an interactive confirm/cancel card automatically. User clicks confirm → Gemini analysis runs via card callback. No manual confirmation needed from agent. Recognize user intent naturally — '帮我分析最新的视频', '看看3号视频' etc.`,
+      `- **Bitable Video Analysis (ONE COMMAND)**: When a user wants to analyze a video from the bitable (多维表格), run: \`npx tsx ${extDir}/src/features/big-video/bitable-video-cli.ts --target <latest|number> --prompt "用户的分析需求" --to "user:<sender_open_id>" --reply-to "<message_id>" --sender "<sender_open_id>"\`. This uploads the video and sends an interactive confirm/cancel card automatically. User clicks confirm → Gemini analysis runs via card callback. No manual confirmation needed from agent. Recognize user intent naturally — '帮我分析最新的视频', '看看3号视频' etc.`,
       `- **飞书项目 API (localhost:18791)**: 当用户询问工作项、缺陷、任务相关内容时，用 curl 调用：`,
       `  - \`curl http://127.0.0.1:18791/types\` - 获取工作项类型（需求/缺陷/任务等）`,
       `  - \`curl http://127.0.0.1:18791/workitems?typeKey=issue\` - 查询缺陷列表`,
@@ -68,7 +71,8 @@ export const feishuPlugin: ChannelPlugin<ResolvedFeishuAccount> = {
       `  - \`curl -X POST http://127.0.0.1:18797/add -H "Content-Type: application/json" -d '{"job":{"schedule":"in 5 minutes","text":"提醒内容"}}'\` - 添加延时任务（支持 "in 5 minutes", "at 14:00" 等）`,
       `  - \`curl http://127.0.0.1:18797/list\` - 查看当前所有定时任务`,
       `  - \`curl -X POST http://127.0.0.1:18797/remove -H "Content-Type: application/json" -d '{"id":"job_id"}'\` - 删除任务`,
-    ],
+    ];
+    },
   },
   actions: {
     listActions: () => ["poll"],

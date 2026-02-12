@@ -11,6 +11,7 @@
 import { existsSync } from "fs";
 import { mkdir, readFile, writeFile, readdir, stat, unlink } from "fs/promises";
 import { join } from "path";
+import { getStateDir } from "../../utils/paths.js";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -34,7 +35,7 @@ export interface VoteData {
 
 // ─── File Persistence ────────────────────────────────────────────────────────
 
-const VOTE_DIR = join(process.env.HOME ?? "/tmp", ".clawdbot", "vote-data");
+const VOTE_DIR = join(getStateDir(), "vote-data");
 
 async function ensureVoteDir(): Promise<void> {
   if (!existsSync(VOTE_DIR)) {

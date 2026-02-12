@@ -14,15 +14,15 @@
 import { execSync } from 'child_process';
 import { readFileSync } from 'fs';
 import { createServer, IncomingMessage, ServerResponse } from 'http';
-import { join } from 'path';
 import { getUsageSnapshot, getDevLockSnapshot } from '../features/dev-lock.js';
+import { getConfigPath, getCliCommand } from '../utils/paths.js';
 
 const PORT = 18799;
 const GATEWAY_URL = 'http://127.0.0.1:18789';
 
 // 获取 Gateway token
 function getGatewayToken(): string {
-  const configPath = join(process.env.HOME || '', '.clawdbot', 'clawdbot.json');
+  const configPath = getConfigPath();
   const config = JSON.parse(readFileSync(configPath, 'utf-8'));
   const token = config?.gateway?.auth?.token;
   if (!token) throw new Error('Gateway token not found');
@@ -33,7 +33,8 @@ function getGatewayToken(): string {
 function getActiveSessions(hours: number): Array<{ key: string; kind?: string; updatedAt?: number }> {
   try {
     const minutes = hours * 60;
-    const result = execSync(`clawdbot sessions --json --active ${minutes}`, {
+    const cli = getCliCommand();
+    const result = execSync(`${cli} sessions --json --active ${minutes}`, {
       encoding: 'utf-8',
       maxBuffer: 10 * 1024 * 1024,
     });

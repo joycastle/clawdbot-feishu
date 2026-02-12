@@ -7,12 +7,12 @@
  */
 
 import * as fs from "fs";
-import * as path from "path";
 import { parseArgs } from "node:util";
 import * as lark from "@larksuiteoapi/node-sdk";
+import { getConfigPath } from "../utils/paths.js";
 
 function loadConfig() {
-  const configPath = path.join(process.env.HOME || "", ".clawdbot", "clawdbot.json");
+  const configPath = getConfigPath();
   return JSON.parse(fs.readFileSync(configPath, "utf-8"));
 }
 

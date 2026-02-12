@@ -1,4 +1,5 @@
 #!/usr/bin/env npx tsx
+import { getConfigPath } from "../utils/paths.js";
 /**
  * 获取飞书会话历史消息 CLI
  * 
@@ -14,9 +15,9 @@
 import * as fs from "fs";
 import * as path from "path";
 
-// 从 clawdbot 配置读取飞书凭据
+// 从配置读取飞书凭据
 function getFeishuCredentials(): { appId: string; appSecret: string } {
-  const configPath = path.join(process.env.HOME || "", ".clawdbot", "clawdbot.json");
+  const configPath = getConfigPath();
   const config = JSON.parse(fs.readFileSync(configPath, "utf-8"));
   const feishu = config?.channels?.feishu;
   if (!feishu?.appId || !feishu?.appSecret) {

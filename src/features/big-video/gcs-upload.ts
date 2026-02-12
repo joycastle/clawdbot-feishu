@@ -13,6 +13,7 @@ import fs from "fs";
 import path from "path";
 import crypto from "crypto";
 import { Readable } from "stream";
+import { getGoogleSAPath } from "../../utils/paths.js";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -36,7 +37,7 @@ export interface GcsUploadResult {
 // ─── Configuration ───────────────────────────────────────────────────────────
 
 const DEFAULT_BUCKET_NAME = "larkbot-storage";
-const DEFAULT_SA_PATH = path.join(process.env.HOME ?? "/tmp", ".clawdbot/credentials/google-vertex-sa.json");
+const DEFAULT_SA_PATH = getGoogleSAPath();
 const GCS_SCOPE = "https://www.googleapis.com/auth/cloud-platform";
 
 /** Runtime-resolved config (set once via initGcsConfig or resolved from env/defaults). */

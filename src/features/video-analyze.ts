@@ -9,6 +9,7 @@
 import fs from "fs";
 import path from "path";
 import crypto from "crypto";
+import { getGoogleSAPath } from "../utils/paths.js";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -384,7 +385,7 @@ function loadCredentials(): ServiceAccountCredentials {
   const credPath =
     _configCredPath ||
     process.env.GOOGLE_APPLICATION_CREDENTIALS ||
-    path.join(process.env.HOME || "/home/ubuntu", ".clawdbot/credentials/google-vertex-sa.json");
+    getGoogleSAPath();
 
   if (!fs.existsSync(credPath)) {
     throw new Error(`Google credentials not found at ${credPath}`);

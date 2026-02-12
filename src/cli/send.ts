@@ -1,4 +1,5 @@
 #!/usr/bin/env npx tsx
+import { getConfigPath } from "../utils/paths.js";
 /**
  * 飞书消息发送 CLI
  * 
@@ -14,7 +15,7 @@ import { join } from 'path';
 import * as lark from '@larksuiteoapi/node-sdk';
 
 function getFeishuCredentials(): { appId: string; appSecret: string } {
-  const configPath = join(process.env.HOME || '', '.clawdbot', 'clawdbot.json');
+  const configPath = getConfigPath();
   const config = JSON.parse(readFileSync(configPath, 'utf-8'));
   const feishu = config?.channels?.feishu;
   if (!feishu?.appId || !feishu?.appSecret) {

@@ -1,4 +1,5 @@
 #!/usr/bin/env npx tsx
+import { getConfigPath } from "../utils/paths.js";
 /**
  * CLI to list/create/delete pinned messages in Feishu chats.
  * Usage:
@@ -14,7 +15,7 @@ import { createFeishuClient } from "../client.js";
 import type { FeishuConfig } from "../types.js";
 
 function loadConfig() {
-  const configPath = path.join(process.env.HOME || "", ".clawdbot", "clawdbot.json");
+  const configPath = getConfigPath();
   return JSON.parse(fs.readFileSync(configPath, "utf-8"));
 }
 
