@@ -50,11 +50,6 @@ export async function monitorFeishuProvider(opts: MonitorFeishuOpts = {}): Promi
   }
 
   const feishuCfg = cfg.channels?.feishu as FeishuConfig | undefined;
-  const creds = resolveFeishuCredentials(feishuCfg);
-  if (!creds) {
-    throw new Error("Feishu credentials not configured (appId, appSecret required)");
-  }
-
   const log = opts.runtime?.log ?? console.log;
   const error = opts.runtime?.error ?? console.error;
 
@@ -87,7 +82,12 @@ export async function monitorFeishuProvider(opts: MonitorFeishuOpts = {}): Promi
   const connectionMode = feishuCfg?.connectionMode ?? "websocket";
 
   if (connectionMode === "websocket") {
-    return monitorWebSocket({ cfg, feishuCfg: feishuCfg!, runtime: opts.runtime, abortSignal: opts.abortSignal });
+    const creds = resolveFeishuCredentials(feishuCfg);
+    if (!feishuCfg || !creds) {
+      error("feishu: missing credentials (appId/appSecret); websocket disabled");
+      return;
+    }
+    return monitorWebSocket({ cfg, feishuCfg, runtime: opts.runtime, abortSignal: opts.abortSignal });
   }
 
   log("feishu: webhook mode not implemented in monitor, use HTTP server directly");

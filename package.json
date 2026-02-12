@@ -7,7 +7,8 @@
   "files": [
     "index.ts",
     "src",
-    "clawdbot.plugin.json"
+    "clawdbot.plugin.json",
+    "openclaw.plugin.json"
   ],
   "repository": {
     "type": "git",
