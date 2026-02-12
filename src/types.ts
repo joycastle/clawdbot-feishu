@@ -16,6 +16,12 @@ export type ResolvedFeishuAccount = {
 
 export type FeishuIdType = "open_id" | "user_id" | "union_id" | "chat_id";
 
+export type MentionTarget = {
+  openId: string;
+  name: string;
+  key: string;
+};
+
 export type FeishuMessageContext = {
   chatId: string;
   messageId: string;
@@ -28,6 +34,8 @@ export type FeishuMessageContext = {
   parentId?: string;
   content: string;
   contentType: string;
+  mentionTargets?: MentionTarget[];
+  mentionMessageBody?: string;
 };
 
 export type FeishuSendResult = {

@@ -1,5 +1,5 @@
 import type { ClawdbotConfig } from "clawdbot/plugin-sdk";
-import type { FeishuConfig, FeishuSendResult } from "../types.js";
+import type { FeishuConfig, FeishuSendResult, MentionTarget } from "../types.js";
 import { createFeishuClient } from "../client.js";
 import { resolveReceiveIdType, normalizeFeishuTarget } from "../targets.js";
 import { tryGetFeishuRuntime } from "../runtime.js";
@@ -13,6 +13,30 @@ export type FeishuMessageInfo = {
   contentType: string;
   createTime?: number;
 };
+
+function formatMentionForText(target: MentionTarget): string {
+  return `<at user_id="${target.openId}">${target.name}</at>`;
+}
+
+function formatMentionForCard(target: MentionTarget): string {
+  return `<at id=${target.openId}></at>`;
+}
+
+function buildMentionedMessage(targets: MentionTarget[], message: string): string {
+  if (targets.length === 0) {
+    return message;
+  }
+  const mentionParts = targets.map((t) => formatMentionForText(t));
+  return `${mentionParts.join(" ")} ${message}`;
+}
+
+function buildMentionedCardContent(targets: MentionTarget[], message: string): string {
+  if (targets.length === 0) {
+    return message;
+  }
+  const mentionParts = targets.map((t) => formatMentionForCard(t));
+  return `${mentionParts.join(" ")} ${message}`;
+}
 
 /**
  * Get a message by its ID.
@@ -91,10 +115,11 @@ export type SendFeishuMessageParams = {
   to: string;
   text: string;
   replyToMessageId?: string;
+  mentions?: MentionTarget[];
 };
 
 export async function sendMessageFeishu(params: SendFeishuMessageParams): Promise<FeishuSendResult> {
-  const { cfg, to, text, replyToMessageId } = params;
+  const { cfg, to, text, replyToMessageId, mentions } = params;
   const feishuCfg = cfg.channels?.feishu as FeishuConfig | undefined;
   if (!feishuCfg) {
     throw new Error("Feishu channel not configured");
@@ -108,12 +133,16 @@ export async function sendMessageFeishu(params: SendFeishuMessageParams): Promis
 
   const receiveIdType = resolveReceiveIdType(receiveId);
   const rt = tryGetFeishuRuntime();
+  let rawText = text ?? "";
+  if (mentions && mentions.length > 0) {
+    rawText = buildMentionedMessage(mentions, rawText);
+  }
   const messageText = rt
     ? rt.channel.text.convertMarkdownTables(
-        text ?? "",
+        rawText,
         rt.channel.text.resolveMarkdownTableMode({ cfg, channel: "feishu" }),
       )
-    : (text ?? "");
+    : rawText;
 
   const content = JSON.stringify({ text: messageText });
 
@@ -267,9 +296,11 @@ export async function sendMarkdownCardFeishu(params: {
   to: string;
   text: string;
   replyToMessageId?: string;
+  mentions?: MentionTarget[];
 }): Promise<FeishuSendResult> {
-  const { cfg, to, text, replyToMessageId } = params;
-  const card = buildMarkdownCard(text);
+  const { cfg, to, text, replyToMessageId, mentions } = params;
+  const cardText = mentions && mentions.length > 0 ? buildMentionedCardContent(mentions, text) : text;
+  const card = buildMarkdownCard(cardText);
   return sendCardFeishu({ cfg, to, card, replyToMessageId });
 }
 
@@ -343,8 +374,9 @@ export async function sendPostFeishu(params: {
   text: string;
   title?: string;
   replyToMessageId?: string;
+  mentions?: MentionTarget[];
 }): Promise<FeishuSendResult> {
-  const { cfg, to, text, title, replyToMessageId } = params;
+  const { cfg, to, text, title, replyToMessageId, mentions } = params;
   const feishuCfg = cfg.channels?.feishu as FeishuConfig | undefined;
   if (!feishuCfg) {
     throw new Error("Feishu channel not configured");
@@ -357,7 +389,8 @@ export async function sendPostFeishu(params: {
   }
 
   const receiveIdType = resolveReceiveIdType(receiveId);
-  const postContent = buildPostContent(text, title);
+  const rawText = mentions && mentions.length > 0 ? buildMentionedMessage(mentions, text) : text;
+  const postContent = buildPostContent(rawText, title);
   const content = JSON.stringify(postContent);
 
   if (replyToMessageId) {

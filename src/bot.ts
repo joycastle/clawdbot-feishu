@@ -6,7 +6,8 @@ import {
   DEFAULT_GROUP_HISTORY_LIMIT,
   type HistoryEntry,
 } from "clawdbot/plugin-sdk";
-import type { FeishuConfig, FeishuMessageContext, FeishuMediaInfo } from "./types.js";
+import type { FeishuConfig, FeishuMessageContext, FeishuMediaInfo, MentionTarget } from "./types.js";
+import { createFeishuClient } from "./client.js";
 import { getFeishuRuntime } from "./runtime.js";
 import { enrichMessageWithDocs } from "./features/doc-parser.js";
 import { resolveFeishuGroupConfig, resolveFeishuReplyPolicy, resolveFeishuAllowlistMatch, isFeishuGroupAllowed } from "./policy.js";
@@ -71,6 +72,49 @@ export type FeishuBotAddedEvent = {
   operator_tenant_key?: string;
 };
 
+const SENDER_NAME_TTL_MS = 10 * 60 * 1000;
+const senderNameCache = new Map<string, { name: string; expireAt: number }>();
+
+async function resolveFeishuSenderName(params: {
+  cfg: ClawdbotConfig;
+  senderOpenId: string;
+  log: (...args: any[]) => void;
+}): Promise<string | undefined> {
+  const { cfg, senderOpenId, log } = params;
+  if (!senderOpenId) {
+    return undefined;
+  }
+  const feishuCfg = cfg.channels?.feishu as FeishuConfig | undefined;
+  if (!feishuCfg) {
+    return undefined;
+  }
+  const cached = senderNameCache.get(senderOpenId);
+  const now = Date.now();
+  if (cached && cached.expireAt > now) {
+    return cached.name;
+  }
+  try {
+    const client = createFeishuClient(feishuCfg);
+    const res: any = await client.contact.user.get({
+      path: { user_id: senderOpenId },
+      params: { user_id_type: "open_id" },
+    });
+    const name: string | undefined =
+      res?.data?.user?.name ||
+      res?.data?.user?.display_name ||
+      res?.data?.user?.nickname ||
+      res?.data?.user?.en_name;
+    if (name && typeof name === "string") {
+      senderNameCache.set(senderOpenId, { name, expireAt: now + SENDER_NAME_TTL_MS });
+      return name;
+    }
+    return undefined;
+  } catch (err) {
+    log(`feishu: failed to resolve sender name for ${senderOpenId}: ${String(err)}`);
+    return undefined;
+  }
+}
+
 function parseMessageContent(content: string, messageType: string): string {
   try {
     const parsed = JSON.parse(content);
@@ -103,6 +147,47 @@ function stripBotMention(text: string, mentions?: FeishuMessageEvent["message"][
     result = result.replace(new RegExp(mention.key, "g"), "").trim();
   }
   return result;
+}
+
+function extractMentionTargets(
+  event: FeishuMessageEvent,
+  botOpenId?: string,
+): MentionTarget[] {
+  const mentions = event.message.mentions ?? [];
+  return mentions
+    .filter((m) => {
+      if (botOpenId && m.id.open_id === botOpenId) {
+        return false;
+      }
+      return !!m.id.open_id;
+    })
+    .map((m) => ({
+      openId: m.id.open_id!,
+      name: m.name,
+      key: m.key,
+    }));
+}
+
+function isMentionForwardRequest(event: FeishuMessageEvent, botOpenId?: string): boolean {
+  const mentions = event.message.mentions ?? [];
+  if (mentions.length === 0) {
+    return false;
+  }
+  const isDirectMessage = event.message.chat_type === "p2p";
+  const hasOtherMention = mentions.some((m) => m.id.open_id !== botOpenId);
+  if (isDirectMessage) {
+    return hasOtherMention;
+  }
+  const hasBotMention = mentions.some((m) => m.id.open_id === botOpenId);
+  return hasBotMention && hasOtherMention;
+}
+
+function extractMessageBody(text: string, allMentionKeys: string[]): string {
+  let result = text;
+  for (const key of allMentionKeys) {
+    result = result.replace(new RegExp(key.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "g"), "");
+  }
+  return result.replace(/\s+/g, " ").trim();
 }
 
 /**
@@ -525,7 +610,7 @@ export function parseFeishuMessageEvent(
   const mentionedBot = checkBotMentioned(event, botOpenId);
   const content = stripBotMention(rawContent, event.message.mentions);
 
-  return {
+  const ctx: FeishuMessageContext = {
     chatId: event.message.chat_id,
     messageId: event.message.message_id,
     senderId: event.sender.sender_id.user_id || event.sender.sender_id.open_id || "",
@@ -537,6 +622,17 @@ export function parseFeishuMessageEvent(
     content,
     contentType: event.message.message_type,
   };
+
+  if (isMentionForwardRequest(event, botOpenId)) {
+    const mentionTargets = extractMentionTargets(event, botOpenId);
+    if (mentionTargets.length > 0) {
+      ctx.mentionTargets = mentionTargets;
+      const allMentionKeys = (event.message.mentions ?? []).map((m) => m.key);
+      ctx.mentionMessageBody = extractMessageBody(content, allMentionKeys);
+    }
+  }
+
+  return ctx;
 }
 
 function parseDurationToken(token?: string): number | null | undefined {
@@ -650,10 +746,21 @@ export async function handleFeishuMessage(params: {
   const log = runtime?.log ?? console.log;
   const error = runtime?.error ?? console.error;
 
-  const ctx = parseFeishuMessageEvent(event, botOpenId);
+  let ctx = parseFeishuMessageEvent(event, botOpenId);
   const isGroup = ctx.chatType === "group";
 
   log(`feishu: received message from ${ctx.senderOpenId} in ${ctx.chatId} (${ctx.chatType})`);
+
+  if (ctx.senderOpenId) {
+    const senderName = await resolveFeishuSenderName({
+      cfg,
+      senderOpenId: ctx.senderOpenId,
+      log,
+    });
+    if (senderName) {
+      ctx = { ...ctx, senderName };
+    }
+  }
 
   const historyLimit = Math.max(
     0,
@@ -1013,6 +1120,10 @@ export async function handleFeishuMessage(params: {
     if (quotedContent) {
       messageBody = `[Replying to: "${quotedContent}"]\n\n${enrichedContent}`;
     }
+    if (ctx.mentionTargets && ctx.mentionTargets.length > 0) {
+      const targetNames = ctx.mentionTargets.map((t) => t.name).join(", ");
+      messageBody += `\n\n[System: Your reply will automatically @mention: ${targetNames}. Do not write @xxx yourself.]`;
+    }
 
     const body = core.channel.reply.formatAgentEnvelope({
       channel: "Feishu",
@@ -1045,17 +1156,18 @@ export async function handleFeishuMessage(params: {
       });
     }
 
+    const commandBody = ctx.mentionMessageBody ?? ctx.content;
     const ctxPayload = core.channel.reply.finalizeInboundContext({
       Body: combinedBody,
       RawBody: ctx.content,
-      CommandBody: ctx.content,
+      CommandBody: commandBody,
       From: feishuFrom,
       To: feishuTo,
       SessionKey: isolatedSessionKey,
       AccountId: route.accountId,
       ChatType: isGroup ? "group" : "direct",
       GroupSubject: isGroup ? ctx.chatId : undefined,
-      SenderName: ctx.senderOpenId,
+      SenderName: ctx.senderName ?? ctx.senderOpenId,
       SenderId: ctx.senderOpenId,
       Provider: "feishu" as const,
       Surface: "feishu" as const,
@@ -1074,6 +1186,7 @@ export async function handleFeishuMessage(params: {
       runtime: runtime as RuntimeEnv,
       chatId: ctx.chatId,
       replyToMessageId: ctx.messageId,
+      mentionTargets: ctx.mentionTargets,
     });
 
     log(`feishu: dispatching to agent (session=${isolatedSessionKey})`);
