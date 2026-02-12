@@ -59,7 +59,7 @@ export const feishuPlugin: ChannelPlugin<ResolvedFeishuAccount> = {
       return [
       "- Feishu targeting: omit `target` to reply to the current conversation (auto-inferred). Explicit targets: `user:open_id` or `chat:chat_id`.",
       "- Feishu supports interactive cards for rich messages.",
-      `- **Bitable Video Analysis (ONE COMMAND)**: When a user wants to analyze a video from the bitable (多维表格), run: \`npx tsx ${extDir}/src/features/big-video/bitable-video-cli.ts --target <latest|number> --prompt "用户的分析需求" --to "user:<sender_open_id>" --reply-to "<message_id>" --sender "<sender_open_id>"\`. This uploads the video and sends an interactive confirm/cancel card automatically. User clicks confirm → Gemini analysis runs via card callback. No manual confirmation needed from agent. Recognize user intent naturally — '帮我分析最新的视频', '看看3号视频' etc.`,
+      `- **Bitable Video Analysis (ONE COMMAND)**: When a user wants to analyze a video from the bitable (多维表格), run: \`npx tsx ${extDir}/src/cli/bitable-video.ts --target <latest|number> --prompt "用户的分析需求" --to "user:<sender_open_id>" --reply-to "<message_id>" --sender "<sender_open_id>"\`. This uploads the video and sends an interactive confirm/cancel card automatically. User clicks confirm → Gemini analysis runs via card callback. No manual confirmation needed from agent. Recognize user intent naturally — '帮我分析最新的视频', '看看3号视频' etc.`,
       `- **飞书项目 API (localhost:18791)**: 当用户询问工作项、缺陷、任务相关内容时，用 curl 调用：`,
       `  - \`curl http://127.0.0.1:18791/types\` - 获取工作项类型（需求/缺陷/任务等）`,
       `  - \`curl http://127.0.0.1:18791/workitems?typeKey=issue\` - 查询缺陷列表`,
