@@ -684,9 +684,48 @@ const HELPER_DIR = "/home/ubuntu/clawd/helper";
 
 // Topic name to file mapping (supports aliases)
 const HELPER_TOPICS: Record<string, string> = {
+  // 功能总览
+  "features": "features.md",
+  "1": "features.md",
+  // 原生指令
+  "clawdbot": "clawdbot.md",
+  "commands": "clawdbot.md",
+  "2": "clawdbot.md",
+  // 常见问题
+  "faq": "faq.md",
+  "3": "faq.md",
+  // 状态指令
   "state": "state.md",
-  "1": "state.md",
-  // Add more topics here: "commands": "commands.md", "2": "commands.md", etc.
+  "4": "state.md",
+  // 记忆系统
+  "memory": "memory.md",
+  "5": "memory.md",
+  // RAG 知识检索
+  "rag": "rag.md",
+  "6": "rag.md",
+  // 分析能力
+  "analyze": "analyze.md",
+  "7": "analyze.md",
+  // 飞书基础
+  "feishu-basic": "feishu-basic.md",
+  "feishu": "feishu-basic.md",
+  "8": "feishu-basic.md",
+  // 飞书项目
+  "feishu-project": "feishu-project.md",
+  "project": "feishu-project.md",
+  "9": "feishu-project.md",
+  // 飞书任务
+  "feishu-task": "feishu-task.md",
+  "task": "feishu-task.md",
+  "10": "feishu-task.md",
+  // 多维表格
+  "feishu-bitable": "feishu-bitable.md",
+  "bitable": "feishu-bitable.md",
+  "11": "feishu-bitable.md",
+  // 电子表格
+  "feishu-sheets": "feishu-sheets.md",
+  "sheets": "feishu-sheets.md",
+  "12": "feishu-sheets.md",
 };
 
 function tryHandleHelperCommand(text: string): string | null {
