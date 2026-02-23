@@ -50,6 +50,7 @@
     "@google-cloud/storage": "^7.19.0",
     "@google-cloud/vertexai": "^1.10.0",
     "@larksuiteoapi/node-sdk": "^1.30.0",
+    "@m1heng-clawd/feishu": "^0.1.10",
     "zod": "^4.3.6"
   },
   "devDependencies": {

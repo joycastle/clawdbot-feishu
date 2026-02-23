@@ -148,7 +148,7 @@ async function main() {
   
   let messageId: string | undefined;
   let chatId: string | undefined;
-  let count = 20; // 默认20条，最多50条
+  let count = 50; // 默认50条，最多50条
 
   for (let i = 0; i < args.length; i++) {
     if (args[i] === "--message" || args[i] === "-m") {

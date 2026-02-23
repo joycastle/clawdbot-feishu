@@ -23,6 +23,7 @@ import { startSheetsApi } from "./services/sheets-api.js";
 import { startCronApi } from "./services/cron-api.js";
 import { startDocsRouter } from "./services/docs-router.js";
 import { startBroadcastApi } from "./services/broadcast-api.js";
+import { startRagApi } from "./services/rag-api.js";
 
 export type MonitorFeishuOpts = {
   config?: ClawdbotConfig;
@@ -73,6 +74,9 @@ export async function monitorFeishuProvider(opts: MonitorFeishuOpts = {}): Promi
 
   // 启动 Session 广播服务
   startBroadcastApi();
+
+  // 启动 RAG 知识库检索服务
+  startRagApi(log);
 
   if (feishuCfg) {
     botOpenId = await fetchBotOpenId(feishuCfg);

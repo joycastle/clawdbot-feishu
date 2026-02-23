@@ -679,6 +679,48 @@ function buildUsageText(cfg: ClawdbotConfig): string {
   ].join("\n");
 }
 
+// Helper directory path (relative to workspace)
+const HELPER_DIR = "/home/ubuntu/clawd/helper";
+
+// Topic name to file mapping (supports aliases)
+const HELPER_TOPICS: Record<string, string> = {
+  "state": "state.md",
+  "1": "state.md",
+  // Add more topics here: "commands": "commands.md", "2": "commands.md", etc.
+};
+
+function tryHandleHelperCommand(text: string): string | null {
+  const trimmed = text.trim();
+  if (!trimmed.toLowerCase().startsWith("/helper")) return null;
+
+  const arg = trimmed.slice("/helper".length).trim().toLowerCase();
+
+  try {
+    if (!arg) {
+      // Return index
+      const indexPath = `${HELPER_DIR}/index.md`;
+      if (fs.existsSync(indexPath)) {
+        return fs.readFileSync(indexPath, "utf-8");
+      }
+      return "Helper 索引文件不存在";
+    }
+
+    // Look up topic
+    const fileName = HELPER_TOPICS[arg];
+    if (!fileName) {
+      return `未知主题: ${arg}\n\n输入 /helper 查看可用主题`;
+    }
+
+    const filePath = `${HELPER_DIR}/${fileName}`;
+    if (fs.existsSync(filePath)) {
+      return fs.readFileSync(filePath, "utf-8");
+    }
+    return `主题文件不存在: ${fileName}`;
+  } catch (err) {
+    return `读取帮助文件失败: ${String(err)}`;
+  }
+}
+
 function tryHandleAdminCommand(params: { cfg: ClawdbotConfig; senderId: string; text: string }): string | null {
   const text = params.text.trim();
   if (!text) return null;
@@ -850,6 +892,15 @@ export async function handleFeishuMessage(params: {
     const reply = tryHandleAdminCommand({ cfg, senderId: senderIdForAuth, text: ctx.content });
     if (reply) {
       await sendMessageFeishu({ cfg, to: target, text: reply, replyToMessageId: ctx.messageId });
+      return;
+    }
+  }
+
+  // /helper command - available to all users (no LLM call)
+  if (ctx.contentType === "text") {
+    const helperReply = tryHandleHelperCommand(ctx.content);
+    if (helperReply) {
+      await sendMessageFeishu({ cfg, to: target, text: helperReply, replyToMessageId: ctx.messageId });
       return;
     }
   }
