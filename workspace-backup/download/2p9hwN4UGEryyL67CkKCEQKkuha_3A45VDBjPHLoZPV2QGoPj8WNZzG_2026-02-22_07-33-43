@@ -1,0 +1,1773 @@
+﻿I:1:0:26-02-22 7:33:43.627 -03:30 Odin Serializer ArchitectureInfo initialization with defaults (all unaligned read/writes disabled).
+I:1:0:26-02-22 7:33:43.627 -03:30 Odin Serializer detected non-white-listed runtime platform Android; disabling all unaligned memory read/writes.
+W:1:6:26-02-22 7:33:43.939 -03:30 Launcher Awake
+I:1:6:26-02-22 7:33:43.943 -03:30 isDebugBuild False
+I:1:6:26-02-22 7:33:43.946 -03:30 HandleUrl Uri is NULL
+I:1:6:26-02-22 7:33:43.946 -03:30 UNITY_ANDROID
+I:1:6:26-02-22 7:33:43.971 -03:30 AuthUrl https://bingo2.superbgame.net/,https://bingo2.voyage.bingo/
+W:1:6:26-02-22 7:33:43.971 -03:30 DontDestroyOnLoad only works for root GameObjects or components on root GameObjects.
+I:1:6:26-02-22 7:33:43.975 -03:30 [Performance] Last Session Diagnostic: normal quit
+I:1:6:26-02-22 7:33:44.016 -03:30 AppsFlyer start key: v2w2tuNCNaBNXvFJgRGPRW, isDebug: False
+I:1:6:26-02-22 7:33:44.094 -03:30 [DownloadManager] Set MaxRunningTask to 8
+I:1:6:26-02-22 7:33:44.097 -03:30 Downloading Performance Config https://bingo2.superbgame.net/memory_threshold
+I:1:6:26-02-22 7:33:44.138 -03:30 Using Facebook Unity SDK v18.0.0 with FBAndroidSDK/18.1.3
+I:1:6:26-02-22 7:33:44.139 -03:30 AppsFlyer Init successful
+I:1:7:26-02-22 7:33:44.206 -03:30 UnityService Init successful
+I:1:11:26-02-22 7:33:44.267 -03:30 Firebase init complete Available
+I:1:11:26-02-22 7:33:44.267 -03:30 Firebase Init successful
+I:1:11:26-02-22 7:33:44.272 -03:30 Firebase Init complete
+I:1:12:26-02-22 7:33:44.273 -03:30 Firebase Analytics API Initializing
+I:1:12:26-02-22 7:33:44.273 -03:30 analytics API Initialized
+I:1:12:26-02-22 7:33:44.273 -03:30 Firebase Cloud Messaging API Initialized
+I:1:13:26-02-22 7:33:44.288 -03:30 [FirebaseInit] FCM Token: c-T67vgJTPSsUCQW4rGUZ4:APA91bH0OpCgz0Z9pP-kHVlA22gpHSF2-UrP9fSe3vE-lSXrjPu20-7Evn1iCYMeP1ZfIxkyhCDQYaJE4ebc-2LIOhAqFxsgkJqloQqqIUiVRmdovoLGFKw
+I:1:41:26-02-22 7:33:44.757 -03:30 https://entry.bingo.elitescastle.com
+Time: 787
+Status Code: 404
+Message: 
+I:1:47:26-02-22 7:33:44.854 -03:30 PerformanceConfig: {"memory_threshold":{"Android":{"threshold":2500,"percent":50},"iOS":{"threshold":2500,"percent":50}}}
+I:1:47:26-02-22 7:33:44.868 -03:30 AssetManager Begin Init
+I:1:47:26-02-22 7:33:44.868 -03:30 SuppertAstc True
+I:1:47:26-02-22 7:33:44.868 -03:30 ShouldUsePerformanceMode False
+I:1:47:26-02-22 7:33:44.868 -03:30 [AssetManager] UseMiniBundles False
+I:1:49:26-02-22 7:33:45.166 -03:30 AssetManager finish Init
+I:1:49:26-02-22 7:33:45.168 -03:30 Downloading Remote Config https://bingo2.superbgame.net/?platform=Android&build=1.52&did=1788bf5d9950a6ad0bcf318adf44053e
+I:1:49:26-02-22 7:33:45.170 -03:30 AppsFlyer_Unity_v6.17.81 didReceiveConversionData called with {"redirect_response_data":null,"adgroup_id":null,"engmnt_source":null,"is_incentivized":"false","retargeting_conversion_type":"none","af_ip":"156.57.107.1","orig_cost":"0.0","af_prt":"mintmobicn256","source":"appsflyer","is_first_launch":false,"af_click_lookback":"7d","CB_preload_equal_priority_enabled":false,"af_model":"SM-S928W","af_cpi":null,"iscache":true,"click_time":"2025-02-27 16:06:51.181","is_branded_link":null,"adset":null,"match_type":"id_matching","af_channel":"mov_aos_mxc","campaign_id":null,"af_pmod_lookback_window":"30m","af_ua":"Mozilla\/5.0 (Linux; Android 14; SM-S928W Build\/UP1A.231005.007; wv) AppleWebKit\/537.36 (KHTML, like Gecko) Version\/4.0 Chrome\/132.0.6834.122 Mobile Safari\/537.36","install_time":"2025-02-28 21:19:20.995","agency":"mintmobicn256","media_source":null,"idfa":"a656eb13-7a29-4c95-ad36-f28fe9284501","advertising_id":"a656eb13-7a29-4c95-ad36-f28fe9284501","clickid":"MZMZL3JJ4214M575MJN41JJN1Nr172K1K73KAwA20250228000651AwA107243931AwA1009371AwAOE2f3FA23a107243931ag-a101aPxfLbEIIBfKrPQBALbEIIdEbKa67L08L8435r7N7N97214J082A67L08K99A67L03J8JA1035AwAAwAAwA156f57f107f1AwAg-AwA6000000AwAr656JM13a7r29a4L95arK36aN28NJ9284501AwA50249914544AwANK00492La6484a4N96aM06Ja51212r34N63JAwA20025AwA50249914544AwAcxPHBrKIAPxHAwA1009371AwA20025AwA0AwAoWao928YAwA14AwAAwA1009371","af_siteid":"50249914544","af_status":"Non-organic","af_lang":"en-CA","af_sub1":null,"af_os_version":"14","cost_cents_USD":"0","af_sub5":null,"af_sub4":null,"af_sub3":null,"af_sub2":null,"adset_id":null,"esp_name":null,"http_referrer":null,"campaign":"bingovoyag_AN_cici_vo_ca\/au\/fr_241121_movable","is_universal_link":null,"android_id":"a656eb13-7a29-4c95-ad36-f28fe9284501","is_retargeting":"false","adgroup":null}
+I:1:62:26-02-22 7:33:45.370 -03:30 {"cdn":"https://bingo2-cdn.superbgame.net,https://bingo2-client-cdn.superbgame.net,https://d37saotxmt58hj.cloudfront.net,https://bingo2-client-cf.voyage.bingo,https://d1bsuw0vp08gcu.cloudfront.net","target":"1.52.13.2","gds_addr":"https://assets-gds.superbgame.net/client/production/V1.52.13_S5.zip,https://gds.superbgame.net/client/production/V1.52.13_S5.zip","status":1}
+W:1:62:26-02-22 7:33:45.456 -03:30 App StartGame
+W:1:62:26-02-22 7:33:45.466 -03:30 [Memory] AppDomain Constructor 98623968
+I:1:62:26-02-22 7:33:45.571 -03:30 Unzipping Main.dll took 93ms
+I:1:62:26-02-22 7:33:45.853 -03:30 ILRuntime CLRBinding Took: 224ms
+I:1:62:26-02-22 7:33:45.894 -03:30 deviceModel samsung SM-S928W
+I:1:62:26-02-22 7:33:45.894 -03:30 processorFrequency 6796MHz
+I:1:62:26-02-22 7:33:45.894 -03:30 processorCount 8
+I:1:62:26-02-22 7:33:45.894 -03:30 processorType ARM64 FP ASIMD AES
+I:1:62:26-02-22 7:33:45.894 -03:30 graphicsDeviceName Adreno (TM) 750
+I:1:62:26-02-22 7:33:45.894 -03:30 graphicsDeviceType OpenGLES3
+I:1:62:26-02-22 7:33:45.894 -03:30 graphicsDeviceVendor Qualcomm
+I:1:62:26-02-22 7:33:45.899 -03:30 LibInfo.Version: 1.52_1585fcff-f4a6-4d71-b412-5cb51c0b1930
+I:1:62:26-02-22 7:33:45.899 -03:30 LibInfo.ResVersion: 1.52.13.2
+I:1:62:26-02-22 7:33:46.068 -03:30 [Flow] BeginSubflow 0 
+I:1:62:26-02-22 7:33:46.069 -03:30 BuildVer: 1.52.13
+I:1:62:26-02-22 7:33:46.069 -03:30 ResVer: 1.52.13.2
+I:1:62:26-02-22 7:33:46.069 -03:30 GameMain Started
+I:1:62:26-02-22 7:33:46.069 -03:30 RELEASE build
+I:1:62:26-02-22 7:33:46.069 -03:30 __LOG_VERBOSE false
+W:1:62:26-02-22 7:33:46.069 -03:30 UNITY_EDITOR false
+I:1:62:26-02-22 7:33:46.070 -03:30 Disk Free: 89319MB
+I:1:62:26-02-22 7:33:46.082 -03:30 DeviceID: 1788bf5d9950a6ad0bcf318adf44053e
+I:1:62:26-02-22 7:33:46.082 -03:30 System Memory: 10.8252GB
+I:1:62:26-02-22 7:33:46.085 -03:30 [Performance] Cpu: High, Mem: Large
+I:20:-1:26-02-22 7:33:46.094 -03:30 [FileHelper] Deleting outdated file /storage/emulated/0/Android/data/com.bingo.cruise.free.best.top.game/files/image_cache/0b7f5b1efa500e474a53d312918d87b4.ktx
+I:1:62:26-02-22 7:33:46.094 -03:30 [Performance] Countly Took 0.31ms
+I:1:62:26-02-22 7:33:46.095 -03:30 [Performance] Countly Took 0.22ms
+I:1:62:26-02-22 7:33:46.095 -03:30 [Performance] Countly Took 0.26ms
+I:1:62:26-02-22 7:33:46.096 -03:30 [Performance] Countly Took 0.30ms
+I:1:62:26-02-22 7:33:46.097 -03:30 [Performance] Countly Took 0.20ms
+I:1:62:26-02-22 7:33:46.100 -03:30 [Performance] Countly Took 0.23ms
+I:20:-1:26-02-22 7:33:46.101 -03:30 [FileHelper] Deleting outdated file /storage/emulated/0/Android/data/com.bingo.cruise.free.best.top.game/files/image_cache/1034ce389b5abb1b649e547b9a91669e.ktx
+I:1:62:26-02-22 7:33:46.110 -03:30 [Performance] Countly Took 6.09ms
+I:20:-1:26-02-22 7:33:46.117 -03:30 [FileHelper] Deleting outdated file /storage/emulated/0/Android/data/com.bingo.cruise.free.best.top.game/files/image_cache/1a318ef2fc1f0cef38a3576a15b59986.jpg
+I:20:-1:26-02-22 7:33:46.127 -03:30 [FileHelper] Deleting outdated file /storage/emulated/0/Android/data/com.bingo.cruise.free.best.top.game/files/image_cache/52f7ebb1c1f9bfc90e9c493fe1307ae0.jpg
+I:20:-1:26-02-22 7:33:46.130 -03:30 [FileHelper] Deleting outdated file /storage/emulated/0/Android/data/com.bingo.cruise.free.best.top.game/files/image_cache/5ed444afbea051559cb7fabb9d31f45b.ktx
+I:20:-1:26-02-22 7:33:46.139 -03:30 [FileHelper] Deleting outdated file /storage/emulated/0/Android/data/com.bingo.cruise.free.best.top.game/files/image_cache/8e41d99bb523a54f7f863b30f2127f46.ktx
+I:20:-1:26-02-22 7:33:46.141 -03:30 [FileHelper] Deleting outdated file /storage/emulated/0/Android/data/com.bingo.cruise.free.best.top.game/files/image_cache/92d1ece3519a0dc421f2ea318d014641.ktx
+I:20:-1:26-02-22 7:33:46.156 -03:30 [FileHelper] Deleting outdated file /storage/emulated/0/Android/data/com.bingo.cruise.free.best.top.game/files/image_cache/dbe93beb58976890051eee2bf9a42419.ktx
+I:1:62:26-02-22 7:33:46.553 -03:30 [Performance] Countly Took 0.31ms
+I:1:62:26-02-22 7:33:46.576 -03:30 Detected DPI of 360
+I:1:63:26-02-22 7:33:46.605 -03:30 [AIHelp] Initialization Complete
+I:1:93:26-02-22 7:33:47.131 -03:30 Server Version: 1.52.13-v1.132.3.20260217091301
+I:1:93:26-02-22 7:33:47.145 -03:30 [LoginProcess] Addr wss://bingo2.voyage.bingo 
+I:1:93:26-02-22 7:33:47.145 -03:30 [WebSocket] CloseConnection
+I:34:-1:26-02-22 7:33:47.145 -03:30 [WebSocket] Socket Begin Connect
+I:1:102:26-02-22 7:33:47.267 -03:30 https://entry.bingo.elitescastle.com
+Time: 133
+Status Code: 404
+Message: 
+I:34:-1:26-02-22 7:33:47.412 -03:30 13.225.196.117:443
+I:35:-1:26-02-22 7:33:47.786 -03:30 [WebSocket] Start Receiving on 35
+I:1:131:26-02-22 7:33:47.801 -03:30 [Performance] Countly Took 0.50ms
+I:1:131:26-02-22 7:33:47.801 -03:30 [WebSocket] SEND with _ws UnbufferedRequest|[1]|204||Payload:0 bytes
+I:1:131:26-02-22 7:33:47.802 -03:30 [Performance] Send took 0.50ms
+I:1:131:26-02-22 7:33:47.802 -03:30 [Message] Send Request [1] pb.clock.DeleteCacheReq
+I:35:-1:26-02-22 7:33:47.956 -03:30 [WebSocket] EnqueueMessage Binary
+I:1:142:26-02-22 7:33:47.964 -03:30 [WebSocket] RECEIVE Response|[1]|204||Payload:0 bytes
+I:1:142:26-02-22 7:33:47.964 -03:30 [Performance] GetMessageWrapper took 0.07ms
+I:1:142:26-02-22 7:33:47.967 -03:30 [Message] Receive Response [1] pb.clock.DeleteCacheResp
+W:1:142:26-02-22 7:33:47.967 -03:30 [WebSocket] Set ServerSeq 0
+I:1:142:26-02-22 7:33:47.968 -03:30 [WebSocket] SEND with _ws BufferedRequest|[1]|201||Payload:0 bytes
+I:1:142:26-02-22 7:33:47.968 -03:30 [Performance] Send took 0.47ms
+I:1:142:26-02-22 7:33:47.968 -03:30 [Message] Send Request [1] pb.clock.SyncClockReq
+I:1:142:26-02-22 7:33:47.984 -03:30 [WebSocket] SEND with _ws BufferedRequest|[2]|301||Payload:1832 bytes
+I:1:142:26-02-22 7:33:47.984 -03:30 [Performance] Send took 0.47ms
+I:1:142:26-02-22 7:33:47.985 -03:30 [Message] Send Request [2] pb.user.GetUserReq
+I:35:-1:26-02-22 7:33:48.135 -03:30 [WebSocket] EnqueueMessage Binary
+I:1:153:26-02-22 7:33:48.147 -03:30 [WebSocket] RECEIVE Response|[1]|201||Payload:7 bytes
+I:1:153:26-02-22 7:33:48.147 -03:30 [Performance] GetMessageWrapper took 0.06ms
+I:1:153:26-02-22 7:33:48.149 -03:30 [Message] Receive Response [1] pb.clock.SyncClockResp
+I:1:153:26-02-22 7:33:48.149 -03:30 [SyncTimeProcess] _serverTimeDiffMilli 262
+I:35:-1:26-02-22 7:33:48.217 -03:30 [WebSocket] EnqueueMessage Binary
+I:1:158:26-02-22 7:33:48.231 -03:30 [WebSocket] RECEIVE Response|[2]|301||Payload:8140 bytes
+I:1:158:26-02-22 7:33:48.231 -03:30 [Performance] GetMessageWrapper took 0.06ms
+I:1:158:26-02-22 7:33:48.306 -03:30 [Message] Receive Response [2] pb.user.GetUserResp
+I:35:-1:26-02-22 7:33:48.789 -03:30 [WebSocket] EnqueueMessage Binary
+I:1:187:26-02-22 7:33:48.796 -03:30 [WebSocket] RECEIVE Notification|[1]|100056|chat-37vafuGo2WpSJpsnUyfJIk3XRvd|Payload:83 bytes
+I:1:187:26-02-22 7:33:48.796 -03:30 [Performance] GetMessageWrapper took 0.06ms
+W:1:187:26-02-22 7:33:48.804 -03:30 StreamID not found: chat-37vafuGo2WpSJpsnUyfJIk3XRvd, Topic: 100056
+I:1:190:26-02-22 7:33:48.846 -03:30 [Performance] Countly Took 0.61ms
+I:1:190:26-02-22 7:33:48.867 -03:30 UserName: 779762227
+I:1:190:26-02-22 7:33:48.867 -03:30 UserID: 2p9hwN4UGEryyL67CkKCEQKkuha
+I:1:190:26-02-22 7:33:48.867 -03:30 UserGroups: TEST_SYSTEM_GROWTH_3_1,TEST_STORE_LIMIT_BUFF_1,TEST_NOTIFICATION_1_2,TEST_BIGGOARD_DISPLAY_1_6
+I:1:190:26-02-22 7:33:48.887 -03:30 [WebSocket] SEND with _ws BufferedRequest|[3]|338||Payload:0 bytes
+I:1:190:26-02-22 7:33:48.888 -03:30 [Performance] Send took 0.55ms
+I:1:190:26-02-22 7:33:48.888 -03:30 [Message] Send Request [3] pb.user.GetProfileStateReq
+I:1:190:26-02-22 7:33:48.889 -03:30 [WebSocket] SEND with _ws BufferedRequest|[4]|2601||Payload:0 bytes
+I:1:190:26-02-22 7:33:48.889 -03:30 [Performance] Send took 0.34ms
+I:1:190:26-02-22 7:33:48.889 -03:30 [Message] Send Request [4] pb.clientlog.GetUploadLogStrategyReq
+I:1:190:26-02-22 7:33:48.894 -03:30 GotUser 1 27ms
+I:1:190:26-02-22 7:33:48.909 -03:30 [Performance] Countly Took 0.37ms
+I:1:190:26-02-22 7:33:48.912 -03:30 [WebSocket] SEND with _ws BufferedRequest|[5]|50001||Payload:87 bytes
+I:1:190:26-02-22 7:33:48.913 -03:30 [Performance] Send took 0.41ms
+I:1:190:26-02-22 7:33:48.913 -03:30 [Message] Send Request [5] pb.notify.UpdateNotifyAttrReq
+I:1:190:26-02-22 7:33:48.915 -03:30 Path = /storage/emulated/0/Android/data/com.bingo.cruise.free.best.top.game/files/save/2p9hwN4UGEryyL67CkKCEQKkuha/newly_collected_data.json
+I:1:190:26-02-22 7:33:48.919 -03:30 [WebSocket] SEND with _ws BufferedRequest|[6]|348||Payload:0 bytes
+I:1:190:26-02-22 7:33:48.920 -03:30 [Performance] Send took 0.41ms
+I:1:190:26-02-22 7:33:48.920 -03:30 [Message] Send Request [6] pb.user.GetSwitchInfoStateReq
+I:1:190:26-02-22 7:33:48.920 -03:30 [WebSocket] SEND with _ws BufferedRequest|[7]|2324||Payload:0 bytes
+I:1:190:26-02-22 7:33:48.921 -03:30 [Performance] Send took 0.27ms
+I:1:190:26-02-22 7:33:48.921 -03:30 [Message] Send Request [7] pb.chat.GetChatStateReq
+I:1:190:26-02-22 7:33:48.974 -03:30 GotUser 2 107ms
+I:1:190:26-02-22 7:33:49.006 -03:30 Red dot AlbumCard 645 AC_4_24_4,AC_4_14_7,AC_4_24_1,AC_4_25_2,AC_4_22_8,AC_4_27_9,AC_4_27_1,AC_4_15_6,AC_4_26_3,AC_4_21_6,AC_4_22_3,AC_4_18_7,AC_4_22_9,AC_4_23_3,AC_4_24_2,AC_4_22_5,AC_4_25_3,AC_5_6_9,AC_5_8_2,AC_5_6_8,AC_5_4_6,AC_5_19_2,AC_5_1_6,AC_5_8_9,AC_5_10_6,AC_5_8_7,AC_5_10_2,AC_5_20_3,AC_5_1_9,AC_5_3_1,AC_5_16_4,AC_5_6_5,AC_5_1_3,AC_5_3_5,AC_5_12_6,AC_5_8_4,AC_5_1_5,AC_5_11_7,AC_5_2_8,AC_5_17_4,AC_5_4_7,AC_5_5_2,AC_5_5_9,AC_5_3_3,AC_5_20_2,AC_5_2_9,AC_5_2_6,AC_5_14_4,AC_5_2_4,AC_5_20_5,AC_5_5_1,AC_5_18_4,AC_5_3_7,AC_5_4_9,AC_5_1_1,AC_5_10_7,AC_5_9_8,AC_5_9_4,AC_5_2_5,AC_5_3_4,AC_5_21_2,AC_5_8_5,AC_5_22_2,AC_5_9_9,AC_5_6_3,AC_5_19_3,AC_5_2_1,AC_5_15_4,AC_5_1_4,AC_5_3_6,AC_5_3_2,AC_5_3_8,AC_5_9_1,AC_5_2_2,AC_5_10_3,AC_5_3_9,AC_5_12_5,AC_5_1_7,AC_5_2_3,AC_5_4_2,AC_5_4_1,AC_5_6_1,AC_5_21_4,AC_5_24_9,AC_5_5_6,AC_5_6_7,AC_5_1_2,AC_5_19_5,AC_5_14_6,AC_5_5_8,AC_5_9_2,AC_5_17_6,AC_5_9_5,AC_5_22_6,AC_5_10_1,AC_5_10_4,AC_5_8_6,AC_5_1_8,AC_5_21_3,AC_5_5_3,AC_5_4_3,AC_5_9_3,AC_5_19_4,AC_5_8_3,AC_5_6_2,AC_5_8_1,AC_5_2_7,AC_5_5_5,AC_5_5_4,AC_5_4_4,AC_5_4_5,AC_5_10_9,AC_5_6_4,AC_5_13_5,AC_5_11_6,AC_5_9_7,AC_5_11_3,AC_5_11_8,AC_5_15_3,AC_5_22_4,AC_5_14_1,AC_5_13_2,AC_5_12_1,AC_5_12_3,AC_5_19_8,AC_5_16_9,AC_5_6_6,AC_5_12_8,AC_5_11_5,AC_5_4_8,AC_5_14_5,AC_5_18_5,AC_5_15_5,AC_5_20_4,AC_5_13_8,AC_5_23_8,AC_5_9_6,AC_5_13_1,AC_5_7_9,AC_5_5_7,AC_5_14_8,AC_5_13_3,AC_5_14_2,AC_5_11_1,AC_5_11_2,AC_5_16_2,AC_5_16_3,AC_5_11_4,AC_5_10_5,AC_5_20_9,AC_5_13_7,AC_5_12_2,AC_5_15_1,AC_5_8_8,AC_5_18_2,AC_5_13_4,AC_5_20_1,AC_5_14_3,AC_5_19_1,AC_5_17_1,AC_5_15_2,AC_5_17_2,AC_5_12_4,AC_5_21_8,AC_5_22_1,AC_5_13_6,AC_5_16_1,AC_5_18_3,AC_5_12_7,AC_5_16_6,AC_5_21_1,AC_5_18_1,AC_5_16_5,AC_5_15_7,AC_5_17_3,AC_5_23_1,AC_5_19_6,AC_5_17_5,AC_5_21_6,AC_5_24_3,AC_5_23_5,AC_5_23_2,AC_5_24_1,AC_5_18_9,AC_5_23_9,AC_5_10_8,AC_5_11_9,AC_5_22_3,AC_5_15_6,AC_5_18_6,AC_5_22_7,AC_5_14_7,AC_5_19_9,AC_5_19_7,AC_5_20_6,AC_5_14_9,AC_5_23_3,AC_5_21_5,AC_5_24_5,AC_5_20_8,AC_5_17_8,AC_5_24_2,AC_5_12_9,AC_5_23_7,AC_5_24_8,AC_5_15_9,AC_5_24_6,AC_5_13_9,AC_5_22_8,AC_6_18_1,AC_6_20_8,AC_6_17_4,AC_6_16_4,AC_6_18_5,AC_6_20_7,AC_6_17_7,AC_6_24_9,AC_6_19_4,AC_6_19_3,AC_6_19_2,AC_6_20_3,AC_6_21_2,AC_6_20_2,AC_6_16_6,AC_6_18_4,AC_6_22_2,AC_6_18_3,AC_6_21_8,AC_6_23_9,AC_6_17_9,AC_6_20_4,AC_6_20_6,AC_6_24_4,AC_6_24_5,AC_6_21_7,AC_6_17_1,AC_6_16_9,AC_6_16_1,AC_6_22_5,AC_6_19_1,AC_6_22_1,AC_6_24_1,AC_6_16_2,AC_6_20_9,AC_6_17_6,AC_6_21_1,AC_6_16_3,AC_6_20_1,AC_6_18_2,AC_6_17_3,AC_6_16_5,AC_6_23_5,AC_6_21_5,AC_6_17_2,AC_6_21_3,AC_7_8_6,AC_7_2_5,AC_7_1_7,AC_7_10_7,AC_7_1_9,AC_7_5_8,AC_7_12_2,AC_7_7_4,AC_7_18_1,AC_7_6_3,AC_7_8_4,AC_7_8_2,AC_7_2_3,AC_7_15_4,AC_7_3_5,AC_7_3_2,AC_7_3_8,AC_7_1_1,AC_7_6_1,AC_7_7_5,AC_7_4_7,AC_7_1_6,AC_7_16_4,AC_7_5_2,AC_7_3_3,AC_7_8_7,AC_7_5_1,AC_7_8_9,AC_7_1_4,AC_7_9_4,AC_7_4_2,AC_7_6_8,AC_7_14_4,AC_7_10_2,AC_7_3_7,AC_7_1_2,AC_7_13_2,AC_7_2_6,AC_7_2_4,AC_7_18_3,AC_7_6_5,AC_7_1_3,AC_7_11_8,AC_7_10_3,AC_7_1_5,AC_7_3_1,AC_7_4_6,AC_7_9_6,AC_7_2_8,AC_7_2_2,AC_7_3_4,AC_7_9_1,AC_7_2_9,AC_7_10_6,AC_7_4_1,AC_7_8_5,AC_7_3_6,AC_7_2_1,AC_7_7_6,AC_7_21_9,AC_7_1_8,AC_7_9_9,AC_7_10_9,AC_7_6_2,AC_7_5_6,AC_7_8_3,AC_7_12_6,AC_7_13_7,AC_7_20_2,AC_7_6_7,AC_7_9_2,AC_7_10_1,AC_7_7_2,AC_7_11_7,AC_7_4_3,AC_7_10_4,AC_7_7_7,AC_7_5_3,AC_7_9_3,AC_7_8_1,AC_7_7_1,AC_7_7_3,AC_7_4_4,AC_7_13_5,AC_7_9_5,AC_7_2_7,AC_7_12_4,AC_7_3_9,AC_7_5_5,AC_7_6_9,AC_7_12_5,AC_7_5_4,AC_7_14_2,AC_7_4_5,AC_7_6_4,AC_7_4_9,AC_7_24_9,AC_7_5_9,AC_7_22_2,AC_7_11_3,AC_7_7_8,AC_7_14_1,AC_7_12_1,AC_7_9_8,AC_7_4_8,AC_7_17_4,AC_7_21_4,AC_7_21_5,AC_7_13_1,AC_7_12_3,AC_7_11_2,AC_7_11_5,AC_7_15_8,AC_7_5_7,AC_7_19_2,AC_7_20_3,AC_7_18_4,AC_7_16_6,AC_7_11_1,AC_7_19_3,AC_7_6_6,AC_7_14_9,AC_7_13_3,AC_7_10_5,AC_7_15_1,AC_7_11_6,AC_7_14_6,AC_7_7_9,AC_7_21_2,AC_7_14_5,AC_7_13_4,AC_7_18_9,AC_7_11_4,AC_7_14_3,AC_7_15_3,AC_7_13_6,AC_7_17_1,AC_7_8_8,AC_7_16_1,AC_7_9_7,AC_7_22_1,AC_7_16_2,AC_7_15_2,AC_7_19_1,AC_7_21_1,AC_7_10_8,AC_7_24_3,AC_7_16_5,AC_7_16_3,AC_7_19_9,AC_7_20_1,AC_7_17_3,AC_7_18_2,AC_7_24_7,AC_7_17_2,AC_7_23_3,AC_7_24_8,AC_7_17_7,AC_7_22_3,AC_8_5_8,AC_8_1_1,AC_8_1_2,AC_8_4_7,AC_8_1_3,AC_8_4_6,AC_8_9_6,AC_8_2_2,AC_8_11_8,AC_8_8_7,AC_8_5_2,AC_8_1_4,AC_8_3_8,AC_8_8_4,AC_8_8_6,AC_8_6_5,AC_8_8_9,AC_8_4_1,AC_8_3_1,AC_8_2_3,AC_8_24_7,AC_8_24_9,AC_8_2_4,AC_8_7_6,AC_8_2_6,AC_8_3_4,AC_8_8_5,AC_8_1_9,AC_8_13_5,AC_8_6_8,AC_8_3_3,AC_8_2_1,AC_8_1_7,AC_8_2_5,AC_8_2_8,AC_8_1_5,AC_8_9_4,AC_8_3_5,AC_8_3_7,AC_8_10_3,AC_8_3_2,AC_8_7_4,AC_8_6_1,AC_8_9_1,AC_8_2_9,AC_8_7_2,AC_8_10_9,AC_8_9_9,AC_8_2_7,AC_8_10_6,AC_8_7_7,AC_8_16_4,AC_8_20_3,AC_8_12_4,AC_8_10_7,AC_8_8_3,AC_8_15_4,AC_8_12_6,AC_8_14_4,AC_8_7_1,AC_8_5_3,AC_8_6_2,AC_8_11_7,AC_8_20_2,AC_8_7_3,AC_8_4_3,AC_8_9_5,AC_8_10_1,AC_8_6_7,AC_8_5_6,AC_8_8_1,AC_8_3_9,AC_8_9_2,AC_8_5_4,AC_8_3_6,AC_8_5_9,AC_8_17_4,AC_8_21_2,AC_8_9_8,AC_8_18_4,AC_8_6_4,AC_8_4_5,AC_8_5_5,AC_8_1_8,AC_8_4_4,AC_8_11_3,AC_8_1_6,AC_8_5_1,AC_8_12_9,AC_8_14_1,AC_8_15_7,AC_8_4_8,AC_8_12_1,AC_8_11_2,AC_8_23_9,AC_8_17_8,AC_8_5_7,AC_8_12_5,AC_8_14_6,AC_8_19_2,AC_8_4_9,AC_8_6_3,AC_8_6_6,AC_8_6_9,AC_8_7_8,AC_8_13_2,AC_8_19_3,AC_8_13_7,AC_8_4_2,AC_8_11_6,AC_8_9_7,AC_8_7_5,AC_8_13_3,AC_8_16_1,AC_8_22_2,AC_8_22_4,AC_8_8_8,AC_8_10_5,AC_8_8_2,AC_8_24_2,AC_8_16_6,AC_8_15_8,AC_8_22_7,AC_8_11_4,AC_8_14_5,AC_8_11_1,AC_8_9_3,AC_8_13_6,AC_9_1_5,AC_9_6_5,AC_9_8_6,AC_9_8_5,AC_9_3_8,AC_9_5_8,AC_9_1_7,AC_9_2_1,AC_9_10_3,AC_9_9_4,AC_9_1_4,AC_9_8_7,AC_9_4_1,AC_9_6_1,AC_9_1_2,AC_9_3_1,AC_9_1_1,AC_9_2_6,AC_9_11_8,AC_9_13_5,AC_9_6_8,AC_9_1_3,AC_9_7_4,AC_9_13_2,AC_9_2_2,AC_9_2_3,AC_9_9_1,AC_9_3_5,AC_9_7_6,AC_9_1_9,AC_9_2_5,AC_9_4_6,AC_9_2_8,AC_9_3_2,AC_9_8_4,AC_9_5_2,AC_9_4_7,AC_9_15_4,AC_9_3_3,AC_9_9_6,AC_9_3_7,AC_9_3_4,AC_9_2_4,AC_9_3_9,AC_9_11_7,AC_9_3_6,AC_9_15_8,AC_9_13_7,AC_9_8_9,AC_9_5_3,AC_9_7_1,AC_9_6_2,AC_9_7_3,AC_9_9_9,AC_9_10_1,AC_9_4_9,AC_9_12_6,AC_9_14_4,AC_9_15_9,AC_9_8_1,AC_9_7_7,AC_9_16_4,AC_9_10_9,AC_9_16_6,AC_9_17_4,AC_9_5_6,AC_9_9_2,AC_9_9_5,AC_9_8_3,AC_9_10_7,AC_9_6_7,AC_9_6_9,AC_9_4_3,AC_9_7_2,AC_9_1_6,AC_9_14_9,AC_9_12_4,AC_9_10_6,AC_9_18_4,AC_9_1_8,AC_9_4_5,AC_9_5_5,AC_9_6_4,AC_9_5_9,AC_9_2_9,AC_9_4_4,AC_9_7_8,AC_9_5_4,AC_9_9_8,AC_9_2_7,AC_9_21_2,AC_9_20_2,AC_9_11_3,AC_9_23_9,AC_9_14_8,AC_9_14_1,AC_9_12_1,AC_9_12_9,AC_9_12_5,AC_9_14_6,AC_9_21_4,AC_9_6_6,AC_9_6_3
+I:1:190:26-02-22 7:33:49.006 -03:30 Red dot TeamRaceChat 0 
+I:1:190:26-02-22 7:33:49.006 -03:30 Red dot AlbumWildCard 0 
+I:1:190:26-02-22 7:33:49.006 -03:30 Red dot ClubApply 0 
+I:1:190:26-02-22 7:33:49.006 -03:30 Red dot CostumeFemaleHair 0 
+I:1:190:26-02-22 7:33:49.006 -03:30 Red dot DeckChat 0 
+I:1:190:26-02-22 7:33:49.006 -03:30 Red dot DramaBuildIcon 0 
+I:1:190:26-02-22 7:33:49.006 -03:30 Red dot AlbumSetComplete 0 
+I:1:190:26-02-22 7:33:49.006 -03:30 Red dot TeamRace 0 
+I:1:190:26-02-22 7:33:49.006 -03:30 Red dot AlbumStarShop 0 
+I:1:190:26-02-22 7:33:49.006 -03:30 Red dot ClubGameRewards 0 
+I:1:190:26-02-22 7:33:49.006 -03:30 Red dot TeamBuild 0 
+I:1:190:26-02-22 7:33:49.006 -03:30 Red dot RedeemMarket 8 TeamRaceFaq.TEAM_RACE_1,TeamRaceFaq.TEAM_RACE_2,TeamRaceFaq.TEAM_RACE_3,TeamRaceFaq.TEAM_RACE_4,RedeemMarket.REDEEM_MARKET_14,RedeemMarket.REDEEM_MARKET_15,RedeemMarket.REDEEM_MARKET_16,RedeemMarket.REDEEM_MARKET_18
+I:1:190:26-02-22 7:33:49.006 -03:30 Red dot CostumeFemaleBottom 0 
+I:1:190:26-02-22 7:33:49.006 -03:30 Red dot AlbumFaq 4 RedeemMarket.REDEEM_MARKET_7,RedeemMarket.REDEEM_MARKET_8,RedeemMarket.REDEEM_MARKET_9,RedeemMarket.REDEEM_MARKET_11
+I:1:190:26-02-22 7:33:49.007 -03:30 Red dot SettingPanel 1 m_top_1_aloha_shirt_1
+I:1:190:26-02-22 7:33:49.007 -03:30 Red dot ClubChat 1 
+I:1:190:26-02-22 7:33:49.007 -03:30 Red dot TeamRaceFaq 10 unisex_lifejacket_shirt_1,m_top_1_gray_shirt_1,m_top_1_brown_shirt_2,m_top_1_green_shirt_1,TeamRaceFaq.TEAM_RACE_7,TeamRaceFaq.TEAM_RACE_8,TeamRaceFaq.TEAM_RACE_9,TeamRaceFaq.TEAM_RACE_10,TeamRaceFaq.TEAM_RACE_11,TeamRaceFaq.TEAM_RACE_12
+I:1:190:26-02-22 7:33:49.007 -03:30 Red dot CostumeMaleBottom 0 
+I:1:190:26-02-22 7:33:49.007 -03:30 Red dot CostumeMaleHair 0 
+I:1:190:26-02-22 7:33:49.007 -03:30 Red dot AlbumPickGame 1 Root.Entrance.SPACE_QUEST_118
+I:1:190:26-02-22 7:33:49.007 -03:30 Red dot CostumeMaleSuit 0 
+I:1:190:26-02-22 7:33:49.007 -03:30 Red dot AvatarFrame 0 
+I:1:190:26-02-22 7:33:49.007 -03:30 Red dot PrivateChat 2 TeamRaceFaq.TEAM_RACE_5,TeamRaceFaq.TEAM_RACE_6
+I:1:190:26-02-22 7:33:49.007 -03:30 Red dot Quest 2 RedeemMarket.REDEEM_MARKET_12,RedeemMarket.REDEEM_MARKET_13
+I:1:190:26-02-22 7:33:49.007 -03:30 Red dot CostumeMaleTop 0 
+I:1:190:26-02-22 7:33:49.007 -03:30 Red dot AIHelp 0 
+I:1:190:26-02-22 7:33:49.007 -03:30 Red dot CampaignMission 8 MISSION_1,MISSION_2,MISSION_3,MISSION_4,MISSION_5,MISSION_7,MISSION_8,MISSION_9
+I:1:190:26-02-22 7:33:49.007 -03:30 Red dot CostumeFemaleShoes 0 
+I:1:190:26-02-22 7:33:49.007 -03:30 Red dot WeeklyMission 2 WEEKLY_MISSION_1,WEEKLY_MISSION_2
+I:1:190:26-02-22 7:33:49.008 -03:30 [WebSocket] SEND with _ws BufferedRequest|[8]|2403||Payload:0 bytes
+I:1:190:26-02-22 7:33:49.008 -03:30 [Performance] Send took 0.55ms
+I:1:190:26-02-22 7:33:49.008 -03:30 [Message] Send Request [8] pb.redpoint.GetRedPointV2Req
+I:1:190:26-02-22 7:33:49.015 -03:30 [WebSocket] SEND with _ws BufferedRequest|[9]|1001||Payload:0 bytes
+I:1:190:26-02-22 7:33:49.015 -03:30 [Performance] Send took 0.31ms
+I:1:190:26-02-22 7:33:49.015 -03:30 [Message] Send Request [9] pb.friend.GetListReq
+I:1:190:26-02-22 7:33:49.020 -03:30 [WebSocket] SEND with _ws BufferedRequest|[10]|1205||Payload:0 bytes
+I:1:190:26-02-22 7:33:49.020 -03:30 [Performance] Send took 0.33ms
+I:1:190:26-02-22 7:33:49.020 -03:30 [Message] Send Request [10] pb.character.GetCharacterReq
+I:1:190:26-02-22 7:33:49.048 -03:30 [WebSocket] SEND with _ws BufferedRequest|[11]|602||Payload:11 bytes
+I:1:190:26-02-22 7:33:49.048 -03:30 [Performance] Send took 0.40ms
+I:1:190:26-02-22 7:33:49.048 -03:30 [Message] Send Request [11] pb.collection.GetCollectionSceneReq
+I:35:-1:26-02-22 7:33:49.052 -03:30 [WebSocket] EnqueueMessage Binary
+I:35:-1:26-02-22 7:33:49.052 -03:30 [WebSocket] EnqueueMessage Binary
+I:35:-1:26-02-22 7:33:49.052 -03:30 [WebSocket] EnqueueMessage Binary
+I:35:-1:26-02-22 7:33:49.052 -03:30 [WebSocket] EnqueueMessage Binary
+I:35:-1:26-02-22 7:33:49.053 -03:30 [WebSocket] EnqueueMessage Binary
+I:1:190:26-02-22 7:33:49.053 -03:30 [WebSocket] SEND with _ws BufferedRequest|[12]|701||Payload:0 bytes
+I:1:190:26-02-22 7:33:49.054 -03:30 [Performance] Send took 0.30ms
+I:1:190:26-02-22 7:33:49.054 -03:30 [Message] Send Request [12] pb.bonus.GetPeriodBonusStateReq
+I:1:190:26-02-22 7:33:49.056 -03:30 [WebSocket] SEND with _ws BufferedRequest|[13]|703||Payload:0 bytes
+I:1:190:26-02-22 7:33:49.056 -03:30 [Performance] Send took 0.31ms
+I:1:190:26-02-22 7:33:49.056 -03:30 [Message] Send Request [13] pb.bonus.GetDailyBonusStateReq
+I:1:190:26-02-22 7:33:49.057 -03:30 [WebSocket] SEND with _ws BufferedRequest|[14]|1301||Payload:0 bytes
+I:1:190:26-02-22 7:33:49.058 -03:30 [Performance] Send took 0.26ms
+I:1:190:26-02-22 7:33:49.058 -03:30 [Message] Send Request [14] pb.sysrwd.GetStateReq
+I:1:190:26-02-22 7:33:49.073 -03:30 Pass randomOffset 8677
+I:1:190:26-02-22 7:33:49.078 -03:30 [WebSocket] SEND with _ws BufferedRequest|[15]|1401||Payload:0 bytes
+I:1:190:26-02-22 7:33:49.078 -03:30 [Performance] Send took 0.43ms
+I:1:190:26-02-22 7:33:49.078 -03:30 [Message] Send Request [15] pb.pass.GetStateReq
+I:1:190:26-02-22 7:33:49.079 -03:30 GotUser 3 212ms
+I:1:190:26-02-22 7:33:49.084 -03:30 [WebSocket] SEND with _ws BufferedRequest|[16]|1501||Payload:0 bytes
+I:1:190:26-02-22 7:33:49.084 -03:30 [Performance] Send took 0.39ms
+I:1:190:26-02-22 7:33:49.084 -03:30 [Message] Send Request [16] pb.drama.GetStateReq
+I:1:190:26-02-22 7:33:49.102 -03:30 [WebSocket] SEND with _ws BufferedRequest|[17]|30276||Payload:0 bytes
+I:1:190:26-02-22 7:33:49.103 -03:30 [Performance] Send took 0.60ms
+I:1:190:26-02-22 7:33:49.103 -03:30 [Message] Send Request [17] pb.campaign.GetWeekMissionUnclaimedRewardReq
+I:1:190:26-02-22 7:33:49.104 -03:30 [WebSocket] SEND with _ws BufferedRequest|[18]|30001||Payload:0 bytes
+I:1:190:26-02-22 7:33:49.105 -03:30 [Performance] Send took 0.70ms
+I:1:190:26-02-22 7:33:49.105 -03:30 [Message] Send Request [18] pb.campaign.GetCampaignListReq
+I:1:190:26-02-22 7:33:49.109 -03:30 [WebSocket] SEND with _ws BufferedRequest|[19]|433||Payload:0 bytes
+I:1:190:26-02-22 7:33:49.109 -03:30 [Performance] Send took 0.65ms
+I:1:190:26-02-22 7:33:49.109 -03:30 [Message] Send Request [19] pb.hall.HallConstructionStateReq
+I:1:190:26-02-22 7:33:49.111 -03:30 [WebSocket] SEND with _ws BufferedRequest|[20]|412||Payload:0 bytes
+I:1:190:26-02-22 7:33:49.112 -03:30 [Performance] Send took 0.52ms
+I:1:190:26-02-22 7:33:49.112 -03:30 [Message] Send Request [20] pb.hall.FindingGameStateReq
+I:1:190:26-02-22 7:33:49.142 -03:30 [WebSocket] SEND with _ws BufferedRequest|[21]|1701||Payload:12 bytes
+I:1:190:26-02-22 7:33:49.143 -03:30 [Performance] Send took 0.58ms
+I:1:190:26-02-22 7:33:49.143 -03:30 [Message] Send Request [21] pb.album.GetAlbumsReq
+I:1:190:26-02-22 7:33:49.164 -03:30 [WebSocket] SEND with _ws BufferedRequest|[22]|40001||Payload:0 bytes
+I:1:190:26-02-22 7:33:49.164 -03:30 [Performance] Send took 0.53ms
+I:1:190:26-02-22 7:33:49.165 -03:30 [Message] Send Request [22] pb.pattern.GetPatternsReq
+I:1:190:26-02-22 7:33:49.168 -03:30 [WebSocket] SEND with _ws BufferedRequest|[23]|1803||Payload:0 bytes
+I:1:190:26-02-22 7:33:49.169 -03:30 [Performance] Send took 0.43ms
+I:1:190:26-02-22 7:33:49.169 -03:30 [Message] Send Request [23] pb.leaderboard.GetGlobalLeaderboardReq
+I:1:190:26-02-22 7:33:49.170 -03:30 [WebSocket] SEND with _ws BufferedRequest|[24]|341||Payload:0 bytes
+I:1:190:26-02-22 7:33:49.170 -03:30 [Performance] Send took 0.37ms
+I:1:190:26-02-22 7:33:49.171 -03:30 [Message] Send Request [24] pb.user.GetReturnStateReq
+I:35:-1:26-02-22 7:33:49.186 -03:30 [WebSocket] EnqueueMessage Binary
+I:1:190:26-02-22 7:33:49.204 -03:30 [WebSocket] SEND with _ws BufferedRequest|[25]|2010||Payload:0 bytes
+I:1:190:26-02-22 7:33:49.205 -03:30 [Performance] Send took 0.41ms
+I:1:190:26-02-22 7:33:49.205 -03:30 [Message] Send Request [25] pb.club.GetClubStreamIDReq
+I:1:190:26-02-22 7:33:49.206 -03:30 [WebSocket] SEND with _ws BufferedRequest|[26]|2012||Payload:0 bytes
+I:1:190:26-02-22 7:33:49.206 -03:30 [Performance] Send took 0.39ms
+I:1:190:26-02-22 7:33:49.206 -03:30 [Message] Send Request [26] pb.club.GetUserClubReq
+I:1:190:26-02-22 7:33:49.222 -03:30 [WebSocket] SEND with _ws BufferedRequest|[27]|2301||Payload:0 bytes
+I:1:190:26-02-22 7:33:49.222 -03:30 [Performance] Send took 0.40ms
+I:1:190:26-02-22 7:33:49.223 -03:30 [Message] Send Request [27] pb.chat.GetGlobalChatStreamIDReq
+I:1:190:26-02-22 7:33:49.228 -03:30 GotUser 4 361ms
+I:1:190:26-02-22 7:33:49.229 -03:30 [WebSocket] SEND with _ws BufferedRequest|[28]|621||Payload:0 bytes
+I:1:190:26-02-22 7:33:49.229 -03:30 [Performance] Send took 0.36ms
+I:1:190:26-02-22 7:33:49.229 -03:30 [Message] Send Request [28] pb.collection.GetFeatureCollectionsReq
+I:1:190:26-02-22 7:33:49.230 -03:30 Path = /storage/emulated/0/Android/data/com.bingo.cruise.free.best.top.game/files/save/cached_pid.json
+I:1:190:26-02-22 7:33:49.236 -03:30 [WebSocket] SEND with _ws BufferedRequest|[29]|336||Payload:0 bytes
+I:1:190:26-02-22 7:33:49.237 -03:30 [Performance] Send took 0.39ms
+I:1:190:26-02-22 7:33:49.237 -03:30 [Message] Send Request [29] pb.user.GetIAPRecordReq
+I:35:-1:26-02-22 7:33:49.241 -03:30 [WebSocket] EnqueueMessage Binary
+I:1:190:26-02-22 7:33:49.247 -03:30 [WebSocket] SEND with _ws BufferedRequest|[30]|1721||Payload:0 bytes
+I:1:190:26-02-22 7:33:49.248 -03:30 [Performance] Send took 0.42ms
+I:1:190:26-02-22 7:33:49.248 -03:30 [Message] Send Request [30] pb.album.AlbumGetAndClaimBeSendCardReq
+I:35:-1:26-02-22 7:33:49.251 -03:30 [WebSocket] EnqueueMessage Binary
+I:1:190:26-02-22 7:33:49.251 -03:30 Screen width 720, height 1560, dpi 360 diagonalPixels 1718.139 result 4.772607 SizeThreshold 7
+I:1:190:26-02-22 7:33:49.251 -03:30 Screen width 720, height 1560, aspect ratio 2.166667
+I:1:190:26-02-22 7:33:49.254 -03:30 [WebSocket] SEND with _ws BufferedRequest|[31]|20001||Payload:0 bytes
+I:1:190:26-02-22 7:33:49.254 -03:30 [Performance] Send took 0.33ms
+I:1:190:26-02-22 7:33:49.254 -03:30 [Message] Send Request [31] pb.promo.GetPromoListReq
+I:1:190:26-02-22 7:33:49.255 -03:30 GotUser 5 388ms
+I:1:190:26-02-22 7:33:49.262 -03:30 [WebSocket] SEND with _ws BufferedRequest|[32]|2805||Payload:0 bytes
+I:1:190:26-02-22 7:33:49.263 -03:30 [Performance] Send took 0.43ms
+I:1:190:26-02-22 7:33:49.263 -03:30 [Message] Send Request [32] pb.featurepass.FeaturePassGetSettleRewardReq
+I:1:190:26-02-22 7:33:49.264 -03:30 [WebSocket] SEND with _ws BufferedRequest|[33]|425||Payload:0 bytes
+I:1:190:26-02-22 7:33:49.264 -03:30 [Performance] Send took 0.34ms
+I:1:190:26-02-22 7:33:49.264 -03:30 [Message] Send Request [33] pb.hall.GetAndClaimChangeSVRewardReq
+I:35:-1:26-02-22 7:33:49.270 -03:30 [WebSocket] EnqueueMessage Binary
+I:35:-1:26-02-22 7:33:49.273 -03:30 [WebSocket] EnqueueMessage Binary
+I:35:-1:26-02-22 7:33:49.274 -03:30 [WebSocket] EnqueueMessage Binary
+I:35:-1:26-02-22 7:33:49.276 -03:30 [WebSocket] EnqueueMessage Binary
+I:1:190:26-02-22 7:33:49.321 -03:30 GotUser 6 454ms
+I:1:191:26-02-22 7:33:49.323 -03:30 [WebSocket] RECEIVE Response|[3]|338||Payload:21 bytes
+I:1:191:26-02-22 7:33:49.323 -03:30 [Performance] GetMessageWrapper took 0.04ms
+I:1:191:26-02-22 7:33:49.324 -03:30 [Message] Receive Response [3] pb.user.GetProfileStateResp
+I:1:191:26-02-22 7:33:49.333 -03:30 [WebSocket] RECEIVE Response|[4]|2601||Payload:427 bytes
+I:1:191:26-02-22 7:33:49.333 -03:30 [Performance] GetMessageWrapper took 0.02ms
+I:1:191:26-02-22 7:33:49.336 -03:30 [Message] Receive Response [4] pb.clientlog.GetUploadLogStrategyResp
+I:1:191:26-02-22 7:33:49.337 -03:30 [WebSocket] RECEIVE Response|[5]|50001||Payload:0 bytes
+I:1:191:26-02-22 7:33:49.337 -03:30 [Performance] GetMessageWrapper took 0.02ms
+I:1:191:26-02-22 7:33:49.338 -03:30 [Message] Receive Response [5] pb.notify.UpdateNotifyAttrResp
+I:1:191:26-02-22 7:33:49.338 -03:30 [WebSocket] RECEIVE Response|[6]|348||Payload:22 bytes
+I:1:191:26-02-22 7:33:49.338 -03:30 [Performance] GetMessageWrapper took 0.01ms
+I:1:191:26-02-22 7:33:49.340 -03:30 [Message] Receive Response [6] pb.user.GetSwitchInfoStateResp
+I:1:191:26-02-22 7:33:49.340 -03:30 [WebSocket] RECEIVE Response|[7]|2324||Payload:0 bytes
+I:1:191:26-02-22 7:33:49.340 -03:30 [Performance] GetMessageWrapper took 0.01ms
+I:1:191:26-02-22 7:33:49.341 -03:30 [Message] Receive Response [7] pb.chat.GetChatStateResp
+I:1:191:26-02-22 7:33:49.341 -03:30 [WebSocket] RECEIVE Response|[8]|2403||Payload:69 bytes
+I:1:191:26-02-22 7:33:49.341 -03:30 [Performance] GetMessageWrapper took 0.01ms
+I:1:191:26-02-22 7:33:49.344 -03:30 [Message] Receive Response [8] pb.redpoint.GetRedPointV2Resp
+I:1:191:26-02-22 7:33:49.345 -03:30 [WebSocket] RECEIVE Response|[9]|1001||Payload:3280 bytes
+I:1:191:26-02-22 7:33:49.345 -03:30 [Performance] GetMessageWrapper took 0.01ms
+I:1:191:26-02-22 7:33:49.390 -03:30 [Message] Receive Response [9] pb.friend.GetListResp
+I:1:191:26-02-22 7:33:49.399 -03:30 [WebSocket] SEND with _ws BufferedRequest|[34]|335||Payload:1914 bytes
+I:1:191:26-02-22 7:33:49.399 -03:30 [Performance] Send took 0.37ms
+I:1:191:26-02-22 7:33:49.399 -03:30 [Message] Send Request [34] pb.user.GetOnlineProfileByIDsReq
+I:1:191:26-02-22 7:33:49.399 -03:30 [WebSocket] RECEIVE Response|[10]|1205||Payload:2884 bytes
+I:1:191:26-02-22 7:33:49.399 -03:30 [Performance] GetMessageWrapper took 0.01ms
+I:35:-1:26-02-22 7:33:49.415 -03:30 [WebSocket] EnqueueMessage Binary
+I:35:-1:26-02-22 7:33:49.416 -03:30 [WebSocket] EnqueueMessage Binary
+I:35:-1:26-02-22 7:33:49.416 -03:30 [WebSocket] EnqueueMessage Binary
+I:35:-1:26-02-22 7:33:49.416 -03:30 [WebSocket] EnqueueMessage Binary
+I:35:-1:26-02-22 7:33:49.416 -03:30 [WebSocket] EnqueueMessage Binary
+I:35:-1:26-02-22 7:33:49.417 -03:30 [WebSocket] EnqueueMessage Binary
+I:35:-1:26-02-22 7:33:49.417 -03:30 [WebSocket] EnqueueMessage Binary
+I:35:-1:26-02-22 7:33:49.418 -03:30 [WebSocket] EnqueueMessage Binary
+I:35:-1:26-02-22 7:33:49.418 -03:30 [WebSocket] EnqueueMessage Binary
+I:35:-1:26-02-22 7:33:49.418 -03:30 [WebSocket] EnqueueMessage Binary
+I:35:-1:26-02-22 7:33:49.418 -03:30 [WebSocket] EnqueueMessage Binary
+I:35:-1:26-02-22 7:33:49.418 -03:30 [WebSocket] EnqueueMessage Binary
+I:35:-1:26-02-22 7:33:49.418 -03:30 [WebSocket] EnqueueMessage Binary
+I:35:-1:26-02-22 7:33:49.418 -03:30 [WebSocket] EnqueueMessage Binary
+I:35:-1:26-02-22 7:33:49.419 -03:30 [WebSocket] EnqueueMessage Binary
+I:35:-1:26-02-22 7:33:49.419 -03:30 [WebSocket] EnqueueMessage Binary
+I:35:-1:26-02-22 7:33:49.419 -03:30 [WebSocket] EnqueueMessage Binary
+I:35:-1:26-02-22 7:33:49.419 -03:30 [WebSocket] EnqueueMessage Binary
+I:35:-1:26-02-22 7:33:49.419 -03:30 [WebSocket] EnqueueMessage Binary
+I:1:191:26-02-22 7:33:49.449 -03:30 [Message] Receive Response [10] pb.character.GetCharacterResp
+I:1:191:26-02-22 7:33:49.456 -03:30 [WebSocket] RECEIVE Response|[11]|602||Payload:108 bytes
+I:1:191:26-02-22 7:33:49.456 -03:30 [Performance] GetMessageWrapper took 0.03ms
+I:1:191:26-02-22 7:33:49.461 -03:30 [Message] Receive Response [11] pb.collection.GetCollectionSceneResp
+I:1:191:26-02-22 7:33:49.474 -03:30 [WebSocket] RECEIVE Response|[12]|701||Payload:18 bytes
+I:1:191:26-02-22 7:33:49.475 -03:30 [Performance] GetMessageWrapper took 0.03ms
+I:1:191:26-02-22 7:33:49.475 -03:30 [Message] Receive Response [12] pb.bonus.GetPeriodBonusStateResp
+I:1:191:26-02-22 7:33:49.523 -03:30 [WebSocket] RECEIVE ErrorResponse|[13]|703||Payload:3 bytes
+I:1:191:26-02-22 7:33:49.523 -03:30 [Performance] GetMessageWrapper took 0.07ms
+I:1:191:26-02-22 7:33:49.526 -03:30 [Message] Receive errorResp ErrorResponse [13] pb.error.ErrResp errCode FEATURE_SWITCH_OFF
+I:1:191:26-02-22 7:33:49.526 -03:30 [WebSocket] RECEIVE Response|[14]|1301||Payload:158 bytes
+I:1:191:26-02-22 7:33:49.526 -03:30 [Performance] GetMessageWrapper took 0.04ms
+I:1:191:26-02-22 7:33:49.534 -03:30 [Message] Receive Response [14] pb.sysrwd.GetStateResp
+I:1:191:26-02-22 7:33:49.558 -03:30 [WebSocket] RECEIVE Response|[15]|1401||Payload:1377 bytes
+I:1:191:26-02-22 7:33:49.558 -03:30 [Performance] GetMessageWrapper took 0.05ms
+I:1:191:26-02-22 7:33:49.591 -03:30 [Message] Receive Response [15] pb.pass.GetStateResp
+I:1:191:26-02-22 7:33:49.592 -03:30 Pass:: passModel GetState
+I:35:-1:26-02-22 7:33:49.652 -03:30 [WebSocket] EnqueueMessage Binary
+I:1:191:26-02-22 7:33:49.661 -03:30 [WebSocket] SEND with _ws BufferedRequest|[35]|1407||Payload:0 bytes
+I:1:191:26-02-22 7:33:49.661 -03:30 [Performance] Send took 0.45ms
+I:1:191:26-02-22 7:33:49.661 -03:30 [Message] Send Request [35] pb.pass.GetSettleRewardReq
+I:1:191:26-02-22 7:33:49.662 -03:30 test:: Set Pass Timeout
+I:1:191:26-02-22 7:33:49.662 -03:30 [WebSocket] RECEIVE Response|[16]|1501||Payload:5970 bytes
+I:1:191:26-02-22 7:33:49.662 -03:30 [Performance] GetMessageWrapper took 0.03ms
+I:1:191:26-02-22 7:33:49.752 -03:30 [Message] Receive Response [16] pb.drama.GetStateResp
+I:35:-1:26-02-22 7:33:49.781 -03:30 [WebSocket] EnqueueMessage Binary
+I:1:191:26-02-22 7:33:49.790 -03:30 [WebSocket] RECEIVE Response|[17]|30276||Payload:0 bytes
+I:1:191:26-02-22 7:33:49.790 -03:30 [Performance] GetMessageWrapper took 0.03ms
+I:1:191:26-02-22 7:33:49.791 -03:30 [Message] Receive Response [17] pb.campaign.GetWeekMissionUnclaimedRewardResp
+I:1:191:26-02-22 7:33:49.791 -03:30 [WebSocket] RECEIVE Response|[18]|30001||Payload:546 bytes
+I:1:191:26-02-22 7:33:49.791 -03:30 [Performance] GetMessageWrapper took 0.01ms
+I:1:191:26-02-22 7:33:49.798 -03:30 [Message] Receive Response [18] pb.campaign.GetCampaignListResp
+I:1:191:26-02-22 7:33:49.800 -03:30 [CampaignManagerNew] InitCampaignsList campaign SIX_CARD_200 SIX_CARD
+I:1:191:26-02-22 7:33:49.801 -03:30 [CampaignManagerNew] InitCampaignsList campaign REDEEM_MARKET_19 REDEEM_MARKET
+I:1:191:26-02-22 7:33:49.801 -03:30 [CampaignManagerNew] InitCampaignsList campaign WEEKLY_MISSION_2 WEEKLY_MISSION
+I:1:191:26-02-22 7:33:49.801 -03:30 [CampaignManagerNew] InitCampaignsList campaign TEAM_BUILD_9 TEAM_BUILD
+I:1:191:26-02-22 7:33:49.801 -03:30 [CampaignManagerNew] InitCampaignsList campaign LUCKY_BALL_42 LUCKY_BALL
+I:1:191:26-02-22 7:33:49.801 -03:30 [CampaignManagerNew] InitCampaignsList campaign ONE_ON_ONE_129 ONE_ON_ONE
+I:1:191:26-02-22 7:33:49.801 -03:30 [CampaignManagerNew] InitCampaignsList campaign RESCUE_RUSH_46 RESCUE_RUSH
+I:1:191:26-02-22 7:33:49.801 -03:30 [CampaignManagerNew] InitCampaignsList campaign GOLDEN_RUSH_13 GOLDEN_RUSH
+I:1:191:26-02-22 7:33:49.801 -03:30 [CampaignManagerNew] InitCampaignsList campaign BINGO_DAUB_20 BINGO_DAUB
+I:1:191:26-02-22 7:33:49.801 -03:30 [CampaignManagerNew] InitCampaignsList campaign MANIA_356 MANIA
+I:1:191:26-02-22 7:33:49.806 -03:30 [CampaignManagerNew] RefreshCampaigns lingerCampaigns REDEEM_MARKET_19
+I:1:191:26-02-22 7:33:49.807 -03:30 [CampaignManagerNew] AddCampaignComp GameLib.Main.RedeemMarket.Model.RedeemMarketManager
+I:1:191:26-02-22 7:33:49.807 -03:30 [WebSocket] SEND with _ws BufferedRequest|[36]|30071||Payload:18 bytes
+I:1:191:26-02-22 7:33:49.808 -03:30 [Performance] Send took 0.42ms
+I:1:191:26-02-22 7:33:49.808 -03:30 [Message] Send Request [36] pb.campaign.GetRedeemMarketStateReq
+I:1:191:26-02-22 7:33:49.808 -03:30 [CampaignManagerNew] RefreshCampaigns lingerCampaigns LUCKY_BALL_42
+I:1:191:26-02-22 7:33:49.808 -03:30 [CampaignManagerNew] AddCampaignComp GameLib.Main.LuckyBall.Controller.LuckyBallManager
+I:1:191:26-02-22 7:33:49.809 -03:30 [WebSocket] SEND with _ws BufferedRequest|[37]|30051||Payload:15 bytes
+I:1:191:26-02-22 7:33:49.809 -03:30 [Performance] Send took 0.27ms
+I:1:191:26-02-22 7:33:49.809 -03:30 [Message] Send Request [37] pb.campaign.GetLuckyBallStateReq
+I:1:191:26-02-22 7:33:49.809 -03:30 [CampaignManagerNew] RefreshCampaigns lingerCampaigns ONE_ON_ONE_129
+I:1:191:26-02-22 7:33:49.809 -03:30 [CampaignManagerNew] AddCampaignComp GameLib.Main.Modules.Campaigns.OneOnOne.Controller.OneOnOneManager
+I:1:191:26-02-22 7:33:49.810 -03:30 OneOnOneManager HashCode -636725600
+I:1:191:26-02-22 7:33:49.818 -03:30 [WebSocket] SEND with _ws BufferedRequest|[38]|30131||Payload:16 bytes
+I:1:191:26-02-22 7:33:49.818 -03:30 [Performance] Send took 0.42ms
+I:1:191:26-02-22 7:33:49.818 -03:30 [Message] Send Request [38] pb.campaign.GetOOOStateReq
+I:1:191:26-02-22 7:33:49.818 -03:30 [CampaignManagerNew] openCampaigns SIX_CARD_200
+I:1:191:26-02-22 7:33:49.818 -03:30 [CampaignManagerNew] AddCampaignComp GameLib.Main.Modules.Campaigns.SixCards.Controller.SixCardsManager
+I:1:191:26-02-22 7:33:49.819 -03:30 [WebSocket] SEND with _ws BufferedRequest|[39]|30191||Payload:14 bytes
+I:1:191:26-02-22 7:33:49.819 -03:30 [Performance] Send took 0.35ms
+I:1:191:26-02-22 7:33:49.819 -03:30 [Message] Send Request [39] pb.campaign.GetSixCardStateReq
+I:1:191:26-02-22 7:33:49.819 -03:30 [CampaignManagerNew] openCampaigns WEEKLY_MISSION_2
+I:1:191:26-02-22 7:33:49.819 -03:30 [CampaignManagerNew] AddCampaignComp GameLib.Main.Modules.Campaigns.WeeklyMission.Model.WeeklyMissionManager
+I:1:191:26-02-22 7:33:49.820 -03:30 [WebSocket] SEND with _ws BufferedRequest|[40]|30271||Payload:18 bytes
+I:1:191:26-02-22 7:33:49.820 -03:30 [Performance] Send took 0.34ms
+I:1:191:26-02-22 7:33:49.820 -03:30 [Message] Send Request [40] pb.campaign.GetWeekMissionStateReq
+I:1:191:26-02-22 7:33:49.820 -03:30 [CampaignManagerNew] openCampaigns TEAM_BUILD_9
+I:1:191:26-02-22 7:33:49.822 -03:30 [CampaignManagerNew] AddCampaignComp GameLib.Main.Modules.Campaigns.TeamBuild.Controller.TeamBuildManager
+I:1:191:26-02-22 7:33:49.825 -03:30 [WebSocket] SEND with _ws BufferedRequest|[41]|30151||Payload:14 bytes
+I:1:191:26-02-22 7:33:49.826 -03:30 [Performance] Send took 0.57ms
+I:1:191:26-02-22 7:33:49.826 -03:30 [Message] Send Request [41] pb.campaign.GetTeamBuildStateReq
+I:1:191:26-02-22 7:33:49.826 -03:30 [CampaignManagerNew] openCampaigns RESCUE_RUSH_46
+I:1:191:26-02-22 7:33:49.826 -03:30 [CampaignManagerNew] AddCampaignComp GameLib.Main.RescueRush.Controller.RescueRushManager
+I:1:191:26-02-22 7:33:49.828 -03:30 [WebSocket] SEND with _ws BufferedRequest|[42]|30201||Payload:16 bytes
+I:1:191:26-02-22 7:33:49.828 -03:30 [Performance] Send took 0.34ms
+I:1:191:26-02-22 7:33:49.828 -03:30 [Message] Send Request [42] pb.campaign.GetRescueStateReq
+I:1:191:26-02-22 7:33:49.828 -03:30 [CampaignManagerNew] openCampaigns BINGO_DAUB_20
+I:1:191:26-02-22 7:33:49.828 -03:30 [CampaignManagerNew] AddCampaignComp GameLib.Main.Modules.Campaigns.BingoDaub.Controller.BingoDaubManager
+I:1:191:26-02-22 7:33:49.829 -03:30 [CampaignManagerNew] openCampaigns MANIA_356
+I:1:191:26-02-22 7:33:49.829 -03:30 [CampaignManagerNew] AddCampaignComp GameLib.Main.Mania.Controller.ManiaManager
+I:1:191:26-02-22 7:33:49.830 -03:30 [WebSocket] SEND with _ws BufferedRequest|[43]|30021||Payload:11 bytes
+I:1:191:26-02-22 7:33:49.830 -03:30 [Performance] Send took 0.31ms
+I:1:191:26-02-22 7:33:49.830 -03:30 [Message] Send Request [43] pb.campaign.GetManiaStateReq
+I:1:191:26-02-22 7:33:49.851 -03:30 [WebSocket] RECEIVE Response|[19]|433||Payload:477 bytes
+I:1:191:26-02-22 7:33:49.851 -03:30 [Performance] GetMessageWrapper took 0.09ms
+I:1:191:26-02-22 7:33:49.858 -03:30 [Message] Receive Response [19] pb.hall.HallConstructionStateResp
+I:1:191:26-02-22 7:33:49.859 -03:30 [WebSocket] RECEIVE Response|[20]|412||Payload:0 bytes
+I:1:191:26-02-22 7:33:49.859 -03:30 [Performance] GetMessageWrapper took 0.01ms
+I:1:191:26-02-22 7:33:49.860 -03:30 [Message] Receive Response [20] pb.hall.FindingGameStateResp
+I:1:191:26-02-22 7:33:49.869 -03:30 [WebSocket] RECEIVE Response|[21]|1701||Payload:844 bytes
+I:1:191:26-02-22 7:33:49.869 -03:30 [Performance] GetMessageWrapper took 0.02ms
+I:1:191:26-02-22 7:33:49.906 -03:30 [Message] Receive Response [21] pb.album.GetAlbumsResp
+I:1:191:26-02-22 7:33:49.954 -03:30 [WebSocket] RECEIVE Response|[22]|40001||Payload:322 bytes
+I:1:191:26-02-22 7:33:49.954 -03:30 [Performance] GetMessageWrapper took 0.04ms
+I:1:191:26-02-22 7:33:49.959 -03:30 [Message] Receive Response [22] pb.pattern.GetPatternsResp
+I:1:191:26-02-22 7:33:49.980 -03:30 [WebSocket] RECEIVE Response|[23]|1803||Payload:2967 bytes
+I:1:191:26-02-22 7:33:49.980 -03:30 [Performance] GetMessageWrapper took 0.02ms
+I:35:-1:26-02-22 7:33:50.017 -03:30 [WebSocket] EnqueueMessage Binary
+I:35:-1:26-02-22 7:33:50.018 -03:30 [WebSocket] EnqueueMessage Binary
+I:35:-1:26-02-22 7:33:50.018 -03:30 [WebSocket] EnqueueMessage Binary
+I:35:-1:26-02-22 7:33:50.018 -03:30 [WebSocket] EnqueueMessage Binary
+I:35:-1:26-02-22 7:33:50.019 -03:30 [WebSocket] EnqueueMessage Binary
+I:35:-1:26-02-22 7:33:50.019 -03:30 [WebSocket] EnqueueMessage Binary
+I:35:-1:26-02-22 7:33:50.019 -03:30 [WebSocket] EnqueueMessage Binary
+I:35:-1:26-02-22 7:33:50.074 -03:30 [WebSocket] EnqueueMessage Binary
+I:1:191:26-02-22 7:33:50.084 -03:30 [Message] Receive Response [23] pb.leaderboard.GetGlobalLeaderboardResp
+I:1:191:26-02-22 7:33:50.093 -03:30 Leaderboard HasCrossedCircle Get False Set False
+I:1:191:26-02-22 7:33:50.094 -03:30 [WebSocket] RECEIVE Response|[24]|341||Payload:0 bytes
+I:1:191:26-02-22 7:33:50.094 -03:30 [Performance] GetMessageWrapper took 0.02ms
+I:1:191:26-02-22 7:33:50.095 -03:30 [Message] Receive Response [24] pb.user.GetReturnStateResp
+I:1:191:26-02-22 7:33:50.095 -03:30 [WebSocket] RECEIVE Response|[25]|2010||Payload:54 bytes
+I:1:191:26-02-22 7:33:50.095 -03:30 [Performance] GetMessageWrapper took 0.01ms
+I:1:191:26-02-22 7:33:50.096 -03:30 [Message] Receive Response [25] pb.club.GetClubStreamIDResp
+I:1:191:26-02-22 7:33:50.099 -03:30 [WebSocket] SEND with _ws BufferedRequest|[44]|2201|club-39D4uzWV6rNGNJTeZcZ6B8JtsQL|Payload:0 bytes
+I:1:191:26-02-22 7:33:50.100 -03:30 [Performance] Send took 0.56ms
+I:1:191:26-02-22 7:33:50.100 -03:30 [Message] Send Request [44] pb.stream.JoinStreamReq
+I:1:191:26-02-22 7:33:50.100 -03:30 [WebSocket] RECEIVE Response|[26]|2012||Payload:484 bytes
+I:1:191:26-02-22 7:33:50.100 -03:30 [Performance] GetMessageWrapper took 0.01ms
+I:1:191:26-02-22 7:33:50.108 -03:30 [Message] Receive Response [26] pb.club.GetUserClubResp
+I:1:191:26-02-22 7:33:50.117 -03:30 [WebSocket] RECEIVE Response|[27]|2301||Payload:34 bytes
+I:1:191:26-02-22 7:33:50.117 -03:30 [Performance] GetMessageWrapper took 0.02ms
+I:1:191:26-02-22 7:33:50.118 -03:30 [Message] Receive Response [27] pb.chat.GetGlobalChatStreamIDResp
+I:1:191:26-02-22 7:33:50.118 -03:30 [WebSocket] SEND with _ws BufferedRequest|[45]|2201|chat-37vafuGo2WpSJpsnUyfJIk3XRvd|Payload:0 bytes
+I:1:191:26-02-22 7:33:50.118 -03:30 [Performance] Send took 0.55ms
+I:1:191:26-02-22 7:33:50.118 -03:30 [Message] Send Request [45] pb.stream.JoinStreamReq
+I:1:191:26-02-22 7:33:50.118 -03:30 [WebSocket] RECEIVE Response|[28]|621||Payload:82 bytes
+I:1:191:26-02-22 7:33:50.118 -03:30 [Performance] GetMessageWrapper took 0.01ms
+I:1:191:26-02-22 7:33:50.124 -03:30 [Message] Receive Response [28] pb.collection.GetFeatureCollectionsResp
+I:1:191:26-02-22 7:33:50.138 -03:30 [WebSocket] RECEIVE Response|[29]|336||Payload:758 bytes
+I:1:191:26-02-22 7:33:50.138 -03:30 [Performance] GetMessageWrapper took 0.02ms
+I:1:191:26-02-22 7:33:50.144 -03:30 [Message] Receive Response [29] pb.user.GetIAPRecordResp
+I:1:191:26-02-22 7:33:50.154 -03:30 [WebSocket] RECEIVE ErrorResponse|[30]|1721||Payload:3 bytes
+I:1:191:26-02-22 7:33:50.154 -03:30 [Performance] GetMessageWrapper took 0.03ms
+I:1:191:26-02-22 7:33:50.155 -03:30 [Message] Receive errorResp ErrorResponse [30] pb.error.ErrResp errCode ALBUM_NO_BESENDCARD
+I:1:191:26-02-22 7:33:50.156 -03:30 [WebSocket] RECEIVE Response|[31]|20001||Payload:331 bytes
+I:1:191:26-02-22 7:33:50.156 -03:30 [Performance] GetMessageWrapper took 0.03ms
+I:1:191:26-02-22 7:33:50.163 -03:30 [Message] Receive Response [31] pb.promo.GetPromoListResp
+I:1:191:26-02-22 7:33:50.176 -03:30 FirstPurchase LastBetTicket Set 3200
+I:1:191:26-02-22 7:33:50.176 -03:30 FirstPurchase StartMillis Get 1759572732533
+I:1:191:26-02-22 7:33:50.176 -03:30 FirstPurchase LastPopMillis Set 1759572732554
+I:1:191:26-02-22 7:33:50.176 -03:30 [WebSocket] SEND with _ws BufferedRequest|[46]|20011||Payload:18 bytes
+I:1:191:26-02-22 7:33:50.177 -03:30 [Performance] Send took 0.54ms
+I:1:191:26-02-22 7:33:50.177 -03:30 [Message] Send Request [46] pb.promo.GetPromoFirstPurchaseStateReq
+I:1:191:26-02-22 7:33:50.182 -03:30 [WebSocket] SEND with _ws BufferedRequest|[47]|20081||Payload:20 bytes
+I:1:191:26-02-22 7:33:50.182 -03:30 [Performance] Send took 0.29ms
+I:1:191:26-02-22 7:33:50.182 -03:30 [Message] Send Request [47] pb.promo.GetPromoPigStateReq
+I:1:191:26-02-22 7:33:50.184 -03:30 [WebSocket] SEND with _ws BufferedRequest|[48]|20031||Payload:38 bytes
+I:1:191:26-02-22 7:33:50.184 -03:30 [Performance] Send took 0.30ms
+I:1:191:26-02-22 7:33:50.184 -03:30 [Message] Send Request [48] pb.promo.GetPromoLineSaleStateReq
+I:1:191:26-02-22 7:33:50.186 -03:30 [WebSocket] SEND with _ws BufferedRequest|[49]|20051||Payload:14 bytes
+I:1:191:26-02-22 7:33:50.186 -03:30 [Performance] Send took 0.33ms
+I:1:191:26-02-22 7:33:50.186 -03:30 [Message] Send Request [49] pb.promo.GetPromoDiyOfferStateReq
+I:1:191:26-02-22 7:33:50.187 -03:30 [WebSocket] RECEIVE Response|[32]|2805||Payload:0 bytes
+I:1:191:26-02-22 7:33:50.187 -03:30 [Performance] GetMessageWrapper took 0.04ms
+I:1:191:26-02-22 7:33:50.192 -03:30 [Message] Receive Response [32] pb.featurepass.FeaturePassGetSettleRewardResp
+I:1:191:26-02-22 7:33:50.192 -03:30 [WebSocket] RECEIVE ErrorResponse|[33]|425||Payload:3 bytes
+I:1:191:26-02-22 7:33:50.192 -03:30 [Performance] GetMessageWrapper took 0.01ms
+I:1:191:26-02-22 7:33:50.193 -03:30 [Message] Receive errorResp ErrorResponse [33] pb.error.ErrResp errCode CHANGESV_NO_REWARD
+I:1:191:26-02-22 7:33:50.193 -03:30 [WebSocket] RECEIVE Response|[34]|335||Payload:23178 bytes
+I:1:191:26-02-22 7:33:50.193 -03:30 [Performance] GetMessageWrapper took 0.01ms
+I:35:-1:26-02-22 7:33:50.253 -03:30 [WebSocket] EnqueueMessage Binary
+I:35:-1:26-02-22 7:33:50.326 -03:30 [WebSocket] EnqueueMessage Binary
+I:1:191:26-02-22 7:33:50.433 -03:30 [Message] Receive Response [34] pb.user.GetOnlineProfileByIDsResp
+I:1:191:26-02-22 7:33:50.459 -03:30 [WebSocket] SEND with _ws BufferedRequest|[50]|335||Payload:435 bytes
+I:1:191:26-02-22 7:33:50.460 -03:30 [Performance] Send took 0.64ms
+I:1:191:26-02-22 7:33:50.460 -03:30 [Message] Send Request [50] pb.user.GetOnlineProfileByIDsReq
+I:1:191:26-02-22 7:33:50.480 -03:30 [WebSocket] RECEIVE Response|[35]|1407||Payload:0 bytes
+I:1:191:26-02-22 7:33:50.480 -03:30 [Performance] GetMessageWrapper took 0.05ms
+I:1:191:26-02-22 7:33:50.481 -03:30 [Message] Receive Response [35] pb.pass.GetSettleRewardResp
+I:1:191:26-02-22 7:33:50.482 -03:30 [WebSocket] RECEIVE Response|[36]|30071||Payload:29 bytes
+I:1:191:26-02-22 7:33:50.482 -03:30 [Performance] GetMessageWrapper took 0.03ms
+I:1:191:26-02-22 7:33:50.485 -03:30 [Message] Receive Response [36] pb.campaign.GetRedeemMarketStateResp
+I:35:-1:26-02-22 7:33:50.486 -03:30 [WebSocket] EnqueueMessage Binary
+I:35:-1:26-02-22 7:33:50.488 -03:30 [WebSocket] EnqueueMessage Binary
+I:35:-1:26-02-22 7:33:50.489 -03:30 [WebSocket] EnqueueMessage Binary
+I:35:-1:26-02-22 7:33:50.489 -03:30 [WebSocket] EnqueueMessage Binary
+I:35:-1:26-02-22 7:33:50.490 -03:30 [WebSocket] EnqueueMessage Binary
+I:1:191:26-02-22 7:33:50.507 -03:30 [WebSocket] RECEIVE Response|[37]|30051||Payload:120 bytes
+I:1:191:26-02-22 7:33:50.507 -03:30 [Performance] GetMessageWrapper took 0.02ms
+I:1:191:26-02-22 7:33:50.523 -03:30 [Message] Receive Response [37] pb.campaign.GetLuckyBallStateResp
+I:1:191:26-02-22 7:33:50.539 -03:30 [WebSocket] RECEIVE Response|[38]|30131||Payload:50 bytes
+I:1:191:26-02-22 7:33:50.539 -03:30 [Performance] GetMessageWrapper took 0.02ms
+I:1:191:26-02-22 7:33:50.542 -03:30 [Message] Receive Response [38] pb.campaign.GetOOOStateResp
+I:1:191:26-02-22 7:33:50.543 -03:30 TryQuitCampaignDetention ONE_ON_ONE_129 force False
+I:1:191:26-02-22 7:33:50.543 -03:30 LingerCampaignsController linger REDEEM_MARKET_19,LUCKY_BALL_42,ONE_ON_ONE_129, remove ONE_ON_ONE_129
+I:1:191:26-02-22 7:33:50.543 -03:30 PendingCampaignsController pending GOLDEN_RUSH_13, remove GOLDEN_RUSH_13
+I:1:191:26-02-22 7:33:50.543 -03:30 [CampaignManagerNew] RefreshCampaigns endedCampaigns ONE_ON_ONE_129
+I:1:191:26-02-22 7:33:50.543 -03:30 [CampaignManagerNew] ChangeStateToEnded ONE_ON_ONE_129
+I:1:191:26-02-22 7:33:50.544 -03:30 [CampaignManagerNew] RefreshCampaigns RemoveCampaignComp ONE_ON_ONE
+I:1:191:26-02-22 7:33:50.544 -03:30 [CampaignManagerNew] openCampaigns GOLDEN_RUSH_13
+I:1:191:26-02-22 7:33:50.544 -03:30 [CampaignManagerNew] AddCampaignComp GameLib.Main.Modules.Campaigns.GoldenRush.Controller.GoldenRushManager
+I:1:191:26-02-22 7:33:50.546 -03:30 [WebSocket] SEND with _ws BufferedRequest|[51]|30091||Payload:16 bytes
+I:1:191:26-02-22 7:33:50.546 -03:30 [Performance] Send took 0.34ms
+I:1:191:26-02-22 7:33:50.546 -03:30 [Message] Send Request [51] pb.campaign.GetGoldenRushStateReq
+I:1:191:26-02-22 7:33:50.546 -03:30 [WebSocket] RECEIVE Response|[39]|30191||Payload:2 bytes
+I:1:191:26-02-22 7:33:50.546 -03:30 [Performance] GetMessageWrapper took 0.01ms
+I:1:191:26-02-22 7:33:50.548 -03:30 [Message] Receive Response [39] pb.campaign.GetSixCardStateResp
+I:1:191:26-02-22 7:33:50.548 -03:30 [WebSocket] RECEIVE Response|[40]|30271||Payload:1347 bytes
+I:1:191:26-02-22 7:33:50.548 -03:30 [Performance] GetMessageWrapper took 0.01ms
+I:1:191:26-02-22 7:33:50.584 -03:30 [Message] Receive Response [40] pb.campaign.GetWeekMissionStateResp
+I:1:191:26-02-22 7:33:50.639 -03:30 [WebSocket] RECEIVE Response|[41]|30151||Payload:31 bytes
+I:1:191:26-02-22 7:33:50.639 -03:30 [Performance] GetMessageWrapper took 0.05ms
+I:1:191:26-02-22 7:33:50.643 -03:30 [Message] Receive Response [41] pb.campaign.GetTeamBuildStateResp
+I:1:191:26-02-22 7:33:50.675 -03:30 [WebSocket] SEND with _ws BufferedRequest|[52]|30152||Payload:40 bytes
+I:1:191:26-02-22 7:33:50.675 -03:30 [Performance] Send took 0.61ms
+I:1:191:26-02-22 7:33:50.675 -03:30 [Message] Send Request [52] pb.campaign.GetTeamBuildSocialReq
+I:1:191:26-02-22 7:33:50.676 -03:30 [WebSocket] SEND with _ws BufferedRequest|[53]|30161||Payload:14 bytes
+I:1:191:26-02-22 7:33:50.676 -03:30 [Performance] Send took 0.41ms
+I:1:191:26-02-22 7:33:50.676 -03:30 [Message] Send Request [53] pb.campaign.TeamBuildRefreshRobotScoreReq
+I:1:191:26-02-22 7:33:50.676 -03:30 [WebSocket] RECEIVE Response|[42]|30201||Payload:27 bytes
+I:1:191:26-02-22 7:33:50.676 -03:30 [Performance] GetMessageWrapper took 0.01ms
+I:1:191:26-02-22 7:33:50.679 -03:30 [Message] Receive Response [42] pb.campaign.GetRescueStateResp
+E:1:191:26-02-22 7:33:50.730 -03:30 CampaignRescueEventConfig  not found
+at GameLib.Main.GameConf._Get(String id) 
+at GameLib.Main.GameConf.Get(String id) 
+at GameLib.Main.RescueRush.Model.RescueRushModel.FromServer(RescueState state, Boolean refreshDaubState) 
+at GameLib.Main.RescueRush.Controller.RescueRushManager/<>c__DisplayClass42_0.<GetRescueRushState>b__0(ErrResp error, GetRescueStateResp resp) 
+at GameLib.Main.Server.MessageStream/ResponseHandler`1<pb.campaign.GetRescueStateResp>.GameLib.Main.Server.MessageStream.IResponseHandler.Invoke(Object message) 
+at GameLib.Main.Server.MessageStream.HandleResponse(UInt32 seqId, Object msg, Boolean isError) 
+at GameLib.Main.Server.MessageStream.HandleMessage(UInt32 seq, Object resp, MessageType messageType) 
+at GameLib.Main.Server.MessageStream.OnSocketMessage(MessageWrapper messageWrapper) 
+at GameLib.Main.Server.MessageProxy.OnUpdate() 
+at GameLib.Main.EventHub._Update() 
+at GameLib.Main.EventHub.Update() 
+at GameLib.Main.GameMain.Update() 
+
+Core.Utils.LogHelper:LogToUnityConsole(LogType, Boolean, Object, String, Object[])
+Game.ILRuntime.DebugLogCLRRedirection:LogError_0(ILIntepreter, StackObject*, IList`1, CLRMethod, Boolean)
+ILRuntime.Runtime.Intepreter.ILIntepreter:Execute(ILMethod, StackObject*, Boolean&)
+ILRuntime.Runtime.Intepreter.ILIntepreter:Execute(ILMethod, StackObject*, Boolean&)
+ILRuntime.Runtime.Intepreter.ILIntepreter:Execute(ILMethod, StackObject*, Boolean&)
+ILRuntime.Runtime.Intepreter.ILIntepreter:Execute(ILMethod, StackObject*, Boolean&)
+ILRuntime.Runtime.Intepreter.DelegateAdapter:ILInvokeSub(ILIntepreter, StackObject*, IList`1)
+ILRuntime.Runtime.Intepreter.DelegateAdapter:ILInvoke(ILIntepreter, StackObject*, IList`1)
+ILRuntime.Runtime.Intepreter.ILIntepreter:Execute(ILMethod, StackObject*, Boolean&)
+ILRuntime.Runtime.Intepreter.ILIntepreter:Execute(ILMethod, StackObject*, Boolean&)
+ILRuntime.Runtime.Intepreter.ILIntepreter:Execute(ILMethod, StackObject*, Boolean&)
+ILRuntime.Runtime.Intepreter.ILIntepreter:Execute(ILMethod, StackObject*, Boolean&)
+ILRuntime.Runtime.Intepreter.ILIntepreter:Execute(ILMethod, StackObject*, Boolean&)
+ILRuntime.Runtime.Intepreter.DelegateAdapter:ILInvokeSub(ILIntepreter, StackObject*, IList`1)
+ILRuntime.Runtime.Intepreter.DelegateAdapter:ILInvoke(ILIntepreter, StackObject*, IList`1)
+ILRuntime.Runtime.Intepreter.ILIntepreter:Execute(ILMethod, StackObject*, Boolean&)
+ILRuntime.Runtime.Intepreter.ILIntepreter:Execute(ILMethod, StackObject*, Boolean&)
+ILRuntime.Runtime.Intepreter.ILIntepreter:Execute(ILMethod, StackObject*, Boolean&)
+ILRuntime.Runtime.Intepreter.ILIntepreter:Run(ILMethod, Object, Object[])
+ILRuntime.Runtime.Enviorment.AppDomain:Invoke(IMethod, Object, Object[])
+
+I:1:191:26-02-22 7:33:50.730 -03:30 [WebSocket] RECEIVE Response|[43]|30021||Payload:49 bytes
+I:1:191:26-02-22 7:33:50.730 -03:30 [Performance] GetMessageWrapper took 0.05ms
+I:1:191:26-02-22 7:33:50.736 -03:30 [Message] Receive Response [43] pb.campaign.GetManiaStateResp
+I:1:191:26-02-22 7:33:50.737 -03:30 [WebSocket] RECEIVE Notification|[2]|100056|chat-37vafuGo2WpSJpsnUyfJIk3XRvd|Payload:109 bytes
+I:1:191:26-02-22 7:33:50.737 -03:30 [Performance] GetMessageWrapper took 0.04ms
+I:1:191:26-02-22 7:33:50.738 -03:30 [Message] Receive Notification [2] pb.chat.BatchGlobalChatMessageNoti
+I:1:191:26-02-22 7:33:50.738 -03:30 [WebSocket] RECEIVE Response|[44]|2201|club-39D4uzWV6rNGNJTeZcZ6B8JtsQL|Payload:0 bytes
+I:1:191:26-02-22 7:33:50.738 -03:30 [Performance] GetMessageWrapper took 0.01ms
+I:1:191:26-02-22 7:33:50.739 -03:30 [Message] Receive Response [44] pb.stream.JoinStreamResp
+I:1:191:26-02-22 7:33:50.740 -03:30 [WebSocket] SEND with _ws BufferedRequest|[54]|2202|club-39D4uzWV6rNGNJTeZcZ6B8JtsQL|Payload:0 bytes
+I:1:191:26-02-22 7:33:50.740 -03:30 [Performance] Send took 0.40ms
+I:1:191:26-02-22 7:33:50.743 -03:30 [WebSocket] SEND with _ws BufferedRequest|[55]|2109|club-39D4uzWV6rNGNJTeZcZ6B8JtsQL|Payload:2 bytes
+I:1:191:26-02-22 7:33:50.743 -03:30 [Performance] Send took 0.32ms
+I:1:191:26-02-22 7:33:50.743 -03:30 [Message] Send Request [55] pb.club.GetClubChatMessagesReq
+I:1:191:26-02-22 7:33:50.743 -03:30 [WebSocket] SEND with _ws BufferedRequest|[56]|2116|club-39D4uzWV6rNGNJTeZcZ6B8JtsQL|Payload:0 bytes
+I:1:191:26-02-22 7:33:50.744 -03:30 [Performance] Send took 0.21ms
+I:1:191:26-02-22 7:33:50.744 -03:30 [Message] Send Request [56] pb.club.TeamBuildGetClubInvitesReq
+I:1:191:26-02-22 7:33:50.744 -03:30 [WebSocket] SEND with _ws BufferedRequest|[57]|2113|club-39D4uzWV6rNGNJTeZcZ6B8JtsQL|Payload:0 bytes
+I:1:191:26-02-22 7:33:50.744 -03:30 [Performance] Send took 0.22ms
+I:1:191:26-02-22 7:33:50.744 -03:30 [Message] Send Request [57] pb.club.GetClubRequiresReq
+I:1:191:26-02-22 7:33:50.746 -03:30 [WebSocket] SEND with _ws BufferedRequest|[58]|2117|club-39D4uzWV6rNGNJTeZcZ6B8JtsQL|Payload:0 bytes
+I:1:191:26-02-22 7:33:50.746 -03:30 [Performance] Send took 0.26ms
+I:1:191:26-02-22 7:33:50.746 -03:30 [Message] Send Request [58] pb.club.GetClubGameStateReq
+I:1:191:26-02-22 7:33:50.747 -03:30 [WebSocket] RECEIVE Response|[45]|2201|chat-37vafuGo2WpSJpsnUyfJIk3XRvd|Payload:0 bytes
+I:1:191:26-02-22 7:33:50.747 -03:30 [Performance] GetMessageWrapper took 0.01ms
+I:1:191:26-02-22 7:33:50.747 -03:30 [Message] Receive Response [45] pb.stream.JoinStreamResp
+I:1:191:26-02-22 7:33:50.747 -03:30 [WebSocket] SEND with _ws BufferedRequest|[59]|2202|chat-37vafuGo2WpSJpsnUyfJIk3XRvd|Payload:0 bytes
+I:1:191:26-02-22 7:33:50.748 -03:30 [Performance] Send took 0.31ms
+I:1:191:26-02-22 7:33:50.748 -03:30 [WebSocket] SEND with _ws BufferedRequest|[60]|2311|chat-37vafuGo2WpSJpsnUyfJIk3XRvd|Payload:2 bytes
+I:1:191:26-02-22 7:33:50.748 -03:30 [Performance] Send took 0.18ms
+I:1:191:26-02-22 7:33:50.748 -03:30 [Message] Send Request [60] pb.chat.EnterGlobalChatReq
+I:1:191:26-02-22 7:33:50.748 -03:30 [WebSocket] RECEIVE Response|[46]|20011||Payload:29 bytes
+I:1:191:26-02-22 7:33:50.748 -03:30 [Performance] GetMessageWrapper took 0.04ms
+I:1:191:26-02-22 7:33:50.750 -03:30 [Message] Receive Response [46] pb.promo.GetPromoFirstPurchaseStateResp
+I:1:191:26-02-22 7:33:50.751 -03:30 FirstPurchase isBought False
+I:1:191:26-02-22 7:33:50.751 -03:30 [WebSocket] RECEIVE Response|[47]|20081||Payload:38 bytes
+I:1:191:26-02-22 7:33:50.751 -03:30 [Performance] GetMessageWrapper took 0.01ms
+I:1:191:26-02-22 7:33:50.753 -03:30 [Message] Receive Response [47] pb.promo.GetPromoPigStateResp
+I:1:191:26-02-22 7:33:50.762 -03:30 [WebSocket] RECEIVE Response|[48]|20031||Payload:223 bytes
+I:1:191:26-02-22 7:33:50.762 -03:30 [Performance] GetMessageWrapper took 0.02ms
+I:1:191:26-02-22 7:33:50.767 -03:30 [Message] Receive Response [48] pb.promo.GetPromoLineSaleStateResp
+I:1:191:26-02-22 7:33:50.767 -03:30 [WebSocket] RECEIVE Response|[49]|20051||Payload:29 bytes
+I:1:191:26-02-22 7:33:50.767 -03:30 [Performance] GetMessageWrapper took 0.01ms
+I:1:191:26-02-22 7:33:50.768 -03:30 [Message] Receive Response [49] pb.promo.GetPromoDiyOfferStateResp
+W:1:191:26-02-22 7:33:50.780 -03:30 [Performance] Long frame time: 1457ms
+I:1:192:26-02-22 7:33:50.782 -03:30 [WebSocket] SEND with _ws BufferedRequest|[61]|401||Payload:0 bytes
+I:1:192:26-02-22 7:33:50.782 -03:30 [Performance] Send took 0.34ms
+I:1:192:26-02-22 7:33:50.782 -03:30 [Message] Send Request [61] pb.hall.HallListReq
+I:35:-1:26-02-22 7:33:50.885 -03:30 [WebSocket] EnqueueMessage Binary
+I:35:-1:26-02-22 7:33:50.886 -03:30 [WebSocket] EnqueueMessage Binary
+I:35:-1:26-02-22 7:33:50.886 -03:30 [WebSocket] EnqueueMessage Binary
+I:35:-1:26-02-22 7:33:50.887 -03:30 [WebSocket] EnqueueMessage Binary
+I:1:199:26-02-22 7:33:50.891 -03:30 [WebSocket] RECEIVE Response|[50]|335||Payload:5554 bytes
+I:1:199:26-02-22 7:33:50.891 -03:30 [Performance] GetMessageWrapper took 0.10ms
+I:35:-1:26-02-22 7:33:50.892 -03:30 [WebSocket] EnqueueMessage Binary
+I:35:-1:26-02-22 7:33:50.938 -03:30 [WebSocket] EnqueueMessage Binary
+I:35:-1:26-02-22 7:33:50.938 -03:30 [WebSocket] EnqueueMessage Binary
+I:35:-1:26-02-22 7:33:50.948 -03:30 [WebSocket] EnqueueMessage Binary
+I:35:-1:26-02-22 7:33:50.951 -03:30 [WebSocket] EnqueueMessage Binary
+I:1:199:26-02-22 7:33:50.963 -03:30 [Message] Receive Response [50] pb.user.GetOnlineProfileByIDsResp
+I:1:199:26-02-22 7:33:50.965 -03:30 [WebSocket] RECEIVE Response|[51]|30091||Payload:48 bytes
+I:1:199:26-02-22 7:33:50.965 -03:30 [Performance] GetMessageWrapper took 0.04ms
+I:1:199:26-02-22 7:33:50.968 -03:30 [Message] Receive Response [51] pb.campaign.GetGoldenRushStateResp
+I:1:199:26-02-22 7:33:50.973 -03:30 [WebSocket] RECEIVE Response|[52]|30152||Payload:807 bytes
+I:1:199:26-02-22 7:33:50.973 -03:30 [Performance] GetMessageWrapper took 0.03ms
+I:1:199:26-02-22 7:33:50.980 -03:30 [Message] Receive Response [52] pb.campaign.GetTeamBuildSocialResp
+I:1:199:26-02-22 7:33:50.988 -03:30 [WebSocket] SEND with _ws BufferedRequest|[62]|30159||Payload:2241 bytes
+I:1:199:26-02-22 7:33:50.989 -03:30 [Performance] Send took 0.93ms
+I:1:199:26-02-22 7:33:50.989 -03:30 [Message] Send Request [62] pb.campaign.GetTeamBuildFriendStateReq
+I:1:199:26-02-22 7:33:50.989 -03:30 [WebSocket] RECEIVE Response|[53]|30161||Payload:0 bytes
+I:1:199:26-02-22 7:33:50.989 -03:30 [Performance] GetMessageWrapper took 0.01ms
+I:1:199:26-02-22 7:33:50.990 -03:30 [Message] Receive Response [53] pb.campaign.TeamBuildRefreshRobotScoreResp
+I:1:199:26-02-22 7:33:50.990 -03:30 [WebSocket] RECEIVE Response|[54]|2202|club-39D4uzWV6rNGNJTeZcZ6B8JtsQL|Payload:0 bytes
+I:1:199:26-02-22 7:33:50.990 -03:30 [Performance] GetMessageWrapper took 0.01ms
+I:1:199:26-02-22 7:33:50.991 -03:30 [WebSocket] RECEIVE Response|[55]|2109|club-39D4uzWV6rNGNJTeZcZ6B8JtsQL|Payload:0 bytes
+I:1:199:26-02-22 7:33:50.991 -03:30 [Performance] GetMessageWrapper took 0.01ms
+I:1:199:26-02-22 7:33:50.993 -03:30 [Message] Receive Response [55] pb.club.GetClubChatMessagesResp
+I:1:199:26-02-22 7:33:50.993 -03:30 [WebSocket] RECEIVE Response|[56]|2116|club-39D4uzWV6rNGNJTeZcZ6B8JtsQL|Payload:101 bytes
+I:1:199:26-02-22 7:33:50.993 -03:30 [Performance] GetMessageWrapper took 0.01ms
+I:1:199:26-02-22 7:33:50.996 -03:30 [Message] Receive Response [56] pb.club.TeamBuildGetClubInvitesResp
+I:1:199:26-02-22 7:33:50.997 -03:30 [WebSocket] SEND with _ws BufferedRequest|[63]|30159||Payload:45 bytes
+I:1:199:26-02-22 7:33:50.998 -03:30 [Performance] Send took 0.70ms
+I:1:199:26-02-22 7:33:50.998 -03:30 [Message] Send Request [63] pb.campaign.GetTeamBuildFriendStateReq
+I:1:199:26-02-22 7:33:50.998 -03:30 [WebSocket] RECEIVE Response|[59]|2202|chat-37vafuGo2WpSJpsnUyfJIk3XRvd|Payload:0 bytes
+I:1:199:26-02-22 7:33:50.998 -03:30 [Performance] GetMessageWrapper took 0.01ms
+I:1:199:26-02-22 7:33:50.999 -03:30 [WebSocket] RECEIVE Response|[60]|2311|chat-37vafuGo2WpSJpsnUyfJIk3XRvd|Payload:2847 bytes
+I:1:199:26-02-22 7:33:50.999 -03:30 [Performance] GetMessageWrapper took 0.04ms
+I:1:199:26-02-22 7:33:51.014 -03:30 [Message] Receive Response [60] pb.chat.EnterGlobalChatResp
+I:35:-1:26-02-22 7:33:51.113 -03:30 [WebSocket] EnqueueMessage Binary
+I:35:-1:26-02-22 7:33:51.113 -03:30 [WebSocket] EnqueueMessage Binary
+I:1:207:26-02-22 7:33:51.124 -03:30 [WebSocket] RECEIVE Response|[57]|2113|club-39D4uzWV6rNGNJTeZcZ6B8JtsQL|Payload:0 bytes
+I:1:207:26-02-22 7:33:51.124 -03:30 [Performance] GetMessageWrapper took 0.12ms
+I:1:207:26-02-22 7:33:51.134 -03:30 [Message] Receive Response [57] pb.club.GetClubRequiresResp
+I:1:207:26-02-22 7:33:51.135 -03:30 [WebSocket] RECEIVE Response|[58]|2117|club-39D4uzWV6rNGNJTeZcZ6B8JtsQL|Payload:2137 bytes
+I:1:207:26-02-22 7:33:51.135 -03:30 [Performance] GetMessageWrapper took 0.05ms
+I:1:207:26-02-22 7:33:51.196 -03:30 [Message] Receive Response [58] pb.club.GetClubGameStateResp
+I:1:207:26-02-22 7:33:51.197 -03:30 RefreshGames Now:club_game_27_BATTLE_0 1771833600000, History: , 
+I:1:207:26-02-22 7:33:51.197 -03:30 AddGameManager: club_game_27_BATTLE_0, Type: BATTLE
+I:1:207:26-02-22 7:33:51.209 -03:30 ClubGameManager Initialize club_game_27_BATTLE_0, Status Open
+I:35:-1:26-02-22 7:33:51.434 -03:30 [WebSocket] EnqueueMessage Binary
+I:35:-1:26-02-22 7:33:51.437 -03:30 [WebSocket] EnqueueMessage Binary
+I:1:222:26-02-22 7:33:51.441 -03:30 [WebSocket] RECEIVE Response|[61]|401||Payload:2157 bytes
+I:1:222:26-02-22 7:33:51.441 -03:30 [Performance] GetMessageWrapper took 0.07ms
+I:1:222:26-02-22 7:33:51.460 -03:30 [Message] Receive Response [61] pb.hall.HallListResp
+I:1:222:26-02-22 7:33:51.491 -03:30 SuppertAstc True
+I:1:222:26-02-22 7:33:51.492 -03:30 [Performance] Countly Took 0.38ms
+I:35:-1:26-02-22 7:33:51.567 -03:30 [WebSocket] EnqueueMessage Binary
+I:1:222:26-02-22 7:33:51.611 -03:30 StartMainThreadWatchdog method invoked successfully using reflection. 1000,10000,False
+I:1:222:26-02-22 7:33:51.617 -03:30 [Performance] Countly Took 0.45ms
+I:1:222:26-02-22 7:33:51.625 -03:30 [WebSocket] RECEIVE Response|[62]|30159||Payload:1088 bytes
+I:1:222:26-02-22 7:33:51.625 -03:30 [Performance] GetMessageWrapper took 0.10ms
+I:1:222:26-02-22 7:33:51.659 -03:30 [Message] Receive Response [62] pb.campaign.GetTeamBuildFriendStateResp
+I:1:222:26-02-22 7:33:51.660 -03:30 [WebSocket] RECEIVE Response|[63]|30159||Payload:30 bytes
+I:1:222:26-02-22 7:33:51.660 -03:30 [Performance] GetMessageWrapper took 0.02ms
+I:1:222:26-02-22 7:33:51.661 -03:30 [Message] Receive Response [63] pb.campaign.GetTeamBuildFriendStateResp
+I:1:271:26-02-22 7:33:52.460 -03:30 [Performance] Countly Took 0.70ms
+I:1:271:26-02-22 7:33:52.464 -03:30 [WebSocket] SEND with _ws BufferedRequest|[64]|30038||Payload:16 bytes
+I:1:271:26-02-22 7:33:52.465 -03:30 [Performance] Send took 1.02ms
+I:1:271:26-02-22 7:33:52.465 -03:30 [Message] Send Request [64] pb.campaign.BatchQuitCampaignDetentionReq
+I:1:271:26-02-22 7:33:52.465 -03:30 [WebSocket] SEND with _ws BufferedRequest|[65]|201||Payload:0 bytes
+I:1:271:26-02-22 7:33:52.466 -03:30 [Performance] Send took 0.55ms
+I:1:271:26-02-22 7:33:52.466 -03:30 [Message] Send Request [65] pb.clock.SyncClockReq
+I:1:271:26-02-22 7:33:52.466 -03:30 [ModuleRefreshManager] RefreshAfterChangeScene: from Launch to Main
+I:1:271:26-02-22 7:33:52.466 -03:30 [ModuleRefreshManager] OnChangeScene Main
+I:1:271:26-02-22 7:33:52.466 -03:30 [WebSocket] SEND with _ws BufferedRequest|[66]|30001||Payload:0 bytes
+I:1:271:26-02-22 7:33:52.467 -03:30 [Performance] Send took 0.63ms
+I:1:271:26-02-22 7:33:52.467 -03:30 [Message] Send Request [66] pb.campaign.GetCampaignListReq
+I:1:271:26-02-22 7:33:52.468 -03:30 [WebSocket] SEND with _ws BufferedRequest|[67]|20001||Payload:0 bytes
+I:1:271:26-02-22 7:33:52.468 -03:30 [Performance] Send took 0.39ms
+I:1:271:26-02-22 7:33:52.468 -03:30 [Message] Send Request [67] pb.promo.GetPromoListReq
+I:4:-1:26-02-22 7:33:52.571 -03:30 [FileHelper] Deleted 0 files, remaining 100.
+I:35:-1:26-02-22 7:33:52.668 -03:30 [WebSocket] EnqueueMessage Binary
+I:35:-1:26-02-22 7:33:52.668 -03:30 [WebSocket] EnqueueMessage Binary
+I:35:-1:26-02-22 7:33:52.668 -03:30 [WebSocket] EnqueueMessage Binary
+I:35:-1:26-02-22 7:33:52.668 -03:30 [WebSocket] EnqueueMessage Binary
+I:1:276:26-02-22 7:33:52.668 -03:30 [WebSocket] RECEIVE Response|[64]|30038||Payload:0 bytes
+I:1:276:26-02-22 7:33:52.668 -03:30 [Performance] GetMessageWrapper took 0.08ms
+I:18:-1:26-02-22 7:33:52.668 -03:30 [Costume] read info f:016d061ffb8d42b0da2272eed2899121
+I:1:276:26-02-22 7:33:52.670 -03:30 [Message] Receive Response [64] pb.campaign.BatchQuitCampaignDetentionResp
+I:1:276:26-02-22 7:33:52.670 -03:30 [WebSocket] RECEIVE Response|[65]|201||Payload:7 bytes
+I:1:276:26-02-22 7:33:52.670 -03:30 [Performance] GetMessageWrapper took 0.03ms
+I:1:276:26-02-22 7:33:52.671 -03:30 [Message] Receive Response [65] pb.clock.SyncClockResp
+I:1:276:26-02-22 7:33:52.671 -03:30 [SyncTimeProcess] _serverTimeDiffMilli 257
+I:1:276:26-02-22 7:33:52.671 -03:30 [WebSocket] RECEIVE Response|[66]|30001||Payload:485 bytes
+I:1:276:26-02-22 7:33:52.671 -03:30 [Performance] GetMessageWrapper took 0.03ms
+I:18:-1:26-02-22 7:33:52.673 -03:30 [Costume] read info f:066f950214acb2215949547bf14d4e5b
+I:18:-1:26-02-22 7:33:52.674 -03:30 [Costume] read info m:07bc6b82f03c7667148747dc2b1e9496
+I:18:-1:26-02-22 7:33:52.675 -03:30 [Costume] read info f:0b5d83bb5a4258303705f3dcba385e5c
+I:18:-1:26-02-22 7:33:52.677 -03:30 [Costume] read info f:0fdd8b6e2310c975fcdd35f549354b5a
+I:18:-1:26-02-22 7:33:52.678 -03:30 [Costume] read info f:16445fff6213d023e76f300dc21eb95f
+I:18:-1:26-02-22 7:33:52.679 -03:30 [Costume] read info m:16a5d5b7998108904f1b597a4740f2c6
+I:18:-1:26-02-22 7:33:52.680 -03:30 [Costume] read info f:1bace5359029d2fe60fabf7171ad208e
+I:18:-1:26-02-22 7:33:52.681 -03:30 [Costume] read info f:1c48f18c78f1761645dd09292b1545a2
+I:18:-1:26-02-22 7:33:52.682 -03:30 [Costume] read info m:2047774aa843fb93558b244cd7a2ee6a
+I:1:276:26-02-22 7:33:52.682 -03:30 [Message] Receive Response [66] pb.campaign.GetCampaignListResp
+I:18:-1:26-02-22 7:33:52.683 -03:30 [Costume] read info m:226e5ffd5fa2e6a04b01e7b6924de329
+I:1:276:26-02-22 7:33:52.683 -03:30 [CampaignManagerNew] InitCampaignsList campaign SIX_CARD_200 SIX_CARD
+I:1:276:26-02-22 7:33:52.683 -03:30 [CampaignManagerNew] InitCampaignsList campaign REDEEM_MARKET_19 REDEEM_MARKET
+I:1:276:26-02-22 7:33:52.683 -03:30 [CampaignManagerNew] InitCampaignsList campaign WEEKLY_MISSION_2 WEEKLY_MISSION
+I:1:276:26-02-22 7:33:52.683 -03:30 [CampaignManagerNew] InitCampaignsList campaign TEAM_BUILD_9 TEAM_BUILD
+I:1:276:26-02-22 7:33:52.683 -03:30 [CampaignManagerNew] InitCampaignsList campaign LUCKY_BALL_42 LUCKY_BALL
+I:18:-1:26-02-22 7:33:52.684 -03:30 [Costume] read info f:2a3d203c179918e1cf77a842d9b9912c
+I:1:276:26-02-22 7:33:52.684 -03:30 [CampaignManagerNew] InitCampaignsList campaign RESCUE_RUSH_46 RESCUE_RUSH
+I:1:276:26-02-22 7:33:52.684 -03:30 [CampaignManagerNew] InitCampaignsList campaign GOLDEN_RUSH_13 GOLDEN_RUSH
+I:1:276:26-02-22 7:33:52.684 -03:30 [CampaignManagerNew] InitCampaignsList campaign BINGO_DAUB_20 BINGO_DAUB
+I:1:276:26-02-22 7:33:52.684 -03:30 [CampaignManagerNew] InitCampaignsList campaign MANIA_356 MANIA
+I:1:276:26-02-22 7:33:52.685 -03:30 [CampaignManagerNew] RefreshCampaigns lingerCampaigns REDEEM_MARKET_19
+I:1:276:26-02-22 7:33:52.685 -03:30 [CampaignManagerNew] ChangeStateToLinger REDEEM_MARKET_19
+I:18:-1:26-02-22 7:33:52.686 -03:30 [Costume] read info m:2b094cf555516649fda1294df770273e
+I:1:276:26-02-22 7:33:52.686 -03:30 TryQuitCampaignDetention REDEEM_MARKET_19 force False
+I:1:276:26-02-22 7:33:52.687 -03:30 LingerCampaignsController linger REDEEM_MARKET_19,LUCKY_BALL_42, remove REDEEM_MARKET_19
+I:18:-1:26-02-22 7:33:52.687 -03:30 [Costume] read info m:2cef57908eb0827f8bfdd155be78716c
+I:1:276:26-02-22 7:33:52.687 -03:30 [CampaignManagerNew] RefreshCampaigns endedCampaigns REDEEM_MARKET_19
+I:1:276:26-02-22 7:33:52.687 -03:30 [CampaignManagerNew] ChangeStateToEnded REDEEM_MARKET_19
+I:1:276:26-02-22 7:33:52.687 -03:30 [CampaignManagerNew] RefreshCampaigns RemoveCampaignComp REDEEM_MARKET
+I:18:-1:26-02-22 7:33:52.688 -03:30 [Costume] read info m:2dcbb82eb4e653b909bf800dcd7635e1
+I:1:276:26-02-22 7:33:52.688 -03:30 [CampaignManagerNew] RefreshCampaigns lingerCampaigns LUCKY_BALL_42
+I:1:276:26-02-22 7:33:52.688 -03:30 [CampaignManagerNew] ChangeStateToLinger LUCKY_BALL_42
+I:18:-1:26-02-22 7:33:52.688 -03:30 [Costume] read info f:3017435549753139a29840145190796c
+I:1:276:26-02-22 7:33:52.688 -03:30 [WebSocket] SEND with _ws BufferedRequest|[68]|30051||Payload:15 bytes
+I:1:276:26-02-22 7:33:52.689 -03:30 [Performance] Send took 0.54ms
+I:1:276:26-02-22 7:33:52.689 -03:30 [Message] Send Request [68] pb.campaign.GetLuckyBallStateReq
+I:1:276:26-02-22 7:33:52.689 -03:30 [CampaignManagerNew] openCampaigns SIX_CARD_200
+I:1:276:26-02-22 7:33:52.689 -03:30 [CampaignManagerNew] openCampaigns WEEKLY_MISSION_2
+I:1:276:26-02-22 7:33:52.689 -03:30 [CampaignManagerNew] openCampaigns TEAM_BUILD_9
+I:1:276:26-02-22 7:33:52.689 -03:30 [CampaignManagerNew] openCampaigns RESCUE_RUSH_46
+I:1:276:26-02-22 7:33:52.689 -03:30 [CampaignManagerNew] openCampaigns GOLDEN_RUSH_13
+I:1:276:26-02-22 7:33:52.689 -03:30 [CampaignManagerNew] openCampaigns BINGO_DAUB_20
+I:1:276:26-02-22 7:33:52.689 -03:30 [CampaignManagerNew] openCampaigns MANIA_356
+I:18:-1:26-02-22 7:33:52.689 -03:30 [Costume] read info f:3073bfb98510438298cdc3ae6c77160d
+I:18:-1:26-02-22 7:33:52.690 -03:30 [Costume] read info m:3077b4c289c78dec7bb22e9bdca1a68d
+I:1:276:26-02-22 7:33:52.690 -03:30 [WebSocket] RECEIVE Response|[67]|20001||Payload:331 bytes
+I:1:276:26-02-22 7:33:52.690 -03:30 [Performance] GetMessageWrapper took 0.06ms
+I:18:-1:26-02-22 7:33:52.690 -03:30 [Costume] read info f:31c23f9d6cb8c05b4f5498cbacda3215
+I:18:-1:26-02-22 7:33:52.691 -03:30 [Costume] read info f:372d31a8b8793b0857058b970494f6a9
+I:18:-1:26-02-22 7:33:52.692 -03:30 [Costume] read info f:37835815c76110c073a034fcf4916986
+I:18:-1:26-02-22 7:33:52.693 -03:30 [Costume] read info f:3a5b530539c6401f1616afe84ad2cc0a
+I:18:-1:26-02-22 7:33:52.694 -03:30 [Costume] read info f:3d2bdc0d1d337b85d3077e391e3b60ca
+I:1:276:26-02-22 7:33:52.694 -03:30 [Message] Receive Response [67] pb.promo.GetPromoListResp
+I:18:-1:26-02-22 7:33:52.695 -03:30 [Costume] read info f:3d3cf923b8320c6f53d9ceee86442176
+I:18:-1:26-02-22 7:33:52.789 -03:30 [Costume] read info f:434e96e125f4a154127654d45582986a
+I:18:-1:26-02-22 7:33:52.835 -03:30 [Costume] read info f:438840d65afcc8edd5f57fd37de945f6
+I:18:-1:26-02-22 7:33:52.841 -03:30 [Costume] read info f:43d3d465430e5df13ea20d44c61eded8
+I:18:-1:26-02-22 7:33:52.842 -03:30 [Costume] read info f:4a10f20b393feac6c3e40d9672999341
+I:1:277:26-02-22 7:33:52.842 -03:30 [DownloadTask] Ctor order:0 https://bingo2-cdn.superbgame.net/production/albumV3/AC_9/AC_9_1/AC_9_1_2.ktx
+I:18:-1:26-02-22 7:33:52.843 -03:30 [Costume] read info m:4dfea69d649175e1a2a01e3a241d0d52
+I:18:-1:26-02-22 7:33:52.844 -03:30 [Costume] read info m:5483731d6e009959f63500671257cf64
+I:18:-1:26-02-22 7:33:52.844 -03:30 [Costume] read info f:583ca3d17579436adb0effc83c04864e
+I:18:-1:26-02-22 7:33:52.845 -03:30 [Costume] read info m:5ca0c697f6035a04dcf060332f64aaec
+I:18:-1:26-02-22 7:33:52.846 -03:30 [Costume] read info m:5e7638d3ef1c2a7df64f19c04658f0b3
+I:18:-1:26-02-22 7:33:52.846 -03:30 [Costume] read info f:5f3690d5f5d4fda0215bff2364a30555
+I:18:-1:26-02-22 7:33:52.847 -03:30 [Costume] read info f:6a57579e66a0df1bbdc6286df0dd09d3
+I:18:-1:26-02-22 7:33:52.848 -03:30 [Costume] read info m:6a7a05894c791a929646735187b1c63a
+I:35:-1:26-02-22 7:33:52.848 -03:30 [WebSocket] EnqueueMessage Binary
+I:18:-1:26-02-22 7:33:52.848 -03:30 [Costume] read info f:6c235138616bbd4cd32544a67eb59eb4
+I:18:-1:26-02-22 7:33:52.849 -03:30 [Costume] read info f:6c321876708de2407951eb381ef88ed5
+I:18:-1:26-02-22 7:33:52.850 -03:30 [Costume] read info f:6d6fd549821a1acb2928ff4a7a6087ec
+I:18:-1:26-02-22 7:33:52.851 -03:30 [Costume] read info f:6e415142b5c5a424b2c84097ea0582b5
+I:18:-1:26-02-22 7:33:52.851 -03:30 [Costume] read info f:7163dcba09ceef3b3d70ccaa9af4058f
+I:18:-1:26-02-22 7:33:52.852 -03:30 [Costume] read info f:73f6a825be5c4eed9abb14bfbe1d2d1b
+I:18:-1:26-02-22 7:33:52.853 -03:30 [Costume] read info f:75246d891b205f6483422148a01420bc
+I:18:-1:26-02-22 7:33:52.853 -03:30 [Costume] read info f:776d2cc4f46fa62e2fcfe1df86374cc3
+I:18:-1:26-02-22 7:33:52.854 -03:30 [Costume] read info f:777b16cd54d2e85168e4f0c1a9802515
+I:18:-1:26-02-22 7:33:52.855 -03:30 [Costume] read info f:791003029bd2eacbc6413ab126f2e69e
+I:18:-1:26-02-22 7:33:52.855 -03:30 [Costume] read info f:79513b38a728ecb369434c3fdf45fc60
+I:18:-1:26-02-22 7:33:52.856 -03:30 [Costume] read info m:79c9d0b90bbb65d7049caf3e3b7cd2a2
+I:18:-1:26-02-22 7:33:52.857 -03:30 [Costume] read info f:7d9e66a2bfd5361dc6853df1da2de9d3
+I:18:-1:26-02-22 7:33:52.857 -03:30 [Costume] read info f:88c83e194875aefbab78a190c09256c7
+I:18:-1:26-02-22 7:33:52.858 -03:30 [Costume] read info f:8e2501e0743dee452974dedb6d3b471d
+I:18:-1:26-02-22 7:33:52.859 -03:30 [Costume] read info f:907e68fc3419a0db9ac8c2814f9c3805
+I:18:-1:26-02-22 7:33:52.860 -03:30 [Costume] read info f:9283db63529844d2345d6d8f5024c1db
+I:18:-1:26-02-22 7:33:52.860 -03:30 [Costume] read info f:92e4832ebf8bed80e6312369a84769fb
+I:18:-1:26-02-22 7:33:52.861 -03:30 [Costume] read info f:9431259fee6e1dcb1050bb7b1e597cd9
+I:18:-1:26-02-22 7:33:52.918 -03:30 [Costume] read info f:95a6c0179c99e68af020875e02a556e8
+I:18:-1:26-02-22 7:33:52.919 -03:30 [Costume] read info f:993da9d75b5fa18fba07639dac356396
+I:18:-1:26-02-22 7:33:52.921 -03:30 [Costume] read info f:9e9e018cc902dc1e1bc736e2adb671f5
+I:18:-1:26-02-22 7:33:52.922 -03:30 [Costume] read info f:9f320f5defada8fba95a0ba0b6a3e34e
+I:18:-1:26-02-22 7:33:52.924 -03:30 [Costume] read info f:a1d1a78834195d6ae1d91e3b5c2a0669
+I:18:-1:26-02-22 7:33:52.925 -03:30 [Costume] read info f:a3631d0c0ea429f4b08e7bebf941f8a4
+I:18:-1:26-02-22 7:33:52.926 -03:30 [Costume] read info f:a5077ba31f6db70290c1e0f1d1060254
+I:18:-1:26-02-22 7:33:52.928 -03:30 [Costume] read info f:a5a6de0e6b47ccd07e0960b0da48118e
+I:18:-1:26-02-22 7:33:52.929 -03:30 [Costume] read info f:a7169c4b3c34ea601ac68a80f1a9e2e4
+I:18:-1:26-02-22 7:33:52.930 -03:30 [Costume] read info f:a7a3f20c15aa3949ec61b6bedd4edbcf
+I:18:-1:26-02-22 7:33:52.931 -03:30 [Costume] read info f:a846f128e4d915a1489f209e21adb7fa
+I:18:-1:26-02-22 7:33:52.933 -03:30 [Costume] read info f:a8853a708507a56b75fdcc3666c06af5
+I:18:-1:26-02-22 7:33:52.935 -03:30 [Costume] read info m:aa4a0342b35724e11c34d40d01300b4d
+I:18:-1:26-02-22 7:33:52.936 -03:30 [Costume] read info f:ab2246b07f4ca644a4af0b53632de036
+I:18:-1:26-02-22 7:33:52.937 -03:30 [Costume] read info f:aba1ba122b9ee4db714653d3885225f5
+I:18:-1:26-02-22 7:33:52.938 -03:30 [Costume] read info f:ad4041099223d86af8dab598499a2818
+I:18:-1:26-02-22 7:33:52.939 -03:30 [Costume] read info f:afae6bdf1961ef5d76a3172ce823b992
+I:18:-1:26-02-22 7:33:52.940 -03:30 [Costume] read info m:b0a7e178931c994d47746670ca21baad
+I:18:-1:26-02-22 7:33:52.941 -03:30 [Costume] read info m:b738b87140ed6f06bc51a9789e592000
+I:18:-1:26-02-22 7:33:52.942 -03:30 [Costume] read info m:bab1c09a0792db795d71f03c0304616a
+I:18:-1:26-02-22 7:33:52.943 -03:30 [Costume] read info f:baecd3695f53e4c187f58685db7af17d
+I:18:-1:26-02-22 7:33:52.944 -03:30 [Costume] read info f:bbdf71a5115aca1291c567b61059d632
+I:18:-1:26-02-22 7:33:52.945 -03:30 [Costume] read info f:bc06030b70bdd0667bf674457da4b4f6
+I:18:-1:26-02-22 7:33:52.946 -03:30 [Costume] read info f:c336c323d92fc7b04f6b703e795fb066
+I:18:-1:26-02-22 7:33:52.946 -03:30 [Costume] read info f:c41ec2f85e1124b8cf72f26c976baa76
+I:18:-1:26-02-22 7:33:52.947 -03:30 [Costume] read info f:cc971e3802b018d50ab9b37566407f07
+I:18:-1:26-02-22 7:33:52.947 -03:30 [Costume] read info f:ce5deed215d29ada82340ce7504976b6
+I:18:-1:26-02-22 7:33:52.948 -03:30 [Costume] read info f:cf1bd238ac8e36671549d649db9a1674
+I:18:-1:26-02-22 7:33:52.949 -03:30 [Costume] read info f:d24397aac7c2b7640e720584f9d7eabd
+I:18:-1:26-02-22 7:33:52.950 -03:30 [Costume] read info f:d31efa42a564ab728c94138192c36a09
+I:18:-1:26-02-22 7:33:52.951 -03:30 [Costume] read info f:d4311f73cd878da1a0086af7b8f802a8
+I:18:-1:26-02-22 7:33:52.951 -03:30 [Costume] read info f:dfd76c2ea9aec21de3efc38e2fb2cb0d
+I:18:-1:26-02-22 7:33:52.952 -03:30 [Costume] read info m:e06117351c6e44d26c50bd85a16de365
+I:18:-1:26-02-22 7:33:52.953 -03:30 [Costume] read info f:e2f3fb00be6e8c2e90f205ad57f28962
+I:18:-1:26-02-22 7:33:52.954 -03:30 [Costume] read info f:eb60831863ed80884b8c24c08f3fa5b9
+I:18:-1:26-02-22 7:33:52.955 -03:30 [Costume] read info f:f32c094c97a54d8ecdf08783b9a73339
+I:18:-1:26-02-22 7:33:52.955 -03:30 [Costume] read info f:f516cb4859abe9a9daac8a5d1bdd1519
+I:18:-1:26-02-22 7:33:52.957 -03:30 [Costume] read info f:f5eeea5ac03fcb8ece311892602b174f
+I:18:-1:26-02-22 7:33:52.958 -03:30 [Costume] read info f:f6498a22b4ae92d2d661270b72f871b8
+I:18:-1:26-02-22 7:33:52.959 -03:30 [Costume] read info f:f716cdc9218ec3d3b14106775d84690a
+I:18:-1:26-02-22 7:33:52.959 -03:30 [Costume] read info f:f79d04c93d91d8557857dfd5662dc199
+I:18:-1:26-02-22 7:33:52.960 -03:30 [Costume] read info m:fb641c55f74eb6c3cc15f756ac0af18b
+I:18:-1:26-02-22 7:33:52.961 -03:30 [Costume] read info m:fb8ea9007ac9bad4b337389717f8510c
+I:18:-1:26-02-22 7:33:52.961 -03:30 [Costume] read info m:fd75f07acd15a1ab59b1688360e64cb3
+I:18:-1:26-02-22 7:33:52.962 -03:30 [Costume] read info f:fdd86088238512f8816c2097ce9f9d98
+I:35:-1:26-02-22 7:33:53.056 -03:30 [WebSocket] EnqueueMessage Binary
+I:1:279:26-02-22 7:33:53.059 -03:30 _particleSystem.count = 8
+I:1:279:26-02-22 7:33:53.147 -03:30 [WebSocket] SEND with _ws BufferedRequest|[69]|801||Payload:0 bytes
+I:1:279:26-02-22 7:33:53.148 -03:30 [Performance] Send took 0.98ms
+I:1:279:26-02-22 7:33:53.148 -03:30 [Message] Send Request [69] pb.store.GetStoreReq
+I:1:279:26-02-22 7:33:53.149 -03:30 [WebSocket] SEND with _ws BufferedRequest|[70]|903||Payload:0 bytes
+I:1:279:26-02-22 7:33:53.149 -03:30 [Performance] Send took 0.45ms
+I:1:279:26-02-22 7:33:53.149 -03:30 [Message] Send Request [70] pb.transaction.GetVerifiedTransactionsReq
+I:1:279:26-02-22 7:33:53.151 -03:30 FirstPurchase isActive IsInitialized True, isBought False
+I:1:279:26-02-22 7:33:53.151 -03:30 FirstPurchase StartMillis Get 1759572732533
+I:1:279:26-02-22 7:33:53.151 -03:30 FirstPurchase isActive IsInitialized True, isBought False
+I:1:279:26-02-22 7:33:53.151 -03:30 FirstPurchase StartMillis Get 1759572732533
+I:1:279:26-02-22 7:33:53.237 -03:30 pass:: skin Assets/GameAssets/Modules/Pass/Common/
+I:35:-1:26-02-22 7:33:53.264 -03:30 [WebSocket] EnqueueMessage Binary
+I:35:-1:26-02-22 7:33:53.267 -03:30 [WebSocket] EnqueueMessage Binary
+I:1:279:26-02-22 7:33:53.314 -03:30 Mania Test: state.LastProgress = 0 state.LastTarget = 8, LastLevel = 1, CurrentLevel = 1
+I:1:279:26-02-22 7:33:53.617 -03:30 GetCampaignComp SYSTEM not found!
+I:1:279:26-02-22 7:33:53.786 -03:30 [WebSocket] RECEIVE Response|[68]|30051||Payload:120 bytes
+I:1:279:26-02-22 7:33:53.786 -03:30 [Performance] GetMessageWrapper took 0.05ms
+I:1:279:26-02-22 7:33:53.799 -03:30 [Message] Receive Response [68] pb.campaign.GetLuckyBallStateResp
+I:1:279:26-02-22 7:33:53.800 -03:30 [WebSocket] RECEIVE Notification|[3]|100056|chat-37vafuGo2WpSJpsnUyfJIk3XRvd|Payload:81 bytes
+I:1:279:26-02-22 7:33:53.800 -03:30 [Performance] GetMessageWrapper took 0.02ms
+I:1:279:26-02-22 7:33:53.801 -03:30 [Message] Receive Notification [3] pb.chat.BatchGlobalChatMessageNoti
+I:1:279:26-02-22 7:33:53.802 -03:30 [WebSocket] RECEIVE Response|[69]|801||Payload:19 bytes
+I:1:279:26-02-22 7:33:53.802 -03:30 [Performance] GetMessageWrapper took 0.01ms
+I:1:279:26-02-22 7:33:53.803 -03:30 [Message] Receive Response [69] pb.store.GetStoreResp
+I:1:279:26-02-22 7:33:53.812 -03:30 [WebSocket] SEND with _ws BufferedRequest|[71]|804||Payload:22 bytes
+I:1:279:26-02-22 7:33:53.813 -03:30 [Performance] Send took 0.61ms
+I:1:279:26-02-22 7:33:53.813 -03:30 [Message] Send Request [71] pb.store.GetStoreBuffPackStateReq
+I:1:279:26-02-22 7:33:53.813 -03:30 [WebSocket] RECEIVE Response|[70]|903||Payload:0 bytes
+I:1:279:26-02-22 7:33:53.813 -03:30 [Performance] GetMessageWrapper took 0.01ms
+I:1:279:26-02-22 7:33:53.815 -03:30 [Message] Receive Response [70] pb.transaction.GetVerifiedTransactionsResp
+I:1:279:26-02-22 7:33:53.885 -03:30 [Performance] Countly Took 0.67ms
+W:1:279:26-02-22 7:33:53.886 -03:30 [Performance] Long frame time: 1041ms
+I:35:-1:26-02-22 7:33:53.964 -03:30 [WebSocket] EnqueueMessage Binary
+I:1:280:26-02-22 7:33:53.966 -03:30 [DownloadTask] Complete in 1122ms, successful, 0/3 url:https://bingo2-cdn.superbgame.net/production/albumV3/AC_9/AC_9_1/AC_9_1_2.ktx
+I:1:280:26-02-22 7:33:53.966 -03:30 [WebSocket] RECEIVE Response|[71]|804||Payload:94 bytes
+I:1:280:26-02-22 7:33:53.966 -03:30 [Performance] GetMessageWrapper took 0.05ms
+I:1:280:26-02-22 7:33:53.970 -03:30 [Message] Receive Response [71] pb.store.GetStoreBuffPackStateResp
+I:1:280:26-02-22 7:33:53.973 -03:30 [Performance] Countly Took 0.28ms
+I:1:280:26-02-22 7:33:53.973 -03:30 [Performance] Countly Took 0.15ms
+I:1:280:26-02-22 7:33:53.974 -03:30 [WebSocket] SEND with _ws BufferedRequest|[72]|20061||Payload:53 bytes
+I:1:280:26-02-22 7:33:53.974 -03:30 [Performance] Send took 0.46ms
+I:1:280:26-02-22 7:33:53.974 -03:30 [Message] Send Request [72] pb.promo.SuggestPromoReq
+I:1:280:26-02-22 7:33:53.975 -03:30 [WebSocket] SEND with _ws BufferedRequest|[73]|30161||Payload:14 bytes
+I:1:280:26-02-22 7:33:53.975 -03:30 [Performance] Send took 0.29ms
+I:1:280:26-02-22 7:33:53.975 -03:30 [Message] Send Request [73] pb.campaign.TeamBuildRefreshRobotScoreReq
+I:1:280:26-02-22 7:33:53.977 -03:30 [Flow] Push on SubFlow 0 GameLib.Main.UILogic.ManagedPopup.Tasks.SettlementRefundTask 
+I:1:280:26-02-22 7:33:53.977 -03:30 [Flow] AddTask 0 GameLib.Main.UILogic.ManagedPopup.Tasks.SettlementRefundTask
+I:1:280:26-02-22 7:33:53.977 -03:30 [Flow] Push on SubFlow 0 GameLib.Main.Tasks.CallFuncTask 
+I:1:280:26-02-22 7:33:54.025 -03:30 ShowPanel GameLib.Main.UI.Store.StorePanel
+I:1:280:26-02-22 7:33:54.028 -03:30 [Performance] Countly Took 0.52ms
+I:1:280:26-02-22 7:33:54.029 -03:30 [Performance] Countly Took 0.27ms
+I:1:280:26-02-22 7:33:54.029 -03:30 [Performance] Countly Took 0.24ms
+I:1:280:26-02-22 7:33:54.030 -03:30 [WebSocket] SEND with _ws BufferedRequest|[74]|20061||Payload:58 bytes
+I:1:280:26-02-22 7:33:54.030 -03:30 [Performance] Send took 0.45ms
+I:1:280:26-02-22 7:33:54.030 -03:30 [Message] Send Request [74] pb.promo.SuggestPromoReq
+I:1:280:26-02-22 7:33:54.030 -03:30 ClosePanel GameLib.Main.UI.Store.StorePanel
+I:1:280:26-02-22 7:33:54.031 -03:30 [Performance] Countly Took 0.24ms
+I:1:281:26-02-22 7:33:54.052 -03:30 [Flow] BeginSubflow 1 GameLib.Main.UILogic.ManagedPopup.Tasks.SettlementRefundTask
+I:1:281:26-02-22 7:33:54.053 -03:30 [WebSocket] SEND with _ws BufferedRequest|[75]|428||Payload:0 bytes
+I:1:281:26-02-22 7:33:54.053 -03:30 [Performance] Send took 0.43ms
+I:1:281:26-02-22 7:33:54.053 -03:30 [Message] Send Request [75] pb.hall.GetAndClaimUnClaimedRoundDisconnectRewardReq
+I:35:-1:26-02-22 7:33:54.091 -03:30 [WebSocket] EnqueueMessage Binary
+I:35:-1:26-02-22 7:33:54.092 -03:30 [WebSocket] EnqueueMessage Binary
+I:1:284:26-02-22 7:33:54.102 -03:30 [WebSocket] RECEIVE Response|[72]|20061||Payload:0 bytes
+I:1:284:26-02-22 7:33:54.102 -03:30 [Performance] GetMessageWrapper took 0.11ms
+I:1:284:26-02-22 7:33:54.108 -03:30 [Message] Receive Response [72] pb.promo.SuggestPromoResp
+I:1:284:26-02-22 7:33:54.109 -03:30 [WebSocket] RECEIVE Response|[73]|30161||Payload:0 bytes
+I:1:284:26-02-22 7:33:54.109 -03:30 [Performance] GetMessageWrapper took 0.16ms
+I:1:284:26-02-22 7:33:54.112 -03:30 [Message] Receive Response [73] pb.campaign.TeamBuildRefreshRobotScoreResp
+I:35:-1:26-02-22 7:33:54.144 -03:30 [WebSocket] EnqueueMessage Binary
+I:1:287:26-02-22 7:33:54.152 -03:30 [WebSocket] RECEIVE Response|[74]|20061||Payload:0 bytes
+I:1:287:26-02-22 7:33:54.152 -03:30 [Performance] GetMessageWrapper took 0.07ms
+I:1:287:26-02-22 7:33:54.153 -03:30 [Message] Receive Response [74] pb.promo.SuggestPromoResp
+I:35:-1:26-02-22 7:33:54.173 -03:30 [WebSocket] EnqueueMessage Binary
+I:1:289:26-02-22 7:33:54.208 -03:30 [WebSocket] RECEIVE ErrorResponse|[75]|428||Payload:3 bytes
+I:1:289:26-02-22 7:33:54.208 -03:30 [Performance] GetMessageWrapper took 0.15ms
+I:1:289:26-02-22 7:33:54.212 -03:30 [Message] Receive errorResp ErrorResponse [75] pb.error.ErrResp errCode DISSCONNECT_NO_REWARD
+I:1:289:26-02-22 7:33:54.215 -03:30 [WebSocket] SEND with _ws BufferedRequest|[76]|404||Payload:0 bytes
+I:1:289:26-02-22 7:33:54.216 -03:30 [Performance] Send took 0.76ms
+I:1:289:26-02-22 7:33:54.216 -03:30 [Message] Send Request [76] pb.hall.GetUnclaimedRoundRewardReq
+I:1:290:26-02-22 7:33:54.224 -03:30 [Payment] In-App Purchasing successfully initialized
+I:1:290:26-02-22 7:33:54.224 -03:30 [Payment] InitSuccess
+I:35:-1:26-02-22 7:33:54.225 -03:30 [WebSocket] EnqueueMessage Binary
+I:1:291:26-02-22 7:33:54.234 -03:30 [WebSocket] RECEIVE Notification|[4]|100098||Payload:58 bytes
+I:1:291:26-02-22 7:33:54.234 -03:30 [Performance] GetMessageWrapper took 0.03ms
+I:1:291:26-02-22 7:33:54.237 -03:30 [Message] Receive Notification [4] pb.promo.SuggestPromoNoti
+I:1:291:26-02-22 7:33:54.238 -03:30 [Performance] Countly Took 0.38ms
+I:35:-1:26-02-22 7:33:54.269 -03:30 [WebSocket] EnqueueMessage Binary
+I:1:294:26-02-22 7:33:54.285 -03:30 [WebSocket] RECEIVE Notification|[5]|100098||Payload:100 bytes
+I:1:294:26-02-22 7:33:54.285 -03:30 [Performance] GetMessageWrapper took 0.12ms
+I:1:294:26-02-22 7:33:54.295 -03:30 [Message] Receive Notification [5] pb.promo.SuggestPromoNoti
+I:1:294:26-02-22 7:33:54.297 -03:30 [Performance] Countly Took 1.31ms
+I:35:-1:26-02-22 7:33:54.334 -03:30 [WebSocket] EnqueueMessage Binary
+I:1:297:26-02-22 7:33:54.334 -03:30 [WebSocket] RECEIVE ErrorResponse|[76]|404||Payload:39 bytes
+I:1:297:26-02-22 7:33:54.334 -03:30 [Performance] GetMessageWrapper took 0.11ms
+I:1:297:26-02-22 7:33:54.338 -03:30 [Message] Receive errorResp ErrorResponse [76] pb.error.ErrResp errCode NO_ROUND_SETTLE_DATA
+I:1:298:26-02-22 7:33:54.374 -03:30 [Flow] EndSubflow 1, GameLib.Main.UILogic.ManagedPopup.Tasks.SettlementRefundTask 
+I:1:298:26-02-22 7:33:54.374 -03:30 [Flow] AddTask 1 GameLib.Main.Tasks.CallFuncTask
+I:1:299:26-02-22 7:33:54.385 -03:30 [Flow] Push on SubFlow 0 GameLib.Main.Tasks.CallFuncTask 
+I:1:299:26-02-22 7:33:54.385 -03:30 [Flow] AddTask 2 GameLib.Main.Tasks.CallFuncTask
+I:1:300:26-02-22 7:33:54.401 -03:30 [Flow] Push on SubFlow 0 GameLib.Main.Tasks.CallFuncTask 
+I:1:300:26-02-22 7:33:54.407 -03:30 [Flow] Push on SubFlow 0 GameLib.Main.LeaderBoardV2.Task.LeaderBoardSettleTask 
+I:1:300:26-02-22 7:33:54.422 -03:30 [Flow] Push on SubFlow 0 GameLib.Main.UILogic.RewardQueueing.ChooseClothTask 
+I:1:300:26-02-22 7:33:54.423 -03:30 [Flow] Push on SubFlow 0 GameLib.Main.UILogic.RewardQueueing.DaubClashUpdateRankTask 
+I:1:300:26-02-22 7:33:54.429 -03:30 [Flow] AllIconRefresh isBlocking:False
+I:1:300:26-02-22 7:33:54.451 -03:30 [Flow] Push on SubFlow 0 GameLib.Main.ChapterMap.CheckpointAdvanceTask 
+I:1:300:26-02-22 7:33:54.469 -03:30 FirstPurchase isActive IsInitialized True, isBought False
+I:1:300:26-02-22 7:33:54.469 -03:30 FirstPurchase StartMillis Get 1759572732533
+W:1:300:26-02-22 7:33:54.482 -03:30 [ForcePopup] MANIA_MANIA_356 has no modifier CAMPAIGN_MANIA
+I:1:300:26-02-22 7:33:54.483 -03:30 [ForcePopup] Push DIY_OFFER_DIY_OFFER_82
+I:1:300:26-02-22 7:33:54.483 -03:30 [Flow] Push on SubFlow 0 GameLib.Main.Modules.Promotion.PromotionForcePopUpTaskBase`1<GameLib.Main.Modules.Promotion.DiySale.DiySaleModel> 
+I:1:300:26-02-22 7:33:54.484 -03:30 [ForcePopup] Push LINE_SALE_THREE_LINE_SALE_THREE_108
+I:1:300:26-02-22 7:33:54.484 -03:30 [Flow] Push on SubFlow 0 GameLib.Main.Modules.Promotion.LineSale.LineSaleThreeForcePopTask 
+I:1:300:26-02-22 7:33:54.485 -03:30 [ForcePopup] Push TEAM_BUILD_TEAM_BUILD_9
+I:1:300:26-02-22 7:33:54.486 -03:30 [Flow] Push on SubFlow 0 GameLib.Main.Modules.Campaigns.CampaignExposureTaskBase`2<GameLib.Main.Modules.Campaigns.TeamBuild.Controller.TeamBuildManager,GameLib.Main.Modules.Campaigns.TeamBuild.View.TeamBuildPromotionPanel> 
+I:1:300:26-02-22 7:33:54.486 -03:30 [Flow] Push on SubFlow 0 GameLib.Main.Tasks.CallFuncTask 
+I:1:300:26-02-22 7:33:54.486 -03:30 [Flow] Push on SubFlow 0 GameLib.Main.Tasks.CallFuncTask 
+I:1:300:26-02-22 7:33:54.487 -03:30 [Flow] Push on SubFlow 0 GameLib.Main.Guide.WeakGuide.TriggerWeakGuideTask 
+I:1:300:26-02-22 7:33:54.487 -03:30 [Flow] Push on SubFlow 0 GameLib.Main.Tasks.CallFuncTask 
+I:1:300:26-02-22 7:33:54.487 -03:30 [Flow] AddTask 3 GameLib.Main.Tasks.CallFuncTask
+I:1:301:26-02-22 7:33:54.491 -03:30 [Flow] AddTask 4 GameLib.Main.LeaderBoardV2.Task.LeaderBoardSettleTask
+I:1:302:26-02-22 7:33:54.501 -03:30 [WebSocket] SEND with _ws BufferedRequest|[77]|1804||Payload:0 bytes
+I:1:302:26-02-22 7:33:54.502 -03:30 [Performance] Send took 0.54ms
+I:1:302:26-02-22 7:33:54.502 -03:30 [Message] Send Request [77] pb.leaderboard.ClaimGlobalLeaderboardSettleRewardReq
+I:35:-1:26-02-22 7:33:54.625 -03:30 [WebSocket] EnqueueMessage Binary
+I:1:310:26-02-22 7:33:54.634 -03:30 [WebSocket] RECEIVE Response|[77]|1804||Payload:2 bytes
+I:1:310:26-02-22 7:33:54.634 -03:30 [Performance] GetMessageWrapper took 0.15ms
+I:1:310:26-02-22 7:33:54.647 -03:30 [Message] Receive Response [77] pb.leaderboard.ClaimGlobalLeaderboardSettleRewardResp
+I:1:310:26-02-22 7:33:54.674 -03:30 ShowPanel GameLib.Main.LeaderBoardV2.View.LeaderBoardSettlementPanel
+I:1:310:26-02-22 7:33:54.676 -03:30 [Performance] Countly Took 0.79ms
+I:1:310:26-02-22 7:33:54.690 -03:30 [Performance] Countly Took 0.43ms
+I:1:310:26-02-22 7:33:54.701 -03:30 GetCampaignComp PERIOD_BONUS not found!
+I:35:-1:26-02-22 7:33:54.953 -03:30 [WebSocket] EnqueueMessage Binary
+I:1:327:26-02-22 7:33:54.966 -03:30 [WebSocket] RECEIVE Notification|[6]|100056|chat-37vafuGo2WpSJpsnUyfJIk3XRvd|Payload:84 bytes
+I:1:327:26-02-22 7:33:54.966 -03:30 [Performance] GetMessageWrapper took 0.16ms
+I:1:327:26-02-22 7:33:54.972 -03:30 [Message] Receive Notification [6] pb.chat.BatchGlobalChatMessageNoti
+I:1:398:26-02-22 7:33:56.172 -03:30 [Flow] AddTask 18 GameLib.Main.UILogic.ManagedPopup.V2.FlyResTask
+I:1:398:26-02-22 7:33:56.173 -03:30 [Flow] BeginSubflow 2 GameLib.Main.UILogic.ManagedPopup.V2.FlyResTask
+I:1:398:26-02-22 7:33:56.173 -03:30 [Flow] Push on SubFlow 2 GameLib.Main.Tasks.ParallelTask 
+I:1:398:26-02-22 7:33:56.173 -03:30 [Flow] AddTask 15 GameLib.Main.Tasks.ParallelTask
+I:1:398:26-02-22 7:33:56.173 -03:30 [Flow] Push on SubFlow 2 GameLib.Main.Tasks.CallFuncTask 
+I:1:399:26-02-22 7:33:56.180 -03:30 [WebSocket] SEND with _ws BufferedRequest|[78]|701||Payload:0 bytes
+I:1:399:26-02-22 7:33:56.181 -03:30 [Performance] Send took 1.04ms
+I:1:399:26-02-22 7:33:56.181 -03:30 [Message] Send Request [78] pb.bonus.GetPeriodBonusStateReq
+I:35:-1:26-02-22 7:33:56.261 -03:30 [WebSocket] EnqueueMessage Binary
+I:1:403:26-02-22 7:33:56.264 -03:30 [WebSocket] RECEIVE Notification|[7]|100056|chat-37vafuGo2WpSJpsnUyfJIk3XRvd|Payload:89 bytes
+I:1:403:26-02-22 7:33:56.264 -03:30 [Performance] GetMessageWrapper took 0.11ms
+I:1:403:26-02-22 7:33:56.272 -03:30 [Message] Receive Notification [7] pb.chat.BatchGlobalChatMessageNoti
+I:35:-1:26-02-22 7:33:56.302 -03:30 [WebSocket] EnqueueMessage Binary
+I:1:406:26-02-22 7:33:56.314 -03:30 [WebSocket] RECEIVE Response|[78]|701||Payload:18 bytes
+I:1:406:26-02-22 7:33:56.314 -03:30 [Performance] GetMessageWrapper took 0.09ms
+I:1:406:26-02-22 7:33:56.317 -03:30 [Message] Receive Response [78] pb.bonus.GetPeriodBonusStateResp
+I:1:464:26-02-22 7:33:57.295 -03:30 [Flow] AddTask 19 GameLib.Main.Tasks.CallFuncTask
+I:1:466:26-02-22 7:33:57.328 -03:30 [Flow] EndSubflow 2, GameLib.Main.UILogic.ManagedPopup.V2.FlyResTask 
+I:1:466:26-02-22 7:33:57.328 -03:30 ClosePanel GameLib.Main.LeaderBoardV2.View.LeaderBoardSettlementPanel
+I:1:466:26-02-22 7:33:57.330 -03:30 [Performance] Countly Took 0.97ms
+I:1:467:26-02-22 7:33:57.344 -03:30 [Flow] AddTask 5 GameLib.Main.UILogic.RewardQueueing.ChooseClothTask
+I:1:468:26-02-22 7:33:57.362 -03:30 [Flow] BeginSubflow 3 GameLib.Main.UILogic.RewardQueueing.ChooseClothTask
+I:1:468:26-02-22 7:33:57.362 -03:30 [Flow] Push on SubFlow 3 GameLib.Main.Tasks.CallFuncTask 
+I:1:468:26-02-22 7:33:57.362 -03:30 [Flow] AddTask 20 GameLib.Main.Tasks.CallFuncTask
+I:1:470:26-02-22 7:33:57.394 -03:30 [Flow] EndSubflow 3, GameLib.Main.UILogic.RewardQueueing.ChooseClothTask 
+I:1:470:26-02-22 7:33:57.395 -03:30 [Flow] AddTask 6 GameLib.Main.UILogic.RewardQueueing.DaubClashUpdateRankTask
+I:1:471:26-02-22 7:33:57.413 -03:30 [Flow] AddTask 7 GameLib.Main.ChapterMap.CheckpointAdvanceTask
+I:1:472:26-02-22 7:33:57.434 -03:30 [WebSocket] SEND with _ws BufferedRequest|[79]|701||Payload:0 bytes
+I:1:472:26-02-22 7:33:57.435 -03:30 [Performance] Send took 1.14ms
+I:1:472:26-02-22 7:33:57.435 -03:30 [Message] Send Request [79] pb.bonus.GetPeriodBonusStateReq
+I:1:474:26-02-22 7:33:57.461 -03:30 [Flow] AddTask 8 GameLib.Main.Modules.Promotion.PromotionForcePopUpTaskBase`1<GameLib.Main.Modules.Promotion.DiySale.DiySaleModel>
+I:1:475:26-02-22 7:33:57.479 -03:30 [Flow] BeginSubflow 4 GameLib.Main.Modules.Promotion.PromotionForcePopUpTaskBase`1<GameLib.Main.Modules.Promotion.DiySale.DiySaleModel>
+I:1:475:26-02-22 7:33:57.522 -03:30 ShowPanel GameLib.Main.Modules.Promotion.DiySale.DiySalePanel
+I:1:475:26-02-22 7:33:57.525 -03:30 [Performance] Countly Took 0.93ms
+I:1:475:26-02-22 7:33:57.526 -03:30 [Performance] Countly Took 0.42ms
+I:1:475:26-02-22 7:33:57.527 -03:30 [Performance] Countly Took 0.39ms
+I:1:475:26-02-22 7:33:57.529 -03:30 [Performance] Countly Took 0.47ms
+I:1:475:26-02-22 7:33:57.535 -03:30 GetCampaignComp SYSTEM not found!
+I:1:475:26-02-22 7:33:57.538 -03:30 GetCampaignComp SYSTEM not found!
+I:35:-1:26-02-22 7:33:57.592 -03:30 [WebSocket] EnqueueMessage Binary
+I:1:476:26-02-22 7:33:57.595 -03:30 [WebSocket] RECEIVE Response|[79]|701||Payload:18 bytes
+I:1:476:26-02-22 7:33:57.595 -03:30 [Performance] GetMessageWrapper took 0.05ms
+I:1:476:26-02-22 7:33:57.596 -03:30 [Message] Receive Response [79] pb.bonus.GetPeriodBonusStateResp
+I:35:-1:26-02-22 7:33:58.000 -03:30 [WebSocket] EnqueueMessage Binary
+I:1:501:26-02-22 7:33:58.010 -03:30 [WebSocket] RECEIVE Notification|[8]|100056|chat-37vafuGo2WpSJpsnUyfJIk3XRvd|Payload:90 bytes
+I:1:501:26-02-22 7:33:58.010 -03:30 [Performance] GetMessageWrapper took 0.14ms
+I:1:501:26-02-22 7:33:58.025 -03:30 [Message] Receive Notification [8] pb.chat.BatchGlobalChatMessageNoti
+I:1:597:26-02-22 7:33:59.609 -03:30 ClosePanel GameLib.Main.Modules.Promotion.DiySale.DiySalePanel
+I:1:597:26-02-22 7:33:59.611 -03:30 [Performance] Countly Took 1.18ms
+I:1:604:26-02-22 7:33:59.725 -03:30 [Flow] EndSubflow 4, GameLib.Main.Modules.Promotion.PromotionForcePopUpTaskBase`1<GameLib.Main.Modules.Promotion.DiySale.DiySaleModel> 
+I:1:604:26-02-22 7:33:59.725 -03:30 [Flow] AddTask 9 GameLib.Main.Modules.Promotion.LineSale.LineSaleThreeForcePopTask
+I:1:605:26-02-22 7:33:59.739 -03:30 [Flow] BeginSubflow 5 GameLib.Main.Modules.Promotion.LineSale.LineSaleThreeForcePopTask
+I:1:605:26-02-22 7:33:59.799 -03:30 ShowPanel GameLib.Main.Modules.Promotion.LineSale.LineSaleThreePanel
+I:1:605:26-02-22 7:33:59.802 -03:30 [Performance] Countly Took 0.83ms
+I:1:605:26-02-22 7:33:59.803 -03:30 [Performance] Countly Took 0.44ms
+I:1:605:26-02-22 7:33:59.805 -03:30 [Performance] Countly Took 0.60ms
+I:1:605:26-02-22 7:33:59.817 -03:30 [Performance] Countly Took 1.72ms
+I:35:-1:26-02-22 7:34:00.639 -03:30 [WebSocket] EnqueueMessage Binary
+I:1:655:26-02-22 7:34:00.654 -03:30 [WebSocket] RECEIVE Notification|[9]|100056|chat-37vafuGo2WpSJpsnUyfJIk3XRvd|Payload:91 bytes
+I:1:655:26-02-22 7:34:00.654 -03:30 [Performance] GetMessageWrapper took 0.11ms
+I:1:655:26-02-22 7:34:00.663 -03:30 [Message] Receive Notification [9] pb.chat.BatchGlobalChatMessageNoti
+I:1:679:26-02-22 7:34:01.055 -03:30 [DownloadTask] Ctor order:0 https://bingo2-cdn.superbgame.net/production/albumV3/AC_9/AC_9_1/AC_9_1_9.ktx
+I:1:686:26-02-22 7:34:01.169 -03:30 [DownloadTask] Complete in 112ms, successful, 0/3 url:https://bingo2-cdn.superbgame.net/production/albumV3/AC_9/AC_9_1/AC_9_1_9.ktx
+I:1:699:26-02-22 7:34:01.400 -03:30 [Performance] Countly Took 0.98ms
+I:1:734:26-02-22 7:34:01.969 -03:30 ClosePanel GameLib.Main.Modules.Promotion.LineSale.LineSaleThreePanel
+I:1:734:26-02-22 7:34:01.971 -03:30 [Performance] Countly Took 1.42ms
+I:1:741:26-02-22 7:34:02.091 -03:30 [Flow] EndSubflow 5, GameLib.Main.Modules.Promotion.LineSale.LineSaleThreeForcePopTask 
+I:1:741:26-02-22 7:34:02.091 -03:30 [Flow] AddTask 10 GameLib.Main.Modules.Campaigns.CampaignExposureTaskBase`2<GameLib.Main.Modules.Campaigns.TeamBuild.Controller.TeamBuildManager,GameLib.Main.Modules.Campaigns.TeamBuild.View.TeamBuildPromotionPanel>
+I:1:742:26-02-22 7:34:02.101 -03:30 [Flow] BeginSubflow 6 GameLib.Main.Modules.Campaigns.CampaignExposureTaskBase`2<GameLib.Main.Modules.Campaigns.TeamBuild.Controller.TeamBuildManager,GameLib.Main.Modules.Campaigns.TeamBuild.View.TeamBuildPromotionPanel>
+I:1:742:26-02-22 7:34:02.130 -03:30 ShowPanel GameLib.Main.Modules.Campaigns.TeamBuild.View.TeamBuildPromotionPanel
+I:1:742:26-02-22 7:34:02.131 -03:30 [Performance] Countly Took 0.91ms
+I:1:742:26-02-22 7:34:02.133 -03:30 [Performance] Countly Took 0.61ms
+E:1:742:26-02-22 7:34:02.147 -03:30 CAUTION: AvatarFrame Is Not Always Image!!!
+at GameLib.Main.GameAsset._GetResImage(ResConfig resConfig) 
+at GameLib.Main.GameAsset.GetResImage(String resID) 
+at GameLib.Main.UI.Common.RewardItemViewBase.GetImageSpritePath(String resID) 
+at GameLib.Main.UI.Common.RewardItemViewFrame.SetImage(String resID) 
+at GameLib.Main.UI.Common.RewardItemViewBase.SetFlyContent(String resID) 
+at GameLib.Main.UI.Common.RewardItemViewDlc.SetDlcValid(Boolean valid) 
+at GameLib.Main.UI.Dlc.Comp.JitDlcs.Initialize(IList`1 dlcModules, IJitDlcListener listener, IViewForJitDlc downloadView) 
+at GameLib.Main.UI.Dlc.Comp.JitDlcs.Initialize(String dlcName, IJitDlcListener listener, IViewForJitDlc downloadView) 
+at GameLib.Main.UI.Common.RewardItemViewDlc.Initialize(String resID, Int32 amount, Boolean isGenericPowerup) 
+at GameLib.Main.UI.Common.RewardItemViewFrame.Initialize(String resID, Int32 amount, Boolean isGenericPowerup) 
+at GameLib.Main.UI.Common.RewardItemView.Initialize(String resID, Int32 amount, IRewardItemViewFactory factory, Boolean isGenericPowerup, Func`2 timeFormatFunc) 
+at GameLib.Main.UI.Common.RewardItemView.Initialize(String resID, Int32 amount, Boolean isGenericPowerup, RewardItemViewFactory factory, Func`2 timeFormatFunc) 
+at GameLib.Main.Modules.Campaigns.TeamBuild.View.TeamBuildPromotionPanel.Initialize(TeamBuildManager manager) 
+at GameLib.Main.Gameplay.ViewsFor`1<GameLib.Main.Modules.Campaigns.TeamBuild.Controller.TeamBuildManager>.AddView(IViewFor`1 view) 
+at GameLib.Main.Campaign.BaseCampaignManager`1<GameLib.Main.Modules.Campaigns.TeamBuild.Controller.TeamBuildManager>.ManagerView(IViewFor`1 view, Boolean add) 
+at GameLib.Main.Campaign.BaseCampaignManager`1<GameLib.Main.Modules.Campaigns.TeamBuild.Controller.TeamBuildManager>.ShowExposurePanel(Action`1 init) 
+at GameLib.Main.Modules.Campaigns.CampaignExposureTaskBase`2<GameLib.Main.Modules.Campaigns.TeamBuild.Controller.TeamBuildManager,GameLib.Main.Modules.Campaigns.TeamBuild.View.TeamBuildPromotionPanel>.CreateExposurePanel() 
+at GameLib.Main.Modules.Campaigns.CampaignExposureBasePanelTaskBase`2<GameLib.Main.Modules.Campaigns.TeamBuild.Controller.TeamBuildManager, GameLib.Main.Modules.Campaigns.TeamBuild.View.TeamBuildPromotionPanel>.OnStart() 
+at GameLib.Main.Tasks.AbstractTask.InternalStart() 
+at GameLib.Main.Tasks.TaskQueue.Update() 
+at GameLib.Main.Tasks.TaskRunner.Update() 
+at GameLib.Main.GameMain.Update() 
+
+Core.Utils.LogHelper:LogToUnityConsole(LogType, Boolean, Object, String, Object[])
+Game.ILRuntime.CoreLogCLRRedirection:LogError_0(ILIntepreter, StackObject*, IList`1, CLRMethod, Boolean)
+ILRuntime.Runtime.Intepreter.ILIntepreter:Execute(ILMethod, StackObject*, Boolean&)
+ILRuntime.Runtime.Intepreter.ILIntepreter:Execute(ILMethod, StackObject*, Boolean&)
+ILRuntime.Runtime.Intepreter.ILIntepreter:Execute(ILMethod, StackObject*, Boolean&)
+ILRuntime.Runtime.Intepreter.ILIntepreter:Execute(ILMethod, StackObject*, Boolean&)
+ILRuntime.Runtime.Intepreter.ILIntepreter:Execute(ILMethod, StackObject*, Boolean&)
+ILRuntime.Runtime.Intepreter.ILIntepreter:Execute(ILMethod, StackObject*, Boolean&)
+ILRuntime.Runtime.Intepreter.ILIntepreter:Execute(ILMethod, StackObject*, Boolean&)
+ILRuntime.Runtime.Intepreter.ILIntepreter:Execute(ILMethod, StackObject*, Boolean&)
+ILRuntime.Runtime.Intepreter.ILIntepreter:Execute(ILMethod, StackObject*, Boolean&)
+ILRuntime.Runtime.Intepreter.ILIntepreter:Execute(ILMethod, StackObject*, Boolean&)
+ILRuntime.Runtime.Intepreter.ILIntepreter:Execute(ILMethod, StackObject*, Boolean&)
+ILRuntime.Runtime.Intepreter.ILIntepreter:Execute(ILMethod, StackObject*, Boolean&)
+ILRuntime.Runtime.Intepreter.ILIntepreter:Execute(ILMethod, StackObject*, Boolean&)
+ILRuntime.Runtime.Intepreter.ILIntepreter:Execute(ILMethod, StackObject*, Boolean&)
+ILRuntime.Runtime.Intepreter.ILIntepreter:Execute(ILMethod, StackObject*, Boolean&)
+ILRuntime.Runtime.Intepreter.ILIntepreter:Execute(ILMethod, StackObject*, Boolean&)
+ILRuntime.Runtime.Intepreter.ILIntepreter:Execute(ILMethod, StackObject*, Boolean&)
+ILRuntime.Runtime.Intepreter.ILIntepreter:Execute(ILMethod, StackObject*, Boolean&)
+ILRuntime.Runtime.Intepreter.ILIntepreter:Execute(ILMethod, StackObject*, Boolean&)
+ILRuntime.Runtime.Intepreter.ILIntepreter:Execute(ILMethod, StackObject*, Boolean&)
+ILRuntime.Runtime.Intepreter.ILIntepreter:Execute(ILMethod, StackObject*, Boolean&)
+ILRuntime.Runtime.Intepreter.ILIntepreter:Execute(ILMethod, StackObject*, Boolean&)
+ILRuntime.Runtime.Intepreter.ILIntepreter:Run(ILMethod, Object, Object[])
+ILRuntime.Runtime.Enviorment.AppDomain:Invoke(IMethod, Object, Object[])
+
+I:1:742:26-02-22 7:34:02.161 -03:30 [Performance] Countly Took 0.60ms
+I:35:-1:26-02-22 7:34:02.193 -03:30 [WebSocket] EnqueueMessage Binary
+I:1:745:26-02-22 7:34:02.200 -03:30 [WebSocket] RECEIVE Notification|[10]|100056|chat-37vafuGo2WpSJpsnUyfJIk3XRvd|Payload:78 bytes
+I:1:745:26-02-22 7:34:02.200 -03:30 [Performance] GetMessageWrapper took 0.06ms
+I:1:745:26-02-22 7:34:02.203 -03:30 [Message] Receive Notification [10] pb.chat.BatchGlobalChatMessageNoti
+I:35:-1:26-02-22 7:34:02.808 -03:30 [WebSocket] EnqueueMessage Binary
+I:1:782:26-02-22 7:34:02.816 -03:30 [WebSocket] RECEIVE Notification|[11]|100056|chat-37vafuGo2WpSJpsnUyfJIk3XRvd|Payload:95 bytes
+I:1:782:26-02-22 7:34:02.817 -03:30 [Performance] GetMessageWrapper took 0.23ms
+I:1:782:26-02-22 7:34:02.824 -03:30 [Message] Receive Notification [11] pb.chat.BatchGlobalChatMessageNoti
+I:1:806:26-02-22 7:34:03.219 -03:30 [Performance] Countly Took 1.14ms
+I:1:806:26-02-22 7:34:03.407 -03:30 ShowPanel GameLib.Main.Modules.Campaigns.TeamBuild.View.TeamBuildMainPanel
+I:1:806:26-02-22 7:34:03.408 -03:30 [Performance] Countly Took 0.56ms
+I:1:806:26-02-22 7:34:03.409 -03:30 [Performance] Countly Took 0.28ms
+I:1:806:26-02-22 7:34:03.411 -03:30 [Performance] Countly Took 0.26ms
+I:1:806:26-02-22 7:34:03.448 -03:30 [WebSocket] SEND with _ws BufferedRequest|[80]|30161||Payload:14 bytes
+I:1:806:26-02-22 7:34:03.448 -03:30 [Performance] Send took 0.39ms
+I:1:806:26-02-22 7:34:03.448 -03:30 [Message] Send Request [80] pb.campaign.TeamBuildRefreshRobotScoreReq
+I:1:806:26-02-22 7:34:03.458 -03:30 [Flow] terminate from: TeamBuildPromotionPanel
+I:1:806:26-02-22 7:34:03.458 -03:30 [Flow] GameLib.Main.Modules.Campaigns.CampaignExposureTaskBase`2<GameLib.Main.Modules.Campaigns.TeamBuild.Controller.TeamBuildManager,GameLib.Main.Modules.Campaigns.TeamBuild.View.TeamBuildPromotionPanel> is Aborted
+I:1:806:26-02-22 7:34:03.458 -03:30 [Flow] BeginSubflow 7 
+I:1:806:26-02-22 7:34:03.460 -03:30 [Flow] AddTask 21 GameLib.Main.UILogic.ManagedPopup.TryShowSecondRoundGuideTask
+I:1:806:26-02-22 7:34:03.460 -03:30 ClosePanel GameLib.Main.Modules.Campaigns.TeamBuild.View.TeamBuildPromotionPanel
+I:1:806:26-02-22 7:34:03.460 -03:30 [Performance] Countly Took 0.29ms
+I:35:-1:26-02-22 7:34:03.464 -03:30 [WebSocket] EnqueueMessage Binary
+I:1:807:26-02-22 7:34:03.470 -03:30 [WebSocket] RECEIVE Notification|[12]|100056|chat-37vafuGo2WpSJpsnUyfJIk3XRvd|Payload:74 bytes
+I:1:807:26-02-22 7:34:03.470 -03:30 [Performance] GetMessageWrapper took 0.04ms
+I:1:807:26-02-22 7:34:03.472 -03:30 [Message] Receive Notification [12] pb.chat.BatchGlobalChatMessageNoti
+I:1:807:26-02-22 7:34:03.473 -03:30 [Performance] Countly Took 0.26ms
+I:1:807:26-02-22 7:34:03.473 -03:30 [Performance] Countly Took 0.12ms
+I:1:807:26-02-22 7:34:03.474 -03:30 [WebSocket] SEND with _ws BufferedRequest|[81]|30161||Payload:14 bytes
+I:1:807:26-02-22 7:34:03.476 -03:30 [Performance] Send took 1.49ms
+I:1:807:26-02-22 7:34:03.476 -03:30 [Message] Send Request [81] pb.campaign.TeamBuildRefreshRobotScoreReq
+I:1:808:26-02-22 7:34:03.489 -03:30 [Flow] AddTask 22 GameLib.Main.Tasks.SequentialTask
+I:1:809:26-02-22 7:34:03.498 -03:30 [Flow] BeginSubflow 8 GameLib.Main.UILogic.ManagedPopup.V2.FlyResTask
+I:1:809:26-02-22 7:34:03.498 -03:30 [Flow] Push on SubFlow 8 GameLib.Main.Tasks.ParallelTask 
+I:1:809:26-02-22 7:34:03.498 -03:30 [Flow] AddTask 26 GameLib.Main.Tasks.ParallelTask
+I:1:809:26-02-22 7:34:03.498 -03:30 [Flow] Push on SubFlow 8 GameLib.Main.Tasks.CallFuncTask 
+I:1:810:26-02-22 7:34:03.515 -03:30 [Flow] AddTask 29 GameLib.Main.Tasks.CallFuncTask
+I:1:812:26-02-22 7:34:03.547 -03:30 [Flow] EndSubflow 8, GameLib.Main.UILogic.ManagedPopup.V2.FlyResTask 
+I:35:-1:26-02-22 7:34:03.581 -03:30 [WebSocket] EnqueueMessage Binary
+I:1:814:26-02-22 7:34:03.581 -03:30 [WebSocket] RECEIVE Response|[80]|30161||Payload:0 bytes
+I:1:814:26-02-22 7:34:03.581 -03:30 [Performance] GetMessageWrapper took 0.12ms
+I:1:814:26-02-22 7:34:03.587 -03:30 [Message] Receive Response [80] pb.campaign.TeamBuildRefreshRobotScoreResp
+I:35:-1:26-02-22 7:34:03.596 -03:30 [WebSocket] EnqueueMessage Binary
+I:1:815:26-02-22 7:34:03.598 -03:30 [WebSocket] RECEIVE Response|[81]|30161||Payload:0 bytes
+I:1:815:26-02-22 7:34:03.598 -03:30 [Performance] GetMessageWrapper took 0.05ms
+I:1:815:26-02-22 7:34:03.599 -03:30 [Message] Receive Response [81] pb.campaign.TeamBuildRefreshRobotScoreResp
+I:1:869:26-02-22 7:34:04.500 -03:30 [Performance] Countly Took 0.95ms
+I:1:869:26-02-22 7:34:04.500 -03:30 ClosePanel GameLib.Main.Modules.Campaigns.TeamBuild.View.TeamBuildMainPanel
+I:1:869:26-02-22 7:34:04.502 -03:30 [Performance] Countly Took 0.64ms
+I:1:875:26-02-22 7:34:04.606 -03:30 [Performance] Countly Took 0.85ms
+I:35:-1:26-02-22 7:34:04.746 -03:30 [WebSocket] EnqueueMessage Binary
+I:1:885:26-02-22 7:34:04.763 -03:30 [WebSocket] RECEIVE Notification|[13]|100056|chat-37vafuGo2WpSJpsnUyfJIk3XRvd|Payload:100 bytes
+I:1:885:26-02-22 7:34:04.764 -03:30 [Performance] GetMessageWrapper took 0.17ms
+I:1:885:26-02-22 7:34:04.775 -03:30 [Message] Receive Notification [13] pb.chat.BatchGlobalChatMessageNoti
+I:1:922:26-02-22 7:34:05.385 -03:30 ShowPanel GameLib.Main.UI.TopBar.MainSettingExpandedPanel
+I:1:922:26-02-22 7:34:05.387 -03:30 [Performance] Countly Took 0.84ms
+I:1:922:26-02-22 7:34:05.387 -03:30 [Performance] Countly Took 0.48ms
+I:1:990:26-02-22 7:34:06.509 -03:30 ClosePanel GameLib.Main.UI.TopBar.MainSettingExpandedPanel
+I:1:990:26-02-22 7:34:06.510 -03:30 [Performance] Countly Took 0.77ms
+I:1:990:26-02-22 7:34:06.511 -03:30 [Performance] Countly Took 0.44ms
+W:1:990:26-02-22 7:34:06.679 -03:30 No emoji asset assigned as default sprite asset in TextMeshPro settings. See the Documentation on how to create an emoji asset file.
+I:1:990:26-02-22 7:34:06.687 -03:30 ShowPanel GameLib.Main.UI.Friend.FriendPanel
+I:1:990:26-02-22 7:34:06.688 -03:30 [Performance] Countly Took 0.57ms
+I:1:990:26-02-22 7:34:06.689 -03:30 [Performance] Countly Took 0.27ms
+I:1:990:26-02-22 7:34:06.699 -03:30 [WebSocket] SEND with _ws BufferedRequest|[82]|335||Payload:435 bytes
+I:1:990:26-02-22 7:34:06.700 -03:30 [Performance] Send took 0.95ms
+I:1:990:26-02-22 7:34:06.700 -03:30 [Message] Send Request [82] pb.user.GetOnlineProfileByIDsReq
+I:1:990:26-02-22 7:34:06.701 -03:30 [WebSocket] SEND with _ws BufferedRequest|[83]|335||Payload:435 bytes
+I:1:990:26-02-22 7:34:06.702 -03:30 [Performance] Send took 0.79ms
+I:1:990:26-02-22 7:34:06.702 -03:30 [Message] Send Request [83] pb.user.GetOnlineProfileByIDsReq
+I:35:-1:26-02-22 7:34:06.855 -03:30 [WebSocket] EnqueueMessage Binary
+I:1:1000:26-02-22 7:34:06.857 -03:30 [WebSocket] RECEIVE Response|[82]|335||Payload:5554 bytes
+I:1:1000:26-02-22 7:34:06.857 -03:30 [Performance] GetMessageWrapper took 0.18ms
+I:35:-1:26-02-22 7:34:06.869 -03:30 [WebSocket] EnqueueMessage Binary
+I:1:1000:26-02-22 7:34:06.929 -03:30 [Message] Receive Response [82] pb.user.GetOnlineProfileByIDsResp
+I:1:1000:26-02-22 7:34:06.976 -03:30 [WebSocket] RECEIVE Response|[83]|335||Payload:5554 bytes
+I:1:1000:26-02-22 7:34:06.976 -03:30 [Performance] GetMessageWrapper took 0.05ms
+I:1:1000:26-02-22 7:34:07.034 -03:30 [Message] Receive Response [83] pb.user.GetOnlineProfileByIDsResp
+I:1:1066:26-02-22 7:34:08.125 -03:30 [Performance] Countly Took 1.16ms
+I:1:1066:26-02-22 7:34:08.158 -03:30 ShowPanel GameLib.Main.UI.Friend.FriendSendGiftPanel
+I:1:1066:26-02-22 7:34:08.159 -03:30 [Performance] Countly Took 0.56ms
+I:1:1066:26-02-22 7:34:08.160 -03:30 [Performance] Countly Took 0.34ms
+I:1:1113:26-02-22 7:34:09.017 -03:30 [Performance] Countly Took 1.17ms
+I:1:1113:26-02-22 7:34:09.023 -03:30 [WebSocket] SEND with _ws BufferedRequest|[84]|1010||Payload:1885 bytes
+I:1:1113:26-02-22 7:34:09.024 -03:30 [Performance] Send took 1.06ms
+I:1:1113:26-02-22 7:34:09.025 -03:30 [Message] Send Request [84] pb.friend.SendGiftReq
+I:35:-1:26-02-22 7:34:09.369 -03:30 [WebSocket] EnqueueMessage Binary
+I:1:1136:26-02-22 7:34:09.385 -03:30 [WebSocket] RECEIVE Notification|[14]|100056|chat-37vafuGo2WpSJpsnUyfJIk3XRvd|Payload:98 bytes
+I:1:1136:26-02-22 7:34:09.385 -03:30 [Performance] GetMessageWrapper took 0.16ms
+I:1:1136:26-02-22 7:34:09.400 -03:30 [Message] Receive Notification [14] pb.chat.BatchGlobalChatMessageNoti
+I:35:-1:26-02-22 7:34:09.663 -03:30 [WebSocket] EnqueueMessage Binary
+I:1:1153:26-02-22 7:34:09.667 -03:30 [WebSocket] RECEIVE Response|[84]|1010||Payload:0 bytes
+I:1:1153:26-02-22 7:34:09.668 -03:30 [Performance] GetMessageWrapper took 0.16ms
+I:1:1153:26-02-22 7:34:09.670 -03:30 [Message] Receive Response [84] pb.friend.SendGiftResp
+I:1:1153:26-02-22 7:34:09.678 -03:30 ClosePanel GameLib.Main.UI.Friend.FriendSendGiftPanel
+I:1:1153:26-02-22 7:34:09.679 -03:30 [Performance] Countly Took 0.86ms
+I:35:-1:26-02-22 7:34:10.391 -03:30 [WebSocket] EnqueueMessage Binary
+I:1:1197:26-02-22 7:34:10.400 -03:30 [WebSocket] RECEIVE Notification|[15]|100056|chat-37vafuGo2WpSJpsnUyfJIk3XRvd|Payload:81 bytes
+I:1:1197:26-02-22 7:34:10.400 -03:30 [Performance] GetMessageWrapper took 0.26ms
+I:1:1197:26-02-22 7:34:10.414 -03:30 [Message] Receive Notification [15] pb.chat.BatchGlobalChatMessageNoti
+I:1:1252:26-02-22 7:34:11.319 -03:30 [Performance] Countly Took 1.01ms
+I:1:1252:26-02-22 7:34:11.321 -03:30 [WebSocket] SEND with _ws BufferedRequest|[85]|1012||Payload:0 bytes
+I:1:1252:26-02-22 7:34:11.322 -03:30 [Performance] Send took 1.50ms
+I:1:1252:26-02-22 7:34:11.322 -03:30 [Message] Send Request [85] pb.friend.ReceiveAllReq
+I:1:1257:26-02-22 7:34:11.400 -03:30 [Performance] Countly Took 0.72ms
+I:35:-1:26-02-22 7:34:11.561 -03:30 [WebSocket] EnqueueMessage Binary
+I:1:1267:26-02-22 7:34:11.564 -03:30 [WebSocket] RECEIVE Response|[85]|1012||Payload:37 bytes
+I:1:1267:26-02-22 7:34:11.564 -03:30 [Performance] GetMessageWrapper took 0.15ms
+I:1:1267:26-02-22 7:34:11.584 -03:30 [Message] Receive Response [85] pb.friend.ReceiveAllResp
+I:1:1267:26-02-22 7:34:11.602 -03:30 ShowPanel GameLib.Main.UI.Common.CommonRewardPanel
+I:1:1267:26-02-22 7:34:11.603 -03:30 [Performance] Countly Took 0.75ms
+I:1:1267:26-02-22 7:34:11.604 -03:30 [Performance] Countly Took 0.41ms
+I:35:-1:26-02-22 7:34:12.132 -03:30 [WebSocket] EnqueueMessage Binary
+I:1:1299:26-02-22 7:34:12.146 -03:30 [WebSocket] RECEIVE Notification|[16]|100056|chat-37vafuGo2WpSJpsnUyfJIk3XRvd|Payload:100 bytes
+I:1:1299:26-02-22 7:34:12.146 -03:30 [Performance] GetMessageWrapper took 0.12ms
+I:1:1299:26-02-22 7:34:12.153 -03:30 [Message] Receive Notification [16] pb.chat.BatchGlobalChatMessageNoti
+I:1:1329:26-02-22 7:34:12.648 -03:30 [Performance] Countly Took 1.04ms
+I:1:1329:26-02-22 7:34:12.653 -03:30 [Flow] AddTask 38 GameLib.Main.UILogic.ManagedPopup.V2.FlyResTask
+I:1:1329:26-02-22 7:34:12.653 -03:30 [Flow] BeginSubflow 9 GameLib.Main.UILogic.ManagedPopup.V2.FlyResTask
+I:1:1329:26-02-22 7:34:12.653 -03:30 [Flow] Push on SubFlow 9 GameLib.Main.Tasks.ParallelTask 
+I:1:1329:26-02-22 7:34:12.653 -03:30 [Flow] AddTask 32 GameLib.Main.Tasks.ParallelTask
+I:1:1329:26-02-22 7:34:12.654 -03:30 [Flow] Push on SubFlow 9 GameLib.Main.Tasks.CallFuncTask 
+I:1:1421:26-02-22 7:34:14.174 -03:30 [Flow] AddTask 39 GameLib.Main.Tasks.CallFuncTask
+I:1:1423:26-02-22 7:34:14.208 -03:30 [Flow] EndSubflow 9, GameLib.Main.UILogic.ManagedPopup.V2.FlyResTask 
+I:1:1423:26-02-22 7:34:14.208 -03:30 ClosePanel GameLib.Main.UI.Common.CommonRewardPanel
+I:1:1423:26-02-22 7:34:14.209 -03:30 [Performance] Countly Took 1.23ms
+I:1:1440:26-02-22 7:34:14.491 -03:30 ClosePanel GameLib.Main.UI.Friend.FriendPanel
+I:1:1440:26-02-22 7:34:14.492 -03:30 [Performance] Countly Took 0.61ms
+I:35:-1:26-02-22 7:34:15.146 -03:30 [WebSocket] EnqueueMessage Binary
+I:1:1479:26-02-22 7:34:15.157 -03:30 [WebSocket] RECEIVE Notification|[17]|100056|chat-37vafuGo2WpSJpsnUyfJIk3XRvd|Payload:83 bytes
+I:1:1479:26-02-22 7:34:15.157 -03:30 [Performance] GetMessageWrapper took 0.15ms
+I:1:1479:26-02-22 7:34:15.173 -03:30 [Message] Receive Notification [17] pb.chat.BatchGlobalChatMessageNoti
+I:1:1492:26-02-22 7:34:15.376 -03:30 [Performance] Countly Took 1.10ms
+I:35:-1:26-02-22 7:34:15.511 -03:30 [WebSocket] EnqueueMessage Binary
+I:1:1492:26-02-22 7:34:15.590 -03:30 ShowPanel GameLib.Main.Album.AlbumMainPanel
+I:1:1492:26-02-22 7:34:15.590 -03:30 [Performance] Countly Took 0.35ms
+I:1:1492:26-02-22 7:34:15.591 -03:30 [Performance] Countly Took 0.22ms
+I:1:1492:26-02-22 7:34:15.634 -03:30 GetCampaignComp POWERUP_VOUCHER not found!
+E:1:1492:26-02-22 7:34:15.636 -03:30 CAUTION: AvatarFrame Is Not Always Image!!!
+at GameLib.Main.GameAsset._GetResImage(ResConfig resConfig) 
+at GameLib.Main.GameAsset.GetResImage(String resID) 
+at GameLib.Main.UI.Common.RewardItemViewBase.GetImageSpritePath(String resID) 
+at GameLib.Main.UI.Common.RewardItemViewFrame.SetImage(String resID) 
+at GameLib.Main.UI.Common.RewardItemViewBase.SetFlyContent(String resID) 
+at GameLib.Main.UI.Common.RewardItemViewDlc.SetDlcValid(Boolean valid) 
+at GameLib.Main.UI.Dlc.Comp.JitDlcs.Initialize(IList`1 dlcModules, IJitDlcListener listener, IViewForJitDlc downloadView) 
+at GameLib.Main.UI.Dlc.Comp.JitDlcs.Initialize(String dlcName, IJitDlcListener listener, IViewForJitDlc downloadView) 
+at GameLib.Main.UI.Common.RewardItemViewDlc.Initialize(String resID, Int32 amount, Boolean isGenericPowerup) 
+at GameLib.Main.UI.Common.RewardItemViewFrame.Initialize(String resID, Int32 amount, Boolean isGenericPowerup) 
+at GameLib.Main.UI.Common.RewardItemView.Initialize(String resID, Int32 amount, IRewardItemViewFactory factory, Boolean isGenericPowerup, Func`2 timeFormatFunc) 
+at GameLib.Main.UI.Common.RewardItemView.Initialize(String resID, Int32 amount, Boolean isGenericPowerup, RewardItemViewFactory factory, Func`2 timeFormatFunc) 
+at GameLib.Main.Album.AlbumMainPanelBase.InitRewards() 
+at GameLib.Main.Album.AlbumMainPanelBase.Initialize(AlbumManager albumController, AlbumData albumData) 
+at GameLib.Main.Album.AlbumMainPanel.Initialize(AlbumManager albumController, AlbumData albumData) 
+at GameLib.Main.Album.AlbumManager.ShowMainPanel() 
+at GameLib.Main.Album.AlbumEntrance.OnEnterButtonClicked() 
+
+Core.Utils.LogHelper:LogToUnityConsole(LogType, Boolean, Object, String, Object[])
+Game.ILRuntime.CoreLogCLRRedirection:LogError_0(ILIntepreter, StackObject*, IList`1, CLRMethod, Boolean)
+ILRuntime.Runtime.Intepreter.ILIntepreter:Execute(ILMethod, StackObject*, Boolean&)
+ILRuntime.Runtime.Intepreter.ILIntepreter:Execute(ILMethod, StackObject*, Boolean&)
+ILRuntime.Runtime.Intepreter.ILIntepreter:Execute(ILMethod, StackObject*, Boolean&)
+ILRuntime.Runtime.Intepreter.ILIntepreter:Execute(ILMethod, StackObject*, Boolean&)
+ILRuntime.Runtime.Intepreter.ILIntepreter:Execute(ILMethod, StackObject*, Boolean&)
+ILRuntime.Runtime.Intepreter.ILIntepreter:Execute(ILMethod, StackObject*, Boolean&)
+ILRuntime.Runtime.Intepreter.ILIntepreter:Execute(ILMethod, StackObject*, Boolean&)
+ILRuntime.Runtime.Intepreter.ILIntepreter:Execute(ILMethod, StackObject*, Boolean&)
+ILRuntime.Runtime.Intepreter.ILIntepreter:Execute(ILMethod, StackObject*, Boolean&)
+ILRuntime.Runtime.Intepreter.ILIntepreter:Execute(ILMethod, StackObject*, Boolean&)
+ILRuntime.Runtime.Intepreter.ILIntepreter:Execute(ILMethod, StackObject*, Boolean&)
+ILRuntime.Runtime.Intepreter.ILIntepreter:Execute(ILMethod, StackObject*, Boolean&)
+ILRuntime.Runtime.Intepreter.ILIntepreter:Execute(ILMethod, StackObject*, Boolean&)
+ILRuntime.Runtime.Intepreter.ILIntepreter:Execute(ILMethod, StackObject*, Boolean&)
+ILRuntime.Runtime.Intepreter.ILIntepreter:Execute(ILMethod, StackObject*, Boolean&)
+ILRuntime.Runtime.Intepreter.ILIntepreter:Execute(ILMethod, StackObject*, Boolean&)
+ILRuntime.Runtime.Intepreter.ILIntepreter:Execute(ILMethod, StackObject*, Boolean&)
+ILRuntime.Runtime.Intepreter.DelegateAdapter:ILInvokeSub(ILIntepreter, StackObject*, IList`1)
+ILRuntime.Runtime.Intepreter.MethodDelegateAdapter:InvokeILMethod()
+UnityEngine.EventSystems.StandaloneInputModule:ProcessTouchPress(PointerEventData, Boolean, Boolean)
+Core.SingleTouchInputModule:HandleTouchEnd(Touch)
+Core.SingleTouchInputModule:ProcessNormalTouches()
+Core.SingleTouchInputModule:ProcessAllTouches()
+Core.SingleTouchInputModule:Process()
+
+I:1:1492:26-02-22 7:34:15.696 -03:30 [WebSocket] SEND with _ws BufferedRequest|[86]|1712||Payload:6 bytes
+I:1:1492:26-02-22 7:34:15.697 -03:30 [Performance] Send took 0.86ms
+I:1:1492:26-02-22 7:34:15.697 -03:30 [Message] Send Request [86] pb.album.PickGameJoinReq
+I:1:1492:26-02-22 7:34:15.698 -03:30 [WebSocket] SEND with _ws BufferedRequest|[87]|1719||Payload:0 bytes
+I:1:1492:26-02-22 7:34:15.698 -03:30 [Performance] Send took 0.50ms
+I:1:1492:26-02-22 7:34:15.698 -03:30 [Message] Send Request [87] pb.album.GetAlbumRequestsReq
+I:1:1492:26-02-22 7:34:15.699 -03:30 [Flow] AddTask 40 GameLib.Main.UILogic.RewardQueueing.OpenAlbumPanelTask
+I:1:1492:26-02-22 7:34:15.699 -03:30 [Flow] BeginSubflow 10 GameLib.Main.UILogic.RewardQueueing.OpenAlbumPanelTask
+I:1:1492:26-02-22 7:34:15.701 -03:30 [Flow] Push on SubFlow 10 GameLib.Main.Album.AlbumClaimRewardTask 
+I:1:1492:26-02-22 7:34:15.701 -03:30 [Flow] AddTask 41 GameLib.Main.Album.AlbumClaimRewardTask
+I:1:1492:26-02-22 7:34:15.701 -03:30 [Flow] Push on SubFlow 10 GameLib.Main.UILogic.RewardQueueing.OpenAlbumGuideTask 
+I:1:1492:26-02-22 7:34:15.701 -03:30 [Flow] Push on SubFlow 10 GameLib.Main.Tasks.CallFuncTask 
+I:1:1492:26-02-22 7:34:15.701 -03:30 [WebSocket] RECEIVE Notification|[18]|100056|chat-37vafuGo2WpSJpsnUyfJIk3XRvd|Payload:82 bytes
+I:1:1492:26-02-22 7:34:15.701 -03:30 [Performance] GetMessageWrapper took 0.02ms
+I:1:1492:26-02-22 7:34:15.703 -03:30 [Message] Receive Notification [18] pb.chat.BatchGlobalChatMessageNoti
+I:1:1493:26-02-22 7:34:15.786 -03:30 [Flow] BeginSubflow 11 GameLib.Main.Album.AlbumClaimRewardTask
+I:1:1493:26-02-22 7:34:15.787 -03:30 [Flow] EndSubflow 11, GameLib.Main.Album.AlbumClaimRewardTask 
+I:1:1493:26-02-22 7:34:15.787 -03:30 [Flow] AddTask 42 GameLib.Main.UILogic.RewardQueueing.OpenAlbumGuideTask
+I:1:1493:26-02-22 7:34:15.805 -03:30 [WebSocket] SEND with _ws BufferedRequest|[88]|334||Payload:145 bytes
+I:1:1493:26-02-22 7:34:15.805 -03:30 [Performance] Send took 0.53ms
+I:1:1493:26-02-22 7:34:15.805 -03:30 [Message] Send Request [88] pb.user.GetBaseProfileByIDsReq
+I:1:1494:26-02-22 7:34:15.812 -03:30 [Flow] AddTask 43 GameLib.Main.Tasks.CallFuncTask
+I:1:1496:26-02-22 7:34:15.837 -03:30 [Flow] EndSubflow 10, GameLib.Main.UILogic.RewardQueueing.OpenAlbumPanelTask 
+I:35:-1:26-02-22 7:34:15.882 -03:30 [WebSocket] EnqueueMessage Binary
+I:35:-1:26-02-22 7:34:15.884 -03:30 [WebSocket] EnqueueMessage Binary
+I:1:1499:26-02-22 7:34:15.887 -03:30 [WebSocket] RECEIVE Response|[86]|1712||Payload:442 bytes
+I:1:1499:26-02-22 7:34:15.887 -03:30 [Performance] GetMessageWrapper took 0.10ms
+I:1:1499:26-02-22 7:34:15.915 -03:30 [Message] Receive Response [86] pb.album.PickGameJoinResp
+I:35:-1:26-02-22 7:34:15.929 -03:30 [WebSocket] EnqueueMessage Binary
+I:1:1499:26-02-22 7:34:15.940 -03:30 [WebSocket] RECEIVE Response|[87]|1719||Payload:0 bytes
+I:1:1499:26-02-22 7:34:15.940 -03:30 [Performance] GetMessageWrapper took 0.05ms
+I:1:1499:26-02-22 7:34:15.943 -03:30 [Message] Receive Response [87] pb.album.GetAlbumRequestsResp
+I:1:1499:26-02-22 7:34:15.944 -03:30 [WebSocket] RECEIVE Response|[88]|334||Payload:1799 bytes
+I:1:1499:26-02-22 7:34:15.944 -03:30 [Performance] GetMessageWrapper took 0.10ms
+I:1:1499:26-02-22 7:34:15.971 -03:30 [Message] Receive Response [88] pb.user.GetBaseProfileByIDsResp
+I:1:1499:26-02-22 7:34:15.986 -03:30 [DownloadTask] Ctor order:0 https://bingo2-avatar.voyage.bingo/production/profile/picture/36mVznEVRqwEF3VBA4afnVKod1P_20251213_080038.jpg
+I:1:1526:26-02-22 7:34:16.430 -03:30 [DownloadTask] Ctor order:0 https://bingo2-cdn.superbgame.net/production/albumV3/AC_9/AC_9_3/AC_9_3_4.ktx
+I:1:1529:26-02-22 7:34:16.469 -03:30 [DownloadTask] Complete in 481ms, successful, 0/3 url:https://bingo2-avatar.voyage.bingo/production/profile/picture/36mVznEVRqwEF3VBA4afnVKod1P_20251213_080038.jpg
+I:1:1533:26-02-22 7:34:16.536 -03:30 [DownloadTask] Complete in 104ms, successful, 0/3 url:https://bingo2-cdn.superbgame.net/production/albumV3/AC_9/AC_9_3/AC_9_3_4.ktx
+I:1:1683:26-02-22 7:34:19.038 -03:30 [Performance] Countly Took 0.89ms
+I:1:1683:26-02-22 7:34:19.066 -03:30 ShowPanel GameLib.Main.Album.StarShopPanel
+I:1:1683:26-02-22 7:34:19.068 -03:30 [Performance] Countly Took 0.64ms
+I:1:1683:26-02-22 7:34:19.069 -03:30 [Performance] Countly Took 0.43ms
+I:35:-1:26-02-22 7:34:19.198 -03:30 [WebSocket] EnqueueMessage Binary
+I:1:1690:26-02-22 7:34:19.212 -03:30 [WebSocket] RECEIVE Notification|[19]|100056|chat-37vafuGo2WpSJpsnUyfJIk3XRvd|Payload:89 bytes
+I:1:1690:26-02-22 7:34:19.212 -03:30 [Performance] GetMessageWrapper took 0.10ms
+I:1:1690:26-02-22 7:34:19.215 -03:30 [Message] Receive Notification [19] pb.chat.BatchGlobalChatMessageNoti
+I:1:1709:26-02-22 7:34:19.531 -03:30 [WebSocket] SEND with _ws BufferedRequest|[89]|334||Payload:29 bytes
+I:1:1709:26-02-22 7:34:19.532 -03:30 [Performance] Send took 0.87ms
+I:1:1709:26-02-22 7:34:19.532 -03:30 [Message] Send Request [89] pb.user.GetBaseProfileByIDsReq
+I:35:-1:26-02-22 7:34:19.681 -03:30 [WebSocket] EnqueueMessage Binary
+I:1:1719:26-02-22 7:34:19.695 -03:30 [WebSocket] RECEIVE Response|[89]|334||Payload:367 bytes
+I:1:1719:26-02-22 7:34:19.695 -03:30 [Performance] GetMessageWrapper took 0.17ms
+I:1:1719:26-02-22 7:34:19.709 -03:30 [Message] Receive Response [89] pb.user.GetBaseProfileByIDsResp
+I:1:1826:26-02-22 7:34:21.479 -03:30 [Performance] Countly Took 1.08ms
+I:1:1852:26-02-22 7:34:21.912 -03:30 [WebSocket] SEND with _ws BufferedRequest|[90]|1704||Payload:6 bytes
+I:1:1852:26-02-22 7:34:21.913 -03:30 [Performance] Send took 0.81ms
+I:1:1852:26-02-22 7:34:21.913 -03:30 [Message] Send Request [90] pb.album.ClaimStarShopFreeRewardReq
+I:35:-1:26-02-22 7:34:22.173 -03:30 [WebSocket] EnqueueMessage Binary
+I:1:1868:26-02-22 7:34:22.177 -03:30 [WebSocket] RECEIVE Response|[90]|1704||Payload:25 bytes
+I:1:1868:26-02-22 7:34:22.177 -03:30 [Performance] GetMessageWrapper took 0.10ms
+I:1:1868:26-02-22 7:34:22.183 -03:30 [Message] Receive Response [90] pb.album.ClaimStarShopFreeRewardResp
+I:1:1868:26-02-22 7:34:22.186 -03:30 [Flow] AddTask 46 GameLib.Main.UILogic.ManagedPopup.V2.FlyResTask
+I:1:1869:26-02-22 7:34:22.194 -03:30 [Flow] BeginSubflow 12 GameLib.Main.UILogic.ManagedPopup.V2.FlyResTask
+I:1:1869:26-02-22 7:34:22.195 -03:30 [Flow] Push on SubFlow 12 GameLib.Main.Tasks.ParallelTask 
+I:1:1869:26-02-22 7:34:22.195 -03:30 [Flow] AddTask 44 GameLib.Main.Tasks.ParallelTask
+I:1:1869:26-02-22 7:34:22.195 -03:30 [Flow] Push on SubFlow 12 GameLib.Main.UILogic.RewardQueueing.OpenAlbumCardPackTask 
+I:1:1869:26-02-22 7:34:22.195 -03:30 [Flow] Push on SubFlow 12 GameLib.Main.Tasks.CallFuncTask 
+I:1:1870:26-02-22 7:34:22.207 -03:30 [Flow] AddTask 47 GameLib.Main.UILogic.RewardQueueing.OpenAlbumCardPackTask
+I:1:1871:26-02-22 7:34:22.222 -03:30 [Flow] BeginSubflow 13 GameLib.Main.UILogic.RewardQueueing.OpenAlbumCardPackTask
+I:1:1871:26-02-22 7:34:22.222 -03:30 [Flow] Push on SubFlow 13 GameLib.Main.UILogic.RewardQueueing.OpenAlbumShowTask 
+I:1:1871:26-02-22 7:34:22.222 -03:30 [Flow] AddTask 49 GameLib.Main.UILogic.RewardQueueing.OpenAlbumShowTask
+I:1:1871:26-02-22 7:34:22.223 -03:30 [Flow] Push on SubFlow 13 GameLib.Main.Album.AlbumClaimRewardTask 
+I:1:1871:26-02-22 7:34:22.223 -03:30 [Flow] Push on SubFlow 13 GameLib.Main.Tasks.CallFuncTask 
+I:1:1872:26-02-22 7:34:22.249 -03:30 [WebSocket] SEND with _ws BufferedRequest|[91]|1707||Payload:17 bytes
+I:1:1872:26-02-22 7:34:22.250 -03:30 [Performance] Send took 1.05ms
+I:1:1872:26-02-22 7:34:22.251 -03:30 [Message] Send Request [91] pb.album.OpenCardPackReq
+I:35:-1:26-02-22 7:34:22.472 -03:30 [WebSocket] EnqueueMessage Binary
+I:1:1886:26-02-22 7:34:22.473 -03:30 [WebSocket] RECEIVE Response|[91]|1707||Payload:55 bytes
+I:1:1886:26-02-22 7:34:22.473 -03:30 [Performance] GetMessageWrapper took 0.10ms
+I:35:-1:26-02-22 7:34:22.473 -03:30 [WebSocket] EnqueueMessage Binary
+I:1:1886:26-02-22 7:34:22.493 -03:30 [Message] Receive Response [91] pb.album.OpenCardPackResp
+I:1:1886:26-02-22 7:34:22.596 -03:30 ShowPanel GameLib.Main.Album.AlbumOpenPackPanel
+I:1:1886:26-02-22 7:34:22.597 -03:30 [Performance] Countly Took 0.45ms
+I:1:1886:26-02-22 7:34:22.598 -03:30 [Performance] Countly Took 0.22ms
+I:1:1886:26-02-22 7:34:22.619 -03:30 [WebSocket] RECEIVE Notification|[20]|100105||Payload:32 bytes
+I:1:1886:26-02-22 7:34:22.620 -03:30 [Performance] GetMessageWrapper took 0.06ms
+I:1:1886:26-02-22 7:34:22.623 -03:30 [Message] Receive Notification [20] pb.campaign.WeekMissionProgressChangeNoti
+I:35:-1:26-02-22 7:34:24.933 -03:30 [WebSocket] EnqueueMessage Binary
+I:1:2025:26-02-22 7:34:24.934 -03:30 [WebSocket] RECEIVE Notification|[21]|100056|chat-37vafuGo2WpSJpsnUyfJIk3XRvd|Payload:89 bytes
+I:1:2025:26-02-22 7:34:24.935 -03:30 [Performance] GetMessageWrapper took 0.21ms
+I:1:2025:26-02-22 7:34:24.948 -03:30 [Message] Receive Notification [21] pb.chat.BatchGlobalChatMessageNoti
+I:1:2043:26-02-22 7:34:25.251 -03:30 [WebSocket] SEND with _ws BufferedRequest|[92]|334||Payload:29 bytes
+I:1:2043:26-02-22 7:34:25.252 -03:30 [Performance] Send took 1.28ms
+I:1:2043:26-02-22 7:34:25.252 -03:30 [Message] Send Request [92] pb.user.GetBaseProfileByIDsReq
+I:35:-1:26-02-22 7:34:25.403 -03:30 [WebSocket] EnqueueMessage Binary
+I:1:2053:26-02-22 7:34:25.416 -03:30 [WebSocket] RECEIVE Response|[92]|334||Payload:348 bytes
+I:1:2053:26-02-22 7:34:25.416 -03:30 [Performance] GetMessageWrapper took 0.11ms
+I:1:2053:26-02-22 7:34:25.426 -03:30 [Message] Receive Response [92] pb.user.GetBaseProfileByIDsResp
+I:35:-1:26-02-22 7:34:25.752 -03:30 [WebSocket] EnqueueMessage Binary
+I:1:2073:26-02-22 7:34:25.765 -03:30 [WebSocket] RECEIVE Notification|[22]|100056|chat-37vafuGo2WpSJpsnUyfJIk3XRvd|Payload:76 bytes
+I:1:2073:26-02-22 7:34:25.765 -03:30 [Performance] GetMessageWrapper took 0.10ms
+I:1:2073:26-02-22 7:34:25.771 -03:30 [Message] Receive Notification [22] pb.chat.BatchGlobalChatMessageNoti
+I:1:2091:26-02-22 7:34:26.082 -03:30 [WebSocket] SEND with _ws BufferedRequest|[93]|334||Payload:29 bytes
+I:1:2091:26-02-22 7:34:26.083 -03:30 [Performance] Send took 0.85ms
+I:1:2091:26-02-22 7:34:26.083 -03:30 [Message] Send Request [93] pb.user.GetBaseProfileByIDsReq
+I:35:-1:26-02-22 7:34:26.233 -03:30 [WebSocket] EnqueueMessage Binary
+I:1:2101:26-02-22 7:34:26.247 -03:30 [WebSocket] RECEIVE Response|[93]|334||Payload:435 bytes
+I:1:2101:26-02-22 7:34:26.248 -03:30 [Performance] GetMessageWrapper took 0.23ms
+I:1:2101:26-02-22 7:34:26.268 -03:30 [Message] Receive Response [93] pb.user.GetBaseProfileByIDsResp
+I:1:2101:26-02-22 7:34:26.271 -03:30 [DownloadTask] Ctor order:0 https://bingo2-avatar.voyage.bingo/production/profile/picture/37ONNpw2Ok5wgWJSFWqgR2fqEYa_20251226_212013.jpg
+I:1:2106:26-02-22 7:34:26.347 -03:30 [DownloadTask] Complete in 73ms, successful, 0/3 url:https://bingo2-avatar.voyage.bingo/production/profile/picture/37ONNpw2Ok5wgWJSFWqgR2fqEYa_20251226_212013.jpg
+I:35:-1:26-02-22 7:34:26.452 -03:30 [WebSocket] EnqueueMessage Binary
+I:1:2113:26-02-22 7:34:26.464 -03:30 [WebSocket] RECEIVE Notification|[23]|100056|chat-37vafuGo2WpSJpsnUyfJIk3XRvd|Payload:100 bytes
+I:1:2113:26-02-22 7:34:26.464 -03:30 [Performance] GetMessageWrapper took 0.12ms
+I:1:2113:26-02-22 7:34:26.470 -03:30 [Message] Receive Notification [23] pb.chat.BatchGlobalChatMessageNoti
+I:1:2117:26-02-22 7:34:26.549 -03:30 [Performance] Countly Took 1.06ms
+I:1:2117:26-02-22 7:34:26.550 -03:30 ClosePanel GameLib.Main.Album.AlbumOpenPackPanel
+I:1:2117:26-02-22 7:34:26.551 -03:30 [Performance] Countly Took 0.66ms
+I:1:2125:26-02-22 7:34:26.689 -03:30 [Flow] AddTask 50 GameLib.Main.Album.AlbumClaimRewardTask
+I:1:2126:26-02-22 7:34:26.696 -03:30 [Flow] BeginSubflow 14 GameLib.Main.Album.AlbumClaimRewardTask
+I:1:2126:26-02-22 7:34:26.696 -03:30 [Flow] EndSubflow 14, GameLib.Main.Album.AlbumClaimRewardTask 
+I:1:2126:26-02-22 7:34:26.697 -03:30 [Flow] AddTask 51 GameLib.Main.Tasks.CallFuncTask
+I:1:2128:26-02-22 7:34:26.729 -03:30 [Flow] EndSubflow 13, GameLib.Main.UILogic.RewardQueueing.OpenAlbumCardPackTask 
+I:1:2128:26-02-22 7:34:26.730 -03:30 [Flow] AddTask 48 GameLib.Main.Tasks.CallFuncTask
+I:1:2130:26-02-22 7:34:26.763 -03:30 [Flow] EndSubflow 12, GameLib.Main.UILogic.ManagedPopup.V2.FlyResTask 
+I:1:2130:26-02-22 7:34:26.765 -03:30 [Performance] Countly Took 1.04ms
+I:1:2131:26-02-22 7:34:26.799 -03:30 [WebSocket] SEND with _ws BufferedRequest|[94]|334||Payload:29 bytes
+I:1:2131:26-02-22 7:34:26.799 -03:30 [Performance] Send took 0.70ms
+I:1:2131:26-02-22 7:34:26.799 -03:30 [Message] Send Request [94] pb.user.GetBaseProfileByIDsReq
+I:35:-1:26-02-22 7:34:26.962 -03:30 [WebSocket] EnqueueMessage Binary
+I:1:2141:26-02-22 7:34:26.962 -03:30 [WebSocket] RECEIVE Response|[94]|334||Payload:414 bytes
+I:1:2141:26-02-22 7:34:26.963 -03:30 [Performance] GetMessageWrapper took 0.12ms
+I:1:2141:26-02-22 7:34:26.981 -03:30 [Message] Receive Response [94] pb.user.GetBaseProfileByIDsResp
+I:1:2141:26-02-22 7:34:26.986 -03:30 [DownloadTask] Ctor order:0 https://bingo2-avatar.voyage.bingo/production/profile/picture/37W886rjTb5n95NhfsGLQUxQVRl_20251229_113148.jpg
+I:1:2146:26-02-22 7:34:27.062 -03:30 [DownloadTask] Complete in 74ms, successful, 0/3 url:https://bingo2-avatar.voyage.bingo/production/profile/picture/37W886rjTb5n95NhfsGLQUxQVRl_20251229_113148.jpg
+I:1:2412:26-02-22 7:34:31.492 -03:30 [Performance] Countly Took 1.15ms
+I:1:2484:26-02-22 7:34:32.685 -03:30 ClosePanel GameLib.Main.Album.StarShopPanel
+I:1:2484:26-02-22 7:34:32.686 -03:30 [Performance] Countly Took 0.70ms
+I:35:-1:26-02-22 7:34:33.226 -03:30 [WebSocket] EnqueueMessage Binary
+I:1:2517:26-02-22 7:34:33.233 -03:30 [WebSocket] RECEIVE Notification|[24]|100056|chat-37vafuGo2WpSJpsnUyfJIk3XRvd|Payload:103 bytes
+I:1:2517:26-02-22 7:34:33.233 -03:30 [Performance] GetMessageWrapper took 0.26ms
+I:1:2517:26-02-22 7:34:33.240 -03:30 [Message] Receive Notification [24] pb.chat.BatchGlobalChatMessageNoti
+I:1:2535:26-02-22 7:34:33.549 -03:30 [WebSocket] SEND with _ws BufferedRequest|[95]|334||Payload:29 bytes
+I:1:2535:26-02-22 7:34:33.550 -03:30 [Performance] Send took 0.96ms
+I:1:2535:26-02-22 7:34:33.550 -03:30 [Message] Send Request [95] pb.user.GetBaseProfileByIDsReq
+I:35:-1:26-02-22 7:34:33.702 -03:30 [WebSocket] EnqueueMessage Binary
+I:1:2545:26-02-22 7:34:33.714 -03:30 [WebSocket] RECEIVE Response|[95]|334||Payload:341 bytes
+I:1:2545:26-02-22 7:34:33.714 -03:30 [Performance] GetMessageWrapper took 0.13ms
+I:1:2545:26-02-22 7:34:33.732 -03:30 [Message] Receive Response [95] pb.user.GetBaseProfileByIDsResp
+I:1:2588:26-02-22 7:34:34.450 -03:30 [Performance] Countly Took 0.78ms
+I:1:2588:26-02-22 7:34:34.451 -03:30 [Performance] Countly Took 0.63ms
+I:1:2588:26-02-22 7:34:34.487 -03:30 ShowPanel GameLib.Main.Modules.Campaigns.GoldenRush.Views.GoldenRushMainPanel
+I:1:2588:26-02-22 7:34:34.488 -03:30 [Performance] Countly Took 0.65ms
+I:1:2588:26-02-22 7:34:34.489 -03:30 [Performance] Countly Took 0.41ms
+I:1:2588:26-02-22 7:34:34.500 -03:30 [Performance] Countly Took 0.33ms
+I:1:2588:26-02-22 7:34:34.501 -03:30 [DownloadTask] Ctor order:0 https://bingo2-cdn.superbgame.net/production/albumV3/AC_9/AC_9_20/AC_9_20_3.ktx
+I:1:2588:26-02-22 7:34:34.502 -03:30 [DownloadTask] Ctor order:0 https://bingo2-cdn.superbgame.net/production/albumV3/AC_9/AC_9_22/AC_9_22_4.ktx
+I:1:2594:26-02-22 7:34:34.612 -03:30 [DownloadTask] Complete in 101ms, successful, 0/3 url:https://bingo2-cdn.superbgame.net/production/albumV3/AC_9/AC_9_22/AC_9_22_4.ktx
+I:1:2604:26-02-22 7:34:34.778 -03:30 [DownloadTask] Complete in 267ms, successful, 0/3 url:https://bingo2-cdn.superbgame.net/production/albumV3/AC_9/AC_9_20/AC_9_20_3.ktx
+I:35:-1:26-02-22 7:34:36.197 -03:30 [WebSocket] EnqueueMessage Binary
+I:1:2690:26-02-22 7:34:36.209 -03:30 [WebSocket] RECEIVE Notification|[25]|100056|chat-37vafuGo2WpSJpsnUyfJIk3XRvd|Payload:163 bytes
+I:1:2690:26-02-22 7:34:36.209 -03:30 [Performance] GetMessageWrapper took 0.13ms
+I:1:2690:26-02-22 7:34:36.219 -03:30 [Message] Receive Notification [25] pb.chat.BatchGlobalChatMessageNoti
+I:1:2796:26-02-22 7:34:37.989 -03:30 ClosePanel GameLib.Main.Modules.Campaigns.GoldenRush.Views.GoldenRushMainPanel
+I:1:2796:26-02-22 7:34:37.991 -03:30 [Performance] Countly Took 0.94ms
+I:1:2802:26-02-22 7:34:38.093 -03:30 [Performance] Countly Took 0.68ms
+I:1:2802:26-02-22 7:34:38.094 -03:30 [Performance] Countly Took 0.51ms
+I:1:2844:26-02-22 7:34:38.790 -03:30 [Performance] Countly Took 0.87ms
+I:1:2844:26-02-22 7:34:38.865 -03:30 ShowPanel GameLib.Main.Album.PickGame.PickGamePanel
+I:1:2844:26-02-22 7:34:38.867 -03:30 [Performance] Countly Took 0.52ms
+I:1:2844:26-02-22 7:34:38.867 -03:30 [Performance] Countly Took 0.26ms
+I:1:2903:26-02-22 7:34:39.858 -03:30 [WebSocket] SEND with _ws BufferedRequest|[96]|1715||Payload:6 bytes
+I:1:2903:26-02-22 7:34:39.859 -03:30 [Performance] Send took 0.94ms
+I:1:2903:26-02-22 7:34:39.859 -03:30 [Message] Send Request [96] pb.album.PickGameNextReq
+I:1:2903:26-02-22 7:34:39.867 -03:30 GetCampaignComp CLUB not found!
+I:35:-1:26-02-22 7:34:40.045 -03:30 [WebSocket] EnqueueMessage Binary
+I:1:2914:26-02-22 7:34:40.050 -03:30 [WebSocket] RECEIVE Response|[96]|1715||Payload:0 bytes
+I:1:2914:26-02-22 7:34:40.050 -03:30 [Performance] GetMessageWrapper took 0.10ms
+I:1:2914:26-02-22 7:34:40.054 -03:30 [Message] Receive Response [96] pb.album.PickGameNextResp
+I:1:2914:26-02-22 7:34:40.055 -03:30 [Performance] Countly Took 1.02ms
+I:35:-1:26-02-22 7:34:40.572 -03:30 [WebSocket] EnqueueMessage Binary
+I:1:2946:26-02-22 7:34:40.581 -03:30 [WebSocket] RECEIVE Notification|[26]|100056|chat-37vafuGo2WpSJpsnUyfJIk3XRvd|Payload:98 bytes
+I:1:2946:26-02-22 7:34:40.582 -03:30 [Performance] GetMessageWrapper took 0.07ms
+I:1:2946:26-02-22 7:34:40.586 -03:30 [Message] Receive Notification [26] pb.chat.BatchGlobalChatMessageNoti
+I:1:2966:26-02-22 7:34:40.915 -03:30 [DownloadTask] Ctor order:0 https://bingo2-cdn.superbgame.net/production/albumV3/AC_9/AC_9_6/AC_9_6_2.ktx
+I:1:2972:26-02-22 7:34:41.014 -03:30 [DownloadTask] Complete in 98ms, successful, 0/3 url:https://bingo2-cdn.superbgame.net/production/albumV3/AC_9/AC_9_6/AC_9_6_2.ktx
+I:1:3001:26-02-22 7:34:41.507 -03:30 [Performance] Countly Took 0.90ms
+I:35:-1:26-02-22 7:34:41.667 -03:30 [WebSocket] EnqueueMessage Binary
+I:1:3012:26-02-22 7:34:41.680 -03:30 [WebSocket] RECEIVE Notification|[27]|100056|chat-37vafuGo2WpSJpsnUyfJIk3XRvd|Payload:82 bytes
+I:1:3012:26-02-22 7:34:41.680 -03:30 [Performance] GetMessageWrapper took 0.17ms
+I:1:3012:26-02-22 7:34:41.685 -03:30 [Message] Receive Notification [27] pb.chat.BatchGlobalChatMessageNoti
+I:1:3031:26-02-22 7:34:41.997 -03:30 [WebSocket] SEND with _ws BufferedRequest|[97]|334||Payload:29 bytes
+I:1:3031:26-02-22 7:34:41.998 -03:30 [Performance] Send took 1.33ms
+I:1:3031:26-02-22 7:34:41.998 -03:30 [Message] Send Request [97] pb.user.GetBaseProfileByIDsReq
+I:35:-1:26-02-22 7:34:42.152 -03:30 [WebSocket] EnqueueMessage Binary
+I:1:3041:26-02-22 7:34:42.167 -03:30 [WebSocket] RECEIVE Response|[97]|334||Payload:320 bytes
+I:1:3041:26-02-22 7:34:42.167 -03:30 [Performance] GetMessageWrapper took 0.16ms
+I:1:3041:26-02-22 7:34:42.184 -03:30 [Message] Receive Response [97] pb.user.GetBaseProfileByIDsResp
+I:1:3077:26-02-22 7:34:42.779 -03:30 [WebSocket] SEND with _ws BufferedRequest|[98]|1715||Payload:6 bytes
+I:1:3077:26-02-22 7:34:42.780 -03:30 [Performance] Send took 0.81ms
+I:1:3077:26-02-22 7:34:42.780 -03:30 [Message] Send Request [98] pb.album.PickGameNextReq
+I:35:-1:26-02-22 7:34:42.939 -03:30 [WebSocket] EnqueueMessage Binary
+I:1:3087:26-02-22 7:34:42.943 -03:30 [WebSocket] RECEIVE Response|[98]|1715||Payload:0 bytes
+I:1:3087:26-02-22 7:34:42.943 -03:30 [Performance] GetMessageWrapper took 0.11ms
+I:1:3087:26-02-22 7:34:42.946 -03:30 [Message] Receive Response [98] pb.album.PickGameNextResp
+I:1:3087:26-02-22 7:34:42.948 -03:30 [Performance] Countly Took 1.01ms
+I:35:-1:26-02-22 7:34:44.493 -03:30 [WebSocket] EnqueueMessage Binary
+I:1:3181:26-02-22 7:34:44.506 -03:30 [WebSocket] RECEIVE Notification|[28]|100056|chat-37vafuGo2WpSJpsnUyfJIk3XRvd|Payload:91 bytes
+I:1:3181:26-02-22 7:34:44.507 -03:30 [Performance] GetMessageWrapper took 0.15ms
+I:1:3181:26-02-22 7:34:44.513 -03:30 [Message] Receive Notification [28] pb.chat.BatchGlobalChatMessageNoti
+I:1:3239:26-02-22 7:34:45.489 -03:30 [WebSocket] SEND with _ws BufferedRequest|[99]|1715||Payload:6 bytes
+I:1:3239:26-02-22 7:34:45.490 -03:30 [Performance] Send took 0.92ms
+I:1:3239:26-02-22 7:34:45.490 -03:30 [Message] Send Request [99] pb.album.PickGameNextReq
+I:35:-1:26-02-22 7:34:45.554 -03:30 [WebSocket] EnqueueMessage Binary
+I:1:3243:26-02-22 7:34:45.554 -03:30 [WebSocket] RECEIVE Notification|[29]|100056|chat-37vafuGo2WpSJpsnUyfJIk3XRvd|Payload:92 bytes
+I:1:3243:26-02-22 7:34:45.554 -03:30 [Performance] GetMessageWrapper took 0.09ms
+I:1:3243:26-02-22 7:34:45.559 -03:30 [Message] Receive Notification [29] pb.chat.BatchGlobalChatMessageNoti
+I:35:-1:26-02-22 7:34:45.658 -03:30 [WebSocket] EnqueueMessage Binary
+I:1:3250:26-02-22 7:34:45.670 -03:30 [WebSocket] RECEIVE Response|[99]|1715||Payload:0 bytes
+I:1:3250:26-02-22 7:34:45.670 -03:30 [Performance] GetMessageWrapper took 0.16ms
+I:1:3250:26-02-22 7:34:45.673 -03:30 [Message] Receive Response [99] pb.album.PickGameNextResp
+I:1:3250:26-02-22 7:34:45.674 -03:30 [Performance] Countly Took 0.79ms
+I:1:3262:26-02-22 7:34:45.873 -03:30 [WebSocket] SEND with _ws BufferedRequest|[100]|334||Payload:29 bytes
+I:1:3262:26-02-22 7:34:45.874 -03:30 [Performance] Send took 1.01ms
+I:1:3262:26-02-22 7:34:45.874 -03:30 [Message] Send Request [100] pb.user.GetBaseProfileByIDsReq
+I:35:-1:26-02-22 7:34:46.023 -03:30 [WebSocket] EnqueueMessage Binary
+I:1:3272:26-02-22 7:34:46.036 -03:30 [WebSocket] RECEIVE Response|[100]|334||Payload:418 bytes
+I:1:3272:26-02-22 7:34:46.036 -03:30 [Performance] GetMessageWrapper took 0.11ms
+I:1:3272:26-02-22 7:34:46.053 -03:30 [Message] Receive Response [100] pb.user.GetBaseProfileByIDsResp
+I:1:3272:26-02-22 7:34:46.067 -03:30 [DownloadTask] Ctor order:0 https://bingo2-avatar.voyage.bingo/production/profile/picture/385oIVRf2vicWDcEoSUZ90Mk7vr_20260121_105049.jpg
+I:1:3277:26-02-22 7:34:46.136 -03:30 [DownloadTask] Complete in 67ms, successful, 0/3 url:https://bingo2-avatar.voyage.bingo/production/profile/picture/385oIVRf2vicWDcEoSUZ90Mk7vr_20260121_105049.jpg
+I:35:-1:26-02-22 7:34:47.564 -03:30 [WebSocket] EnqueueMessage Binary
+I:1:3363:26-02-22 7:34:47.566 -03:30 [WebSocket] RECEIVE Notification|[30]|100056|chat-37vafuGo2WpSJpsnUyfJIk3XRvd|Payload:97 bytes
+I:1:3363:26-02-22 7:34:47.566 -03:30 [Performance] GetMessageWrapper took 0.08ms
+I:1:3363:26-02-22 7:34:47.572 -03:30 [Message] Receive Notification [30] pb.chat.BatchGlobalChatMessageNoti
+I:35:-1:26-02-22 7:34:47.712 -03:30 [WebSocket] EnqueueMessage Binary
+I:1:3371:26-02-22 7:34:47.716 -03:30 [WebSocket] RECEIVE Notification|[31]|100056|chat-37vafuGo2WpSJpsnUyfJIk3XRvd|Payload:98 bytes
+I:1:3371:26-02-22 7:34:47.716 -03:30 [Performance] GetMessageWrapper took 0.11ms
+I:1:3371:26-02-22 7:34:47.728 -03:30 [Message] Receive Notification [31] pb.chat.BatchGlobalChatMessageNoti
+I:1:3380:26-02-22 7:34:47.883 -03:30 [WebSocket] SEND with _ws BufferedRequest|[101]|334||Payload:29 bytes
+I:1:3380:26-02-22 7:34:47.884 -03:30 [Performance] Send took 0.85ms
+I:1:3380:26-02-22 7:34:47.884 -03:30 [Message] Send Request [101] pb.user.GetBaseProfileByIDsReq
+I:35:-1:26-02-22 7:34:48.037 -03:30 [WebSocket] EnqueueMessage Binary
+I:1:3390:26-02-22 7:34:48.049 -03:30 [WebSocket] RECEIVE Response|[101]|334||Payload:419 bytes
+I:1:3390:26-02-22 7:34:48.049 -03:30 [Performance] GetMessageWrapper took 0.14ms
+I:1:3390:26-02-22 7:34:48.062 -03:30 [Message] Receive Response [101] pb.user.GetBaseProfileByIDsResp
+I:1:3390:26-02-22 7:34:48.066 -03:30 [DownloadTask] Ctor order:0 https://bingo2-avatar.voyage.bingo/production/profile/picture/371youTDYcKH1WV7XVbE51cAVSe_20260214_204804.jpg
+I:1:3395:26-02-22 7:34:48.133 -03:30 [DownloadTask] Complete in 66ms, successful, 0/3 url:https://bingo2-avatar.voyage.bingo/production/profile/picture/371youTDYcKH1WV7XVbE51cAVSe_20260214_204804.jpg
+I:1:3399:26-02-22 7:34:48.200 -03:30 [WebSocket] SEND with _ws BufferedRequest|[102]|1715||Payload:6 bytes
+I:1:3399:26-02-22 7:34:48.201 -03:30 [Performance] Send took 1.14ms
+I:1:3399:26-02-22 7:34:48.201 -03:30 [Message] Send Request [102] pb.album.PickGameNextReq
+I:35:-1:26-02-22 7:34:48.358 -03:30 [WebSocket] EnqueueMessage Binary
+I:1:3408:26-02-22 7:34:48.364 -03:30 [WebSocket] RECEIVE Notification|[32]|100056|chat-37vafuGo2WpSJpsnUyfJIk3XRvd|Payload:103 bytes
+I:1:3408:26-02-22 7:34:48.364 -03:30 [Performance] GetMessageWrapper took 0.18ms
+I:1:3408:26-02-22 7:34:48.372 -03:30 [Message] Receive Notification [32] pb.chat.BatchGlobalChatMessageNoti
+I:35:-1:26-02-22 7:34:48.384 -03:30 [WebSocket] EnqueueMessage Binary
+I:1:3408:26-02-22 7:34:48.385 -03:30 [WebSocket] RECEIVE Response|[102]|1715||Payload:0 bytes
+I:1:3408:26-02-22 7:34:48.385 -03:30 [Performance] GetMessageWrapper took 0.14ms
+I:1:3408:26-02-22 7:34:48.387 -03:30 [Message] Receive Response [102] pb.album.PickGameNextResp
+I:1:3408:26-02-22 7:34:48.388 -03:30 [Performance] Countly Took 0.79ms
+I:1:3426:26-02-22 7:34:48.690 -03:30 [WebSocket] SEND with _ws BufferedRequest|[103]|334||Payload:29 bytes
+I:1:3426:26-02-22 7:34:48.691 -03:30 [Performance] Send took 1.01ms
+I:1:3426:26-02-22 7:34:48.691 -03:30 [Message] Send Request [103] pb.user.GetBaseProfileByIDsReq
+I:35:-1:26-02-22 7:34:48.851 -03:30 [WebSocket] EnqueueMessage Binary
+I:1:3437:26-02-22 7:34:48.863 -03:30 [WebSocket] RECEIVE Response|[103]|334||Payload:320 bytes
+I:1:3437:26-02-22 7:34:48.864 -03:30 [Performance] GetMessageWrapper took 0.14ms
+I:1:3437:26-02-22 7:34:48.880 -03:30 [Message] Receive Response [103] pb.user.GetBaseProfileByIDsResp
+I:1:3562:26-02-22 7:34:50.962 -03:30 [Performance] Countly Took 0.74ms
+I:1:3562:26-02-22 7:34:50.968 -03:30 ShowPanel GameLib.Main.Album.PickGame.PickGameQuitConfirmPanel
+I:1:3562:26-02-22 7:34:50.969 -03:30 [Performance] Countly Took 0.53ms
+I:1:3562:26-02-22 7:34:50.970 -03:30 [Performance] Countly Took 0.42ms
+I:35:-1:26-02-22 7:34:51.353 -03:30 [WebSocket] EnqueueMessage Binary
+I:1:3586:26-02-22 7:34:51.358 -03:30 [WebSocket] RECEIVE Notification|[33]|100056|chat-37vafuGo2WpSJpsnUyfJIk3XRvd|Payload:89 bytes
+I:1:3586:26-02-22 7:34:51.358 -03:30 [Performance] GetMessageWrapper took 0.12ms
+I:1:3586:26-02-22 7:34:51.368 -03:30 [Message] Receive Notification [33] pb.chat.BatchGlobalChatMessageNoti
+I:1:3594:26-02-22 7:34:51.511 -03:30 [Performance] Countly Took 1.05ms
+I:1:3611:26-02-22 7:34:51.792 -03:30 [WebSocket] SEND with _ws BufferedRequest|[104]|2202|club-39D4uzWV6rNGNJTeZcZ6B8JtsQL|Payload:0 bytes
+I:1:3611:26-02-22 7:34:51.793 -03:30 [Performance] Send took 1.18ms
+I:1:3611:26-02-22 7:34:51.793 -03:30 [WebSocket] SEND with _ws BufferedRequest|[105]|2202|chat-37vafuGo2WpSJpsnUyfJIk3XRvd|Payload:0 bytes
+I:1:3611:26-02-22 7:34:51.794 -03:30 [Performance] Send took 0.63ms
+I:35:-1:26-02-22 7:34:51.946 -03:30 [WebSocket] EnqueueMessage Binary
+I:35:-1:26-02-22 7:34:51.947 -03:30 [WebSocket] EnqueueMessage Binary
+I:1:3621:26-02-22 7:34:51.957 -03:30 [WebSocket] RECEIVE Response|[104]|2202|club-39D4uzWV6rNGNJTeZcZ6B8JtsQL|Payload:0 bytes
+I:1:3621:26-02-22 7:34:51.957 -03:30 [Performance] GetMessageWrapper took 0.19ms
+I:1:3621:26-02-22 7:34:51.959 -03:30 [WebSocket] RECEIVE Response|[105]|2202|chat-37vafuGo2WpSJpsnUyfJIk3XRvd|Payload:0 bytes
+I:1:3621:26-02-22 7:34:51.960 -03:30 [Performance] GetMessageWrapper took 0.11ms
+I:1:3681:26-02-22 7:34:52.960 -03:30 [WebSocket] SEND with _ws BufferedRequest|[106]|1716||Payload:6 bytes
+I:1:3681:26-02-22 7:34:52.961 -03:30 [Performance] Send took 1.11ms
+I:1:3681:26-02-22 7:34:52.961 -03:30 [Message] Send Request [106] pb.album.PickGameExitReq
+I:1:3681:26-02-22 7:34:52.961 -03:30 ClosePanel GameLib.Main.Album.PickGame.PickGameQuitConfirmPanel
+I:1:3681:26-02-22 7:34:52.963 -03:30 [Performance] Countly Took 0.95ms
+I:35:-1:26-02-22 7:34:53.296 -03:30 [WebSocket] EnqueueMessage Binary
+I:1:3702:26-02-22 7:34:53.303 -03:30 [WebSocket] RECEIVE Response|[106]|1716||Payload:81 bytes
+I:1:3702:26-02-22 7:34:53.304 -03:30 [Performance] GetMessageWrapper took 0.14ms
+I:1:3702:26-02-22 7:34:53.317 -03:30 [Message] Receive Response [106] pb.album.PickGameExitResp
+I:1:3702:26-02-22 7:34:53.320 -03:30 [Performance] Countly Took 0.95ms
+I:1:3702:26-02-22 7:34:53.321 -03:30 [Flow] AddTask 52 GameLib.Main.UILogic.ManagedPopup.Tasks.CommonRewardTask
+I:1:3703:26-02-22 7:34:53.337 -03:30 [Flow] BeginSubflow 15 GameLib.Main.UILogic.ManagedPopup.Tasks.CommonRewardTask
+I:1:3703:26-02-22 7:34:53.341 -03:30 ShowPanel GameLib.Main.UI.Common.CommonRewardPanel
+I:1:3703:26-02-22 7:34:53.342 -03:30 [Performance] Countly Took 0.74ms
+I:1:3703:26-02-22 7:34:53.344 -03:30 [Performance] Countly Took 0.48ms
+I:35:-1:26-02-22 7:34:54.322 -03:30 [WebSocket] EnqueueMessage Binary
+I:1:3762:26-02-22 7:34:54.337 -03:30 [Performance] Countly Took 0.60ms
+I:1:3762:26-02-22 7:34:54.337 -03:30 [Performance] Countly Took 0.35ms
+I:1:3762:26-02-22 7:34:54.338 -03:30 ClosePanel GameLib.Main.Album.PickGame.PickGamePanel
+I:1:3762:26-02-22 7:34:54.338 -03:30 [Performance] Countly Took 0.34ms
+I:1:3762:26-02-22 7:34:54.341 -03:30 [Flow] AddTask 59 GameLib.Main.UILogic.ManagedPopup.V2.FlyResTask
+I:1:3762:26-02-22 7:34:54.342 -03:30 [Flow] BeginSubflow 16 GameLib.Main.UILogic.ManagedPopup.V2.FlyResTask
+I:1:3762:26-02-22 7:34:54.342 -03:30 [Flow] Push on SubFlow 16 GameLib.Main.Tasks.ParallelTask 
+I:1:3762:26-02-22 7:34:54.342 -03:30 [Flow] AddTask 53 GameLib.Main.Tasks.ParallelTask
+I:1:3762:26-02-22 7:34:54.342 -03:30 [Flow] Push on SubFlow 16 GameLib.Main.UILogic.RewardQueueing.OpenAlbumCardPackTask 
+I:1:3762:26-02-22 7:34:54.342 -03:30 [Flow] Push on SubFlow 16 GameLib.Main.Tasks.CallFuncTask 
+I:1:3762:26-02-22 7:34:54.342 -03:30 [WebSocket] RECEIVE Notification|[34]|100056|chat-37vafuGo2WpSJpsnUyfJIk3XRvd|Payload:83 bytes
+I:1:3762:26-02-22 7:34:54.342 -03:30 [Performance] GetMessageWrapper took 0.10ms
+I:1:3762:26-02-22 7:34:54.346 -03:30 [Message] Receive Notification [34] pb.chat.BatchGlobalChatMessageNoti
+I:35:-1:26-02-22 7:34:55.244 -03:30 [WebSocket] EnqueueMessage Binary
+I:1:3816:26-02-22 7:34:55.250 -03:30 [WebSocket] RECEIVE Notification|[35]|100056|chat-37vafuGo2WpSJpsnUyfJIk3XRvd|Payload:81 bytes
+I:1:3816:26-02-22 7:34:55.250 -03:30 [Performance] GetMessageWrapper took 0.11ms
+I:1:3816:26-02-22 7:34:55.256 -03:30 [Message] Receive Notification [35] pb.chat.BatchGlobalChatMessageNoti
+I:1:3828:26-02-22 7:34:55.466 -03:30 [Flow] AddTask 60 GameLib.Main.UILogic.RewardQueueing.OpenAlbumCardPackTask
+I:1:3829:26-02-22 7:34:55.482 -03:30 [Flow] BeginSubflow 17 GameLib.Main.UILogic.RewardQueueing.OpenAlbumCardPackTask
+I:1:3829:26-02-22 7:34:55.482 -03:30 [Flow] Push on SubFlow 17 GameLib.Main.UILogic.RewardQueueing.OpenAlbumShowTask 
+I:1:3829:26-02-22 7:34:55.482 -03:30 [Flow] AddTask 62 GameLib.Main.UILogic.RewardQueueing.OpenAlbumShowTask
+I:1:3829:26-02-22 7:34:55.482 -03:30 [Flow] Push on SubFlow 17 GameLib.Main.Album.AlbumClaimRewardTask 
+I:1:3829:26-02-22 7:34:55.482 -03:30 [Flow] Push on SubFlow 17 GameLib.Main.Tasks.CallFuncTask 
+I:1:3830:26-02-22 7:34:55.499 -03:30 [WebSocket] SEND with _ws BufferedRequest|[107]|1707||Payload:34 bytes
+I:1:3830:26-02-22 7:34:55.500 -03:30 [Performance] Send took 0.96ms
+I:1:3830:26-02-22 7:34:55.500 -03:30 [Message] Send Request [107] pb.album.OpenCardPackReq
+I:35:-1:26-02-22 7:34:55.754 -03:30 [WebSocket] EnqueueMessage Binary
+I:35:-1:26-02-22 7:34:55.754 -03:30 [WebSocket] EnqueueMessage Binary
+I:1:3846:26-02-22 7:34:55.765 -03:30 [WebSocket] RECEIVE Response|[107]|1707||Payload:110 bytes
+I:1:3846:26-02-22 7:34:55.765 -03:30 [Performance] GetMessageWrapper took 0.27ms
+I:1:3846:26-02-22 7:34:55.784 -03:30 [Message] Receive Response [107] pb.album.OpenCardPackResp
+I:1:3846:26-02-22 7:34:55.819 -03:30 ShowPanel GameLib.Main.Album.AlbumOpenPackPanel
+I:1:3846:26-02-22 7:34:55.821 -03:30 [Performance] Countly Took 0.95ms
+I:1:3846:26-02-22 7:34:55.822 -03:30 [Performance] Countly Took 0.43ms
+I:1:3846:26-02-22 7:34:55.839 -03:30 [WebSocket] RECEIVE Notification|[36]|100105||Payload:32 bytes
+I:1:3846:26-02-22 7:34:55.839 -03:30 [Performance] GetMessageWrapper took 0.07ms
+I:1:3846:26-02-22 7:34:55.843 -03:30 [Message] Receive Notification [36] pb.campaign.WeekMissionProgressChangeNoti
+I:1:3846:26-02-22 7:34:55.854 -03:30 [DownloadTask] Ctor order:0 https://bingo2-cdn.superbgame.net/production/albumV3/AC_9/AC_9_10/AC_9_10_1.ktx
+I:1:3852:26-02-22 7:34:55.947 -03:30 [DownloadTask] Complete in 84ms, successful, 0/3 url:https://bingo2-cdn.superbgame.net/production/albumV3/AC_9/AC_9_10/AC_9_10_1.ktx
+I:1:4037:26-02-22 7:34:59.027 -03:30 [Performance] Countly Took 1.15ms
+I:35:-1:26-02-22 7:34:59.645 -03:30 [WebSocket] EnqueueMessage Binary
+I:1:4072:26-02-22 7:34:59.656 -03:30 [WebSocket] RECEIVE Notification|[37]|100056|chat-37vafuGo2WpSJpsnUyfJIk3XRvd|Payload:91 bytes
+I:1:4072:26-02-22 7:34:59.656 -03:30 [Performance] GetMessageWrapper took 0.21ms
+I:1:4072:26-02-22 7:34:59.664 -03:30 [Message] Receive Notification [37] pb.chat.BatchGlobalChatMessageNoti
+I:35:-1:26-02-22 7:34:59.951 -03:30 [WebSocket] EnqueueMessage Binary
+I:1:4089:26-02-22 7:34:59.958 -03:30 [WebSocket] RECEIVE Notification|[38]|100056|chat-37vafuGo2WpSJpsnUyfJIk3XRvd|Payload:73 bytes
+I:1:4089:26-02-22 7:34:59.958 -03:30 [Performance] GetMessageWrapper took 0.10ms
+I:1:4089:26-02-22 7:34:59.962 -03:30 [Message] Receive Notification [38] pb.chat.BatchGlobalChatMessageNoti
+I:1:4090:26-02-22 7:34:59.997 -03:30 [WebSocket] SEND with _ws BufferedRequest|[108]|334||Payload:29 bytes
+I:1:4090:26-02-22 7:34:59.998 -03:30 [Performance] Send took 0.61ms
+I:1:4090:26-02-22 7:34:59.998 -03:30 [Message] Send Request [108] pb.user.GetBaseProfileByIDsReq
+I:35:-1:26-02-22 7:35:00.159 -03:30 [WebSocket] EnqueueMessage Binary
+I:1:4102:26-02-22 7:35:00.172 -03:30 [WebSocket] RECEIVE Response|[108]|334||Payload:314 bytes
+I:1:4102:26-02-22 7:35:00.172 -03:30 [Performance] GetMessageWrapper took 0.13ms
+I:1:4102:26-02-22 7:35:00.187 -03:30 [Message] Receive Response [108] pb.user.GetBaseProfileByIDsResp
+I:35:-1:26-02-22 7:35:00.775 -03:30 [WebSocket] EnqueueMessage Binary
+I:1:4138:26-02-22 7:35:00.787 -03:30 [WebSocket] RECEIVE Notification|[39]|100056|chat-37vafuGo2WpSJpsnUyfJIk3XRvd|Payload:92 bytes
+I:1:4138:26-02-22 7:35:00.787 -03:30 [Performance] GetMessageWrapper took 0.11ms
+I:1:4138:26-02-22 7:35:00.791 -03:30 [Message] Receive Notification [39] pb.chat.BatchGlobalChatMessageNoti
+I:1:4182:26-02-22 7:35:01.526 -03:30 [Performance] Countly Took 0.93ms
+I:1:4234:26-02-22 7:35:02.386 -03:30 [Performance] Countly Took 1.08ms
+I:1:4234:26-02-22 7:35:02.386 -03:30 ClosePanel GameLib.Main.Album.AlbumOpenPackPanel
+I:1:4234:26-02-22 7:35:02.387 -03:30 [Performance] Countly Took 0.69ms
+I:1:4242:26-02-22 7:35:02.528 -03:30 [Flow] AddTask 63 GameLib.Main.Album.AlbumClaimRewardTask
+I:1:4243:26-02-22 7:35:02.536 -03:30 [Flow] BeginSubflow 18 GameLib.Main.Album.AlbumClaimRewardTask
+I:1:4243:26-02-22 7:35:02.537 -03:30 [Flow] EndSubflow 18, GameLib.Main.Album.AlbumClaimRewardTask 
+I:1:4243:26-02-22 7:35:02.537 -03:30 [Flow] AddTask 64 GameLib.Main.Tasks.CallFuncTask
+I:1:4245:26-02-22 7:35:02.566 -03:30 [Flow] EndSubflow 17, GameLib.Main.UILogic.RewardQueueing.OpenAlbumCardPackTask 
+I:1:4245:26-02-22 7:35:02.566 -03:30 [Flow] AddTask 61 GameLib.Main.Tasks.CallFuncTask
+I:1:4247:26-02-22 7:35:02.599 -03:30 [Flow] EndSubflow 16, GameLib.Main.UILogic.ManagedPopup.V2.FlyResTask 
+I:1:4247:26-02-22 7:35:02.599 -03:30 ClosePanel GameLib.Main.UI.Common.CommonRewardPanel
+I:1:4247:26-02-22 7:35:02.601 -03:30 [Performance] Countly Took 1.11ms
+I:1:4248:26-02-22 7:35:02.646 -03:30 [Flow] EndSubflow 15, GameLib.Main.UILogic.ManagedPopup.Tasks.CommonRewardTask 
+I:35:-1:26-02-22 7:35:02.938 -03:30 [WebSocket] EnqueueMessage Binary
+I:1:4267:26-02-22 7:35:02.950 -03:30 [WebSocket] RECEIVE Notification|[40]|100056|chat-37vafuGo2WpSJpsnUyfJIk3XRvd|Payload:98 bytes
+I:1:4267:26-02-22 7:35:02.950 -03:30 [Performance] GetMessageWrapper took 0.10ms
+I:1:4267:26-02-22 7:35:02.954 -03:30 [Message] Receive Notification [40] pb.chat.BatchGlobalChatMessageNoti
+I:1:4274:26-02-22 7:35:03.067 -03:30 ClosePanel GameLib.Main.Album.AlbumMainPanel
+I:1:4274:26-02-22 7:35:03.069 -03:30 [Performance] Countly Took 0.86ms
+I:1:4284:26-02-22 7:35:03.251 -03:30 [DownloadTask] Ctor order:0 https://bingo2-cdn.superbgame.net/production/albumV3/AC_9/AC_9_8/AC_9_8_6.ktx
+I:1:4290:26-02-22 7:35:03.348 -03:30 [DownloadTask] Complete in 93ms, successful, 0/3 url:https://bingo2-cdn.superbgame.net/production/albumV3/AC_9/AC_9_8/AC_9_8_6.ktx
+I:1:4458:26-02-22 7:35:06.144 -03:30 [Performance] Countly Took 0.92ms
+I:1:4458:26-02-22 7:35:06.145 -03:30 [Performance] Countly Took 0.44ms
+I:1:4458:26-02-22 7:35:06.172 -03:30 ShowPanel GameLib.Main.Modules.PeriodBonus.PeriodBonusPanel
+I:1:4458:26-02-22 7:35:06.174 -03:30 [Performance] Countly Took 0.67ms
+I:1:4458:26-02-22 7:35:06.175 -03:30 [Performance] Countly Took 0.41ms
+I:1:4528:26-02-22 7:35:07.343 -03:30 [Performance] Countly Took 1.21ms
+I:1:4528:26-02-22 7:35:07.347 -03:30 [WebSocket] SEND with _ws BufferedRequest|[109]|702||Payload:0 bytes
+I:1:4528:26-02-22 7:35:07.348 -03:30 [Performance] Send took 1.08ms
+I:1:4528:26-02-22 7:35:07.348 -03:30 [Message] Send Request [109] pb.bonus.CollectPeriodBonusTicketReq
+I:35:-1:26-02-22 7:35:07.511 -03:30 [WebSocket] EnqueueMessage Binary
+I:1:4539:26-02-22 7:35:07.521 -03:30 [WebSocket] RECEIVE Response|[109]|702||Payload:19 bytes
+I:1:4539:26-02-22 7:35:07.521 -03:30 [Performance] GetMessageWrapper took 0.16ms
+I:1:4539:26-02-22 7:35:07.536 -03:30 [Message] Receive Response [109] pb.bonus.CollectPeriodBonusTicketResp
+I:1:4539:26-02-22 7:35:07.537 -03:30 [WebSocket] SEND with _ws BufferedRequest|[110]|701||Payload:0 bytes
+I:1:4539:26-02-22 7:35:07.538 -03:30 [Performance] Send took 0.99ms
+I:1:4539:26-02-22 7:35:07.538 -03:30 [Message] Send Request [110] pb.bonus.GetPeriodBonusStateReq
+I:35:-1:26-02-22 7:35:07.658 -03:30 [WebSocket] EnqueueMessage Binary
+I:1:4548:26-02-22 7:35:07.671 -03:30 [WebSocket] RECEIVE Response|[110]|701||Payload:18 bytes
+I:1:4548:26-02-22 7:35:07.671 -03:30 [Performance] GetMessageWrapper took 0.12ms
+I:1:4548:26-02-22 7:35:07.674 -03:30 [Message] Receive Response [110] pb.bonus.GetPeriodBonusStateResp
+W:1:4560:26-02-22 7:35:07.889 -03:30 <color=#0099bc><b>DOTWEEN ► </b></color>Max Tweens reached: capacity has automatically been increased from 200/50 to 200/125. Use DOTween.SetTweensCapacity to set it manually at startup
+W:1:4560:26-02-22 7:35:07.890 -03:30 <color=#0099bc><b>DOTWEEN ► </b></color>Max Tweens reached: capacity has automatically been increased from 200/125 to 500/125. Use DOTween.SetTweensCapacity to set it manually at startup
+I:35:-1:26-02-22 7:35:09.365 -03:30 [WebSocket] EnqueueMessage Binary
+I:1:4649:26-02-22 7:35:09.367 -03:30 [WebSocket] RECEIVE Notification|[41]|100056|chat-37vafuGo2WpSJpsnUyfJIk3XRvd|Payload:101 bytes
+I:1:4649:26-02-22 7:35:09.367 -03:30 [Performance] GetMessageWrapper took 0.08ms
+I:1:4649:26-02-22 7:35:09.372 -03:30 [Message] Receive Notification [41] pb.chat.BatchGlobalChatMessageNoti
+I:35:-1:26-02-22 7:35:09.833 -03:30 [WebSocket] EnqueueMessage Binary
+I:1:4677:26-02-22 7:35:09.833 -03:30 [WebSocket] RECEIVE Notification|[42]|100056|chat-37vafuGo2WpSJpsnUyfJIk3XRvd|Payload:84 bytes
+I:1:4677:26-02-22 7:35:09.834 -03:30 [Performance] GetMessageWrapper took 0.20ms
+I:1:4677:26-02-22 7:35:09.847 -03:30 [Message] Receive Notification [42] pb.chat.BatchGlobalChatMessageNoti
+I:35:-1:26-02-22 7:35:10.704 -03:30 [WebSocket] EnqueueMessage Binary
+I:1:4730:26-02-22 7:35:10.713 -03:30 [WebSocket] RECEIVE Notification|[43]|100056|chat-37vafuGo2WpSJpsnUyfJIk3XRvd|Payload:100 bytes
+I:1:4730:26-02-22 7:35:10.713 -03:30 [Performance] GetMessageWrapper took 0.09ms
+I:1:4730:26-02-22 7:35:10.718 -03:30 [Message] Receive Notification [43] pb.chat.BatchGlobalChatMessageNoti
+I:35:-1:26-02-22 7:35:11.443 -03:30 [WebSocket] EnqueueMessage Binary
+I:1:4774:26-02-22 7:35:11.445 -03:30 [WebSocket] RECEIVE Notification|[44]|100056|chat-37vafuGo2WpSJpsnUyfJIk3XRvd|Payload:252 bytes
+I:1:4774:26-02-22 7:35:11.445 -03:30 [Performance] GetMessageWrapper took 0.11ms
+I:1:4774:26-02-22 7:35:11.458 -03:30 [Message] Receive Notification [44] pb.chat.BatchGlobalChatMessageNoti
+I:1:4778:26-02-22 7:35:11.533 -03:30 [Performance] Countly Took 1.32ms
+I:1:4786:26-02-22 7:35:11.679 -03:30 ClosePanel GameLib.Main.Modules.PeriodBonus.PeriodBonusPanel
+I:1:4786:26-02-22 7:35:11.680 -03:30 [Performance] Countly Took 0.80ms
+I:35:-1:26-02-22 7:35:11.937 -03:30 [WebSocket] EnqueueMessage Binary
+I:1:4803:26-02-22 7:35:11.944 -03:30 [WebSocket] RECEIVE Notification|[45]|100056|chat-37vafuGo2WpSJpsnUyfJIk3XRvd|Payload:90 bytes
+I:1:4803:26-02-22 7:35:11.944 -03:30 [Performance] GetMessageWrapper took 0.13ms
+I:1:4803:26-02-22 7:35:11.956 -03:30 [Message] Receive Notification [45] pb.chat.BatchGlobalChatMessageNoti
+I:35:-1:26-02-22 7:35:12.036 -03:30 [WebSocket] EnqueueMessage Binary
+I:1:4809:26-02-22 7:35:12.044 -03:30 [WebSocket] RECEIVE Notification|[46]|100056|chat-37vafuGo2WpSJpsnUyfJIk3XRvd|Payload:94 bytes
+I:1:4809:26-02-22 7:35:12.044 -03:30 [Performance] GetMessageWrapper took 0.24ms
+I:1:4809:26-02-22 7:35:12.059 -03:30 [Message] Receive Notification [46] pb.chat.BatchGlobalChatMessageNoti
+I:1:4855:26-02-22 7:35:12.811 -03:30 [Performance] Countly Took 0.82ms
+I:1:4855:26-02-22 7:35:12.812 -03:30 [Performance] Countly Took 0.45ms
+I:1:4855:26-02-22 7:35:12.877 -03:30 [Performance] Countly Took 0.56ms
+I:1:4855:26-02-22 7:35:12.882 -03:30 ShowPanel GameLib.Main.LuckyBall.View.LuckyBallMainPanel
+I:1:4855:26-02-22 7:35:12.883 -03:30 [Performance] Countly Took 0.30ms
+I:1:4855:26-02-22 7:35:12.884 -03:30 [Performance] Countly Took 0.20ms
+I:1:4855:26-02-22 7:35:12.885 -03:30 [Performance] Countly Took 0.17ms
+I:35:-1:26-02-22 7:35:14.698 -03:30 [WebSocket] EnqueueMessage Binary
+I:1:4965:26-02-22 7:35:14.707 -03:30 ClosePanel GameLib.Main.LuckyBall.View.LuckyBallMainPanel
+I:1:4965:26-02-22 7:35:14.708 -03:30 [Performance] Countly Took 0.94ms
+I:1:4965:26-02-22 7:35:14.713 -03:30 [WebSocket] SEND with _ws BufferedRequest|[111]|30053||Payload:15 bytes
+I:1:4965:26-02-22 7:35:14.714 -03:30 [Performance] Send took 1.12ms
+I:1:4965:26-02-22 7:35:14.714 -03:30 [Message] Send Request [111] pb.campaign.ClaimLuckyBallRewardReq
+I:1:4965:26-02-22 7:35:14.715 -03:30 [WebSocket] RECEIVE Notification|[47]|100056|chat-37vafuGo2WpSJpsnUyfJIk3XRvd|Payload:83 bytes
+I:1:4965:26-02-22 7:35:14.715 -03:30 [Performance] GetMessageWrapper took 0.07ms
+I:1:4965:26-02-22 7:35:14.721 -03:30 [Message] Receive Notification [47] pb.chat.BatchGlobalChatMessageNoti
+I:1:4971:26-02-22 7:35:14.812 -03:30 [Performance] Countly Took 1.02ms
+I:35:-1:26-02-22 7:35:14.855 -03:30 [WebSocket] EnqueueMessage Binary
+I:1:4975:26-02-22 7:35:14.870 -03:30 [WebSocket] RECEIVE Response|[111]|30053||Payload:19 bytes
+I:1:4975:26-02-22 7:35:14.871 -03:30 [Performance] GetMessageWrapper took 0.16ms
+I:1:4975:26-02-22 7:35:14.886 -03:30 [Message] Receive Response [111] pb.campaign.ClaimLuckyBallRewardResp
+I:1:4975:26-02-22 7:35:14.906 -03:30 ShowPanel GameLib.Main.LuckyBall.View.LuckyBallRewardPanel
+I:1:4975:26-02-22 7:35:14.908 -03:30 [Performance] Countly Took 0.64ms
+I:1:4975:26-02-22 7:35:14.909 -03:30 [Performance] Countly Took 0.36ms
+I:1:5035:26-02-22 7:35:15.889 -03:30 [Performance] Countly Took 1.30ms
+I:1:5035:26-02-22 7:35:15.893 -03:30 [Flow] AddTask 68 GameLib.Main.UILogic.ManagedPopup.V2.FlyResTask
+I:1:5035:26-02-22 7:35:15.893 -03:30 [Flow] BeginSubflow 19 GameLib.Main.UILogic.ManagedPopup.V2.FlyResTask
+I:1:5035:26-02-22 7:35:15.893 -03:30 [Flow] Push on SubFlow 19 GameLib.Main.Tasks.ParallelTask 
+I:1:5035:26-02-22 7:35:15.894 -03:30 [Flow] AddTask 65 GameLib.Main.Tasks.ParallelTask
+I:1:5035:26-02-22 7:35:15.894 -03:30 [Flow] Push on SubFlow 19 GameLib.Main.Tasks.CallFuncTask 
+I:1:5127:26-02-22 7:35:17.415 -03:30 [Flow] AddTask 69 GameLib.Main.Tasks.CallFuncTask
+I:1:5129:26-02-22 7:35:17.447 -03:30 [Flow] EndSubflow 19, GameLib.Main.UILogic.ManagedPopup.V2.FlyResTask 
+I:1:5129:26-02-22 7:35:17.447 -03:30 ClosePanel GameLib.Main.LuckyBall.View.LuckyBallRewardPanel
+I:1:5129:26-02-22 7:35:17.449 -03:30 [Performance] Countly Took 1.30ms
+I:1:5129:26-02-22 7:35:17.451 -03:30 TryQuitCampaignDetention LUCKY_BALL_42 force True
+I:1:5129:26-02-22 7:35:17.451 -03:30 LingerCampaignsController linger LUCKY_BALL_42, remove LUCKY_BALL_42
+I:1:5129:26-02-22 7:35:17.452 -03:30 [CampaignManagerNew] RefreshCampaigns endedCampaigns LUCKY_BALL_42
+I:1:5129:26-02-22 7:35:17.452 -03:30 [CampaignManagerNew] ChangeStateToEnded LUCKY_BALL_42
+I:1:5129:26-02-22 7:35:17.453 -03:30 [CampaignManagerNew] RefreshCampaigns RemoveCampaignComp LUCKY_BALL
+I:1:5129:26-02-22 7:35:17.453 -03:30 [WebSocket] SEND with _ws BufferedRequest|[112]|30038||Payload:33 bytes
+I:1:5129:26-02-22 7:35:17.454 -03:30 [Performance] Send took 1.04ms
+I:1:5129:26-02-22 7:35:17.454 -03:30 [Message] Send Request [112] pb.campaign.BatchQuitCampaignDetentionReq
+I:35:-1:26-02-22 7:35:17.608 -03:30 [WebSocket] EnqueueMessage Binary
+I:1:5139:26-02-22 7:35:17.614 -03:30 [WebSocket] RECEIVE Response|[112]|30038||Payload:0 bytes
+I:1:5139:26-02-22 7:35:17.614 -03:30 [Performance] GetMessageWrapper took 0.13ms
+I:1:5139:26-02-22 7:35:17.622 -03:30 [Message] Receive Response [112] pb.campaign.BatchQuitCampaignDetentionResp
+I:1:5360:26-02-22 7:35:21.315 -03:30 [Performance] Countly Took 0.40ms
+I:1:5360:26-02-22 7:35:21.315 -03:30 BlockSceneUI: False, BlockSceneUIClick False, 4248 , /Volumes/Bingo/JenkinsWorkspace/production_android_62f3/Unity/GameLib/Main/Album/PickGame/PickGameController.cs, line 295
+I:1:5360:26-02-22 7:35:21.316 -03:30 Path = /storage/emulated/0/Android/data/com.bingo.cruise.free.best.top.game/files/save/login_data.json
+I:1:5360:26-02-22 7:35:21.316 -03:30 Path = /storage/emulated/0/Android/data/com.bingo.cruise.free.best.top.game/files/save/2p9hwN4UGEryyL67CkKCEQKkuha/exposure_record_database.json
+I:1:5360:26-02-22 7:35:21.318 -03:30 Path = /storage/emulated/0/Android/data/com.bingo.cruise.free.best.top.game/files/save/2p9hwN4UGEryyL67CkKCEQKkuha/reddot_data.json
+I:1:5360:26-02-22 7:35:21.319 -03:30 Path = /storage/emulated/0/Android/data/com.bingo.cruise.free.best.top.game/files/save/2p9hwN4UGEryyL67CkKCEQKkuha/campaign_promotion_data.json
+I:1:5360:26-02-22 7:35:21.325 -03:30 Path = /storage/emulated/0/Android/data/com.bingo.cruise.free.best.top.game/files/save/2p9hwN4UGEryyL67CkKCEQKkuha/teambuild_local_data.json
+I:1:5360:26-02-22 7:35:21.326 -03:30 Path = /storage/emulated/0/Android/data/com.bingo.cruise.free.best.top.game/files/save/2p9hwN4UGEryyL67CkKCEQKkuha/golden_rush_local_data.json
+I:1:5360:26-02-22 7:35:21.327 -03:30 Path = /storage/emulated/0/Android/data/com.bingo.cruise.free.best.top.game/files/save/2p9hwN4UGEryyL67CkKCEQKkuha/rescue_rush_local_data.json
+I:1:5360:26-02-22 7:35:21.327 -03:30 OnApplicationPause true 1771758321327

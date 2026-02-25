@@ -1,0 +1,74 @@
+# Bingo 人员排期表
+# 用于查询团队成员每日工作安排
+
+meta:
+  name: Bingo 人员排期
+  url: https://joycastle.feishu.cn/wiki/wikcnkot4X55otMpYPfitUtpMKf
+  spreadsheetToken: shtcn1tbqOiZsv2ROOQ7RltYXRb
+  lastAnalyzed: 2026-02-10
+  analyzedBy: 王总
+
+purpose: |
+  记录 Bingo Frenzy 项目各岗位成员的每日工作排期。
+  每月一个 sheet，按周排列日期，人员纵向排列。
+  任务可能跨天（合并单元格）。
+
+structure:
+  # 表格布局
+  headerRow: 0              # 日期行（Excel 序列号）
+  weekdayRow: 1             # 星期行（一、二、三...）
+  dataStartRow: 2           # 数据从第3行开始
+  
+  # 列定义
+  columns:
+    A: department           # 部门（产品/运营/音效/原画/UI等）
+    B: name                 # 人名
+    C onwards: tasks        # 从 C 列开始是每日任务
+  
+  # 日期格式
+  dateFormat: excel-serial  # 46055 = 2026-02-02
+  
+  # 特殊情况
+  hasMergeCells: true       # 跨天任务会合并单元格
+  multiRowPerPerson: true   # 一个人可能占多行（多个并行任务）
+
+sheets:
+  gmUx4r:
+    name: 2月
+    dateRange: [46055, 46081]  # 02-02 to 02-28
+  BooSYL:
+    name: 3月
+  lKcxMC:
+    name: 1月
+
+# 查询方法
+howToQuery: |
+  查询某人某天的任务：
+  
+  1. 确定 sheetId（根据月份选择）
+  2. 用 /find 搜索人名位置（高效！）：
+     curl "http://127.0.0.1:18796/find?token=shtcn1tbqOiZsv2ROOQ7RltYXRb&sheetId=gmUx4r&text=宝根&range=B1:B300"
+     返回: {"matchedCells":["B110"],"rowsCount":1}
+  3. 日期转 Excel 序列号：
+     curl "http://127.0.0.1:18796/date/to-serial?date=2026-02-10"
+  4. 用 /find 搜索日期所在列：
+     curl "http://127.0.0.1:18796/find?token=...&sheetId=...&text=46063&range=A1:Z1"
+  5. 读取交叉点数据，注意检查合并单元格
+
+  快速查询示例：
+  ```bash
+  # 搜索人名位置
+  curl "http://127.0.0.1:18796/find?token=shtcn1tbqOiZsv2ROOQ7RltYXRb&sheetId=gmUx4r&text=宝根&range=B1:B300"
+  
+  # 读宝根那几行
+  curl "http://127.0.0.1:18796/read?token=shtcn1tbqOiZsv2ROOQ7RltYXRb&sheetId=gmUx4r&range=B110:L113"
+  
+  # 获取合并单元格
+  curl "http://127.0.0.1:18796/merges?token=shtcn1tbqOiZsv2ROOQ7RltYXRb&sheetId=gmUx4r"
+  ```
+
+knownPeople:
+  # 常用人员的行号（避免每次搜索）
+  # 注意：行号可能随表格更新变化
+  宝根: 110
+  # TODO: 补充其他人
