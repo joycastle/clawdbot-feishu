@@ -54,6 +54,9 @@
 | 多维表格 API | 18795 | Bitable 增删改查 |
 | 电子表格 API | 18796 | Sheets 数据读取、合并单元格处理 |
 | 定时任务 API | 18797 | 延时提醒、周期任务、Cron 管理 |
+| 文档统一入口 | 18798 | Docs Router（一个接口读所有文档） |
+| Session 广播 | 18799 | Broadcast API |
+| RAG 知识库 | 18800 | 飞书文档向量检索 |
 
 ### 数据流
 
@@ -88,15 +91,16 @@
 
 ```
 src/
-├── api/              # 内部 API 封装（发消息、媒体、表情）
-├── cli/              # CLI 工具（开发锁、聊天历史）
-├── services/         # 独立 HTTP 服务（项目、任务、多维表格）
+├── api/              # 内部 API 封装（发消息、媒体、表情、公告）
+├── cli/              # CLI 工具（开发锁、聊天历史、表情等）
+├── services/         # 独立 HTTP 服务（项目、任务、多维表格、RAG）
 ├── features/         # 功能模块
 │   ├── big-video/    # 大视频分析
 │   ├── feishu-project/  # 飞书项目 SDK
 │   ├── vote/         # 投票功能
 │   └── *.ts          # 其他功能
 ├── smart-router/     # 智能路由（消息分类）
+├── utils/            # 工具函数
 └── *.ts              # 插件核心
 ```
 
@@ -221,6 +225,35 @@ curl -X POST http://127.0.0.1:18797/add -H "Content-Type: application/json" -d '
 curl http://127.0.0.1:18797/list
 ```
 
+### 文档统一入口 (Docs Router)
+
+| 需求 | 位置 | 说明 |
+|------|------|------|
+| HTTP API 服务 | `services/docs-router.ts` | 端口 **18798** |
+| Wiki 解析 | `services/wiki.ts` | 被 docs-router 调用 |
+| Docx 解析 | `services/docx.ts` | 被 docs-router 调用 |
+
+**常用 HTTP 调用：**
+```bash
+# 读取任意飞书文档（自动识别类型）
+curl "http://127.0.0.1:18798/read?url=https://xxx.feishu.cn/wiki/xxxtoken"
+```
+
+### RAG 知识库
+
+| 需求 | 位置 | 说明 |
+|------|------|------|
+| HTTP API 服务 | `services/rag-api.ts` | 端口 **18800** |
+
+**常用 HTTP 调用：**
+```bash
+# 向量搜索
+curl "http://127.0.0.1:18800/search?q=问题关键词&top_k=5"
+
+# 健康检查
+curl http://127.0.0.1:18800/health
+```
+
 ### 投票功能
 
 | 需求 | 位置 | 说明 |
@@ -333,6 +366,9 @@ npx tsx src/cli/history.ts --chat <chat_id> --count 20
 - 多维表格 API: **18795**
 - 电子表格 API: **18796**
 - 定时任务 API: **18797**
+- 文档统一入口: **18798**
+- Session 广播: **18799**
+- RAG 知识库: **18800**
 
 ### 飞书群 Chat ID
 见 TOOLS.md 中的"飞书群 Chat ID"章节。

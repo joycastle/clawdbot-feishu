@@ -439,14 +439,28 @@ async function handleRequest(req: http.IncomingMessage, res: http.ServerResponse
 
     // ==================== 子任务 ====================
 
-    // GET /workitem/:id/subtasks
+    // POST /subtasks/search - 跨空间搜索子任务
+    if (path === '/subtasks/search' && req.method === 'POST') {
+      const body = parseJson(await readBody(req));
+      if (!body) { errorResponse(res, 'Invalid JSON'); return; }
+      const resp = await client.subtask.searchSubtask(ctx, {
+        project_keys: body.project_keys as string[] || [projectKey],
+        work_item_type_keys: body.work_item_type_keys as string[],
+        owner_keys: body.owner_keys as string[],
+        status: body.status as number[],
+        page_num: body.page_num as number || 1,
+        page_size: body.page_size as number || 50,
+      });
+      if (resp.err_code !== 0) { errorResponse(res, resp.err_msg, 400); return; }
+      jsonResponse(res, resp.data);
+      return;
+    }
+
+    // GET /workitem/:id/subtasks - 获取工作项的子任务列表
     const subtasksMatch = path.match(/^\/workitem\/(\d+)\/subtasks$/);
     if (subtasksMatch && req.method === 'GET') {
       const workItemId = parseInt(subtasksMatch[1], 10);
-      const resp = await client.subtask.searchSubtask(ctx, projectKey, typeKey, workItemId, {
-        page_num: parseInt(query.pageNum as string, 10) || 1,
-        page_size: parseInt(query.pageSize as string, 10) || 50,
-      });
+      const resp = await client.subtask.getSubTask(ctx, projectKey, typeKey, workItemId);
       if (resp.err_code !== 0) { errorResponse(res, resp.err_msg, 400); return; }
       jsonResponse(res, { workItemId, subtasks: resp.data });
       return;

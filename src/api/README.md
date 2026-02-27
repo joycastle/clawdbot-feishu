@@ -9,6 +9,7 @@
 | `send.ts` | 发送消息 | `sendMessageFeishu`, `sendCardFeishu`, `sendPostFeishu`, `updateCardFeishu`, `editMessageFeishu`, `getMessageFeishu` |
 | `media.ts` | 媒体上传/下载 | `uploadImageFeishu`, `uploadFileFeishu`, `downloadImageFeishu`, `downloadMessageResourceFeishu`, `sendImageFeishu`, `sendFileFeishu`, `sendMediaFeishu` |
 | `reactions.ts` | 消息表情反应 | `addReactionFeishu`, `removeReactionFeishu` |
+| `announcement.ts` | 群公告 | `getAnnouncementFeishu`, `parseAnnouncementContent` |
 
 ## 使用示例
 

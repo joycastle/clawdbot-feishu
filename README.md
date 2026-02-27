@@ -104,6 +104,7 @@ The Feishu plugin exposes several HTTP APIs on localhost for the AI Agent to per
 | **Project API**| `18793` | Manage Feishu Projects (work items, issues). |
 | **Task API**   | `18794` | Manage Feishu Tasks. |
 | **Cron API** | `18797` | Schedule tasks (delayed, absolute time, periodic). |
+| **RAG API** | `18800` | Vector search over indexed Feishu documents. |
 
 ### Docs API - Unified Document Reader
 

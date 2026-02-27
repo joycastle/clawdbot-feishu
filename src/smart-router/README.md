@@ -74,7 +74,6 @@ src/smart-router/
 ├── README.md          # 本文件
 ├── index.ts           # 路由器主入口
 ├── classifier.ts      # 消息分类器（规则引擎 + LLM 分类）
-├── rules.ts           # 规则定义
 └── types.ts           # 类型定义
 ```
 

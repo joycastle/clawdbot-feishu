@@ -1,0 +1,56 @@
+{
+  "groupId": "oc_6b354f88ad06b10a005ee4e7853c05dd",
+  "members": {
+    "ou_4650478bf5396cbe50c893b9f9ea2d5c": {
+      "id": "ou_4650478bf5396cbe50c893b9f9ea2d5c",
+      "name": "小王子",
+      "targetWeight": 70,
+      "joinedAt": "2026-02-27",
+      "height": 171,
+      "age": 27,
+      "gender": "male"
+    },
+    "ou_a88f1d9ba4dbfc25326566c59b6f5622": {
+      "id": "ou_a88f1d9ba4dbfc25326566c59b6f5622",
+      "name": "千里",
+      "targetWeight": 80,
+      "joinedAt": "2026-02-27",
+      "height": 170,
+      "age": 27,
+      "gender": "male"
+    }
+  },
+  "weightRecords": [
+    {
+      "userId": "ou_4650478bf5396cbe50c893b9f9ea2d5c",
+      "weight": 85,
+      "date": "2026-02-27",
+      "timestamp": 1772167681674
+    },
+    {
+      "userId": "ou_a88f1d9ba4dbfc25326566c59b6f5622",
+      "weight": 90,
+      "date": "2026-02-27",
+      "timestamp": 1772167804510
+    }
+  ],
+  "exerciseRecords": [
+    {
+      "userId": "ou_4650478bf5396cbe50c893b9f9ea2d5c",
+      "type": "跑步",
+      "duration": 30,
+      "calories": 400,
+      "date": "2026-02-27",
+      "timestamp": 1772168803768
+    }
+  ],
+  "settings": {
+    "weightDays": [
+      "monday",
+      "wednesday",
+      "friday"
+    ],
+    "dailyReportTime": "21:00",
+    "timezone": "Asia/Shanghai"
+  }
+}
