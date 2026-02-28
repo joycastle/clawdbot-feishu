@@ -42,6 +42,13 @@
       "calories": 400,
       "date": "2026-02-27",
       "timestamp": 1772168803768
+    },
+    {
+      "userId": "ou_a88f1d9ba4dbfc25326566c59b6f5622",
+      "type": "爬坡",
+      "duration": 54,
+      "date": "2026-02-27",
+      "timestamp": 1772198535315
     }
   ],
   "settings": {

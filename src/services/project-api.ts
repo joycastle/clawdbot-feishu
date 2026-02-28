@@ -16,6 +16,13 @@ let client: FeishuProjectClient | null = null;
 
 let defaultProjectKey = '62b29e862be43458fc1ef6b2';
 
+// user_key vs user_id 映射（飞书项目有两套 ID）
+// user_key: API 认证、current_status_operator 搜索
+// user_id: owner、created_by 字段值
+const USER_MAPPING: Record<string, string> = {
+  '7586496668992949190': '7111584692842840092', // 宝根: user_key -> user_id
+};
+
 function jsonResponse(res: http.ServerResponse, data: unknown, status = 200): void {
   res.writeHead(status, { 'Content-Type': 'application/json' });
   res.end(JSON.stringify(data, null, 2));
@@ -90,6 +97,172 @@ async function handleRequest(req: http.IncomingMessage, res: http.ServerResponse
     if (path === '/types' && req.method === 'GET') {
       const types = await client.getWorkItemTypes(projectKey);
       jsonResponse(res, { projectKey, types });
+      return;
+    }
+
+    // ==================== 我的工作台 ====================
+
+    // GET /my/todo - 我参与的（当前节点负责人是我）
+    // 用法: curl "http://127.0.0.1:18793/my/todo?typeKey=story"
+    if (path === '/my/todo' && req.method === 'GET') {
+      const userKey = ctx.userKey;
+      const pageSize = parseInt(query.pageSize as string, 10) || 50;
+      const workItemTypeKey = (query.typeKey as string) || 'story';
+      
+      const resp = await client.workitem.searchByParams(ctx, projectKey, workItemTypeKey, {
+        search_group: {
+          conjunction: 'AND',
+          search_params: [
+            { param_key: 'current_status_operator', value: [userKey], operator: 'HAS ANY OF' },
+            { param_key: 'finish_status', value: false, operator: '=' },
+          ],
+          search_groups: [],
+        },
+        page_num: 1,
+        page_size: pageSize,
+      });
+      if (resp.err_code !== 0) { errorResponse(res, resp.err_msg, 400); return; }
+      
+      const items = (resp.data as any[]) || [];
+      const simplified = items.map((item: any) => ({
+        id: item.id,
+        num: item.fields?.find((f: any) => f.field_key === 'auto_number')?.field_value,
+        name: item.name,
+        stage: item.sub_stage,
+        nodes: item.current_nodes?.map((n: any) => n.name) || [],
+      }));
+      
+      jsonResponse(res, { 
+        type: 'todo',
+        typeKey: workItemTypeKey,
+        total: items.length, 
+        items: simplified 
+      });
+      return;
+    }
+
+    // GET /my/owned - 我负责的（owner 是我）
+    // 用法: curl "http://127.0.0.1:18793/my/owned?typeKey=story"
+    if (path === '/my/owned' && req.method === 'GET') {
+      const userKey = ctx.userKey;
+      const userId = USER_MAPPING[userKey] || userKey; // owner 字段用 user_id
+      const pageSize = parseInt(query.pageSize as string, 10) || 100;
+      const workItemTypeKey = (query.typeKey as string) || 'story';
+      
+      const resp = await client.workitem.searchByParams(ctx, projectKey, workItemTypeKey, {
+        search_group: {
+          conjunction: 'AND',
+          search_params: [
+            { param_key: 'owner', value: [userId], operator: '=' },
+            { param_key: 'finish_status', value: false, operator: '=' },
+          ],
+          search_groups: [],
+        },
+        page_num: 1,
+        page_size: pageSize,
+      });
+      if (resp.err_code !== 0) { errorResponse(res, resp.err_msg, 400); return; }
+      
+      const items = (resp.data as any[]) || [];
+      const simplified = items.map((item: any) => ({
+        id: item.id,
+        num: item.fields?.find((f: any) => f.field_key === 'auto_number')?.field_value,
+        name: item.name,
+        stage: item.sub_stage,
+      }));
+      
+      jsonResponse(res, { 
+        type: 'owned',
+        typeKey: workItemTypeKey,
+        total: items.length, 
+        items: simplified 
+      });
+      return;
+    }
+
+    // GET /my/created - 我创建的
+    // 用法: curl "http://127.0.0.1:18793/my/created?typeKey=story"
+    if (path === '/my/created' && req.method === 'GET') {
+      const userKey = ctx.userKey;
+      const userId = USER_MAPPING[userKey] || userKey; // created_by 字段用 user_id
+      const pageSize = parseInt(query.pageSize as string, 10) || 100;
+      const workItemTypeKey = (query.typeKey as string) || 'story';
+      
+      const resp = await client.workitem.searchByParams(ctx, projectKey, workItemTypeKey, {
+        search_group: {
+          conjunction: 'AND',
+          search_params: [
+            { param_key: 'created_by', value: [userId], operator: '=' },
+            { param_key: 'finish_status', value: false, operator: '=' },
+          ],
+          search_groups: [],
+        },
+        page_num: 1,
+        page_size: pageSize,
+      });
+      if (resp.err_code !== 0) { errorResponse(res, resp.err_msg, 400); return; }
+      
+      const items = (resp.data as any[]) || [];
+      const simplified = items.map((item: any) => ({
+        id: item.id,
+        num: item.fields?.find((f: any) => f.field_key === 'auto_number')?.field_value,
+        name: item.name,
+        stage: item.sub_stage,
+      }));
+      
+      jsonResponse(res, { 
+        type: 'created',
+        typeKey: workItemTypeKey,
+        total: items.length, 
+        items: simplified 
+      });
+      return;
+    }
+
+    // GET /my/summary - 汇总（需求 + 缺陷的待办数量）
+    // 用法: curl "http://127.0.0.1:18793/my/summary"
+    if (path === '/my/summary' && req.method === 'GET') {
+      const userKey = ctx.userKey;
+      const userId = USER_MAPPING[userKey] || userKey;
+      
+      const results: Record<string, { todo: number; owned: number }> = {};
+      
+      for (const typeKey of ['story', 'issue']) {
+        // 待办
+        const todoResp = await client.workitem.searchByParams(ctx, projectKey, typeKey, {
+          search_group: {
+            conjunction: 'AND',
+            search_params: [
+              { param_key: 'current_status_operator', value: [userKey], operator: 'HAS ANY OF' },
+              { param_key: 'finish_status', value: false, operator: '=' },
+            ],
+            search_groups: [],
+          },
+          page_num: 1,
+          page_size: 1,
+        });
+        
+        // 负责
+        const ownedResp = await client.workitem.searchByParams(ctx, projectKey, typeKey, {
+          search_group: {
+            conjunction: 'AND',
+            search_params: [
+              { param_key: 'owner', value: [userId], operator: '=' },
+              { param_key: 'finish_status', value: false, operator: '=' },
+            ],
+            search_groups: [],
+          },
+          page_num: 1,
+          page_size: 1,
+        });
+        
+        results[typeKey] = {
+          todo: ((todoResp.data as any)?.length) || 0,
+          owned: ((ownedResp.data as any)?.length) || 0,
+        };
+      }
+      
+      jsonResponse(res, { summary: results });
       return;
     }
 
