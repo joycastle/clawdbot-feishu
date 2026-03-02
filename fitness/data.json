@@ -1,10 +1,13 @@
 {
   "groupId": "oc_6b354f88ad06b10a005ee4e7853c05dd",
+  "deadline": "2026-04-27",
   "members": {
     "ou_4650478bf5396cbe50c893b9f9ea2d5c": {
       "id": "ou_4650478bf5396cbe50c893b9f9ea2d5c",
       "name": "小王子",
       "targetWeight": 70,
+      "currentWeight": 85,
+      "basalMetabolism": 1789,
       "joinedAt": "2026-02-27",
       "height": 171,
       "age": 27,
@@ -14,11 +17,19 @@
       "id": "ou_a88f1d9ba4dbfc25326566c59b6f5622",
       "name": "千里",
       "targetWeight": 80,
+      "currentWeight": 90,
+      "basalMetabolism": 1833,
       "joinedAt": "2026-02-27",
       "height": 170,
       "age": 27,
       "gender": "male"
     }
+  },
+  "trainingPlan": {
+    "monday": "核心 + 练胸 + 肩膀 + 跑步",
+    "tuesday": "减脂操 + 核心",
+    "thursday": "核心 + 练腿 + 爬坡",
+    "friday": "减脂操 + 核心"
   },
   "weightRecords": [
     {
@@ -52,11 +63,8 @@
     }
   ],
   "settings": {
-    "weightDays": [
-      "monday",
-      "wednesday",
-      "friday"
-    ],
+    "outputFormat": "table",
+    "weightDays": ["monday", "wednesday", "friday"],
     "dailyReportTime": "21:00",
     "timezone": "Asia/Shanghai"
   }

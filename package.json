@@ -51,6 +51,7 @@
     "@google-cloud/vertexai": "^1.10.0",
     "@larksuiteoapi/node-sdk": "^1.30.0",
     "@m1heng-clawd/feishu": "^0.1.10",
+    "better-sqlite3": "^12.6.2",
     "zod": "^4.3.6"
   },
   "devDependencies": {
