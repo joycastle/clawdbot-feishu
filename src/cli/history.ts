@@ -97,7 +97,42 @@ async function getHistoryMessages(
       } else if (type === "sticker") {
         content = "[表情]";
       } else if (type === "interactive") {
-        content = "[卡片消息]";
+        // 解析卡片内容，提取文本
+        try {
+          const body = JSON.parse(item.body?.content || "{}");
+          const texts: string[] = [];
+          
+          // 递归提取卡片中的文本
+          const extractText = (obj: any) => {
+            if (!obj) return;
+            if (typeof obj === "string") return;
+            if (Array.isArray(obj)) {
+              for (const el of obj) extractText(el);
+              return;
+            }
+            if (typeof obj === "object") {
+              // 提取 text 字段
+              if (obj.tag === "text" && obj.text) {
+                texts.push(obj.text);
+              } else if (obj.tag === "markdown" && obj.content) {
+                texts.push(obj.content);
+              } else if (obj.tag === "plain_text" && obj.content) {
+                texts.push(obj.content);
+              }
+              // 递归处理 elements, content, columns 等
+              if (obj.elements) extractText(obj.elements);
+              if (obj.content) extractText(obj.content);
+              if (obj.columns) extractText(obj.columns);
+              if (obj.header?.title?.content) texts.push(obj.header.title.content);
+            }
+          };
+          
+          extractText(body);
+          const cardText = texts.join("").replace(/\n{3,}/g, "\n\n").trim();
+          content = cardText ? `[卡片] ${cardText.slice(0, 500)}${cardText.length > 500 ? "..." : ""}` : "[空卡片]";
+        } catch {
+          content = "[卡片消息]";
+        }
       } else if (type === "system") {
         content = "[系统消息]";
       } else if (type === "post") {
