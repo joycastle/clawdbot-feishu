@@ -88,6 +88,7 @@ channels:
 - **Inbound media support**: AI can see images, read files (PDF, Excel, etc.), and process rich text with embedded images
 - Image and file uploads (outbound)
 - Typing indicator (via emoji reactions)
+- **Interrupt by new message**: Send any new message to immediately interrupt the AI's current processing and start handling your new request
 - Pairing flow for DM approval
 - User and group directory lookup
 - **Card render mode**: Optional markdown rendering with syntax highlighting
