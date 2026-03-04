@@ -1,0 +1,571 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Token 使用统计 - 过去30天</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            min-height: 100vh;
+            padding: 20px;
+            color: #fff;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        h1 {
+            text-align: center;
+            margin-bottom: 10px;
+            font-size: 2em;
+            background: linear-gradient(90deg, #00d4ff, #7b2cbf);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .subtitle {
+            text-align: center;
+            color: #888;
+            margin-bottom: 30px;
+        }
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        .stat-card {
+            background: rgba(255,255,255,0.1);
+            border-radius: 16px;
+            padding: 20px;
+            text-align: center;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+        .stat-value {
+            font-size: 2em;
+            font-weight: bold;
+            background: linear-gradient(90deg, #00d4ff, #7b2cbf);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .stat-label {
+            color: #aaa;
+            margin-top: 5px;
+        }
+        .chart-container {
+            background: rgba(255,255,255,0.05);
+            border-radius: 16px;
+            padding: 20px;
+            margin-bottom: 20px;
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+        .chart-title {
+            font-size: 1.2em;
+            margin-bottom: 15px;
+            color: #ddd;
+        }
+        .legend-item {
+            display: inline-flex;
+            align-items: center;
+            margin-right: 20px;
+            font-size: 0.9em;
+            color: #aaa;
+        }
+        .legend-color {
+            width: 12px;
+            height: 12px;
+            border-radius: 3px;
+            margin-right: 6px;
+        }
+        canvas {
+            max-height: 400px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🤖 Token 使用统计</h1>
+        <p class="subtitle">2026-02-01 ~ 2026-03-02 (共30天)</p>
+        
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-value" id="totalTokens">-</div>
+                <div class="stat-label">总 Token 消耗</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="totalCost">-</div>
+                <div class="stat-label">总成本 (USD)</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="avgDaily">-</div>
+                <div class="stat-label">日均 Token</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="peakDay">-</div>
+                <div class="stat-label">峰值日期</div>
+            </div>
+        </div>
+
+        <div class="chart-container">
+            <div class="chart-title">📊 每日 Token 消耗</div>
+            <canvas id="tokenChart"></canvas>
+        </div>
+
+        <div class="chart-container">
+            <div class="chart-title">💰 每日成本 (USD)</div>
+            <canvas id="costChart"></canvas>
+        </div>
+
+        <div class="chart-container">
+            <div class="chart-title">📈 Token 类型分布</div>
+            <div style="margin-bottom: 10px;">
+                <span class="legend-item"><span class="legend-color" style="background:#00d4ff"></span>Input</span>
+                <span class="legend-item"><span class="legend-color" style="background:#7b2cbf"></span>Output</span>
+                <span class="legend-item"><span class="legend-color" style="background:#00ff88"></span>Cache Read</span>
+                <span class="legend-item"><span class="legend-color" style="background:#ff6b6b"></span>Cache Write</span>
+            </div>
+            <canvas id="breakdownChart"></canvas>
+        </div>
+    </div>
+
+    <script>
+        const data = [
+  {
+    "date": "2026-01-31",
+    "input": 0,
+    "output": 0,
+    "cacheRead": 0,
+    "cacheWrite": 0,
+    "total": 0,
+    "cost": 0
+  },
+  {
+    "date": "2026-02-01",
+    "input": 0,
+    "output": 0,
+    "cacheRead": 0,
+    "cacheWrite": 0,
+    "total": 0,
+    "cost": 0
+  },
+  {
+    "date": "2026-02-02",
+    "input": 0,
+    "output": 0,
+    "cacheRead": 0,
+    "cacheWrite": 0,
+    "total": 0,
+    "cost": 0
+  },
+  {
+    "date": "2026-02-03",
+    "input": 0,
+    "output": 0,
+    "cacheRead": 0,
+    "cacheWrite": 0,
+    "total": 0,
+    "cost": 0
+  },
+  {
+    "date": "2026-02-04",
+    "input": 0,
+    "output": 0,
+    "cacheRead": 0,
+    "cacheWrite": 0,
+    "total": 0,
+    "cost": 0
+  },
+  {
+    "date": "2026-02-05",
+    "input": 0,
+    "output": 0,
+    "cacheRead": 0,
+    "cacheWrite": 0,
+    "total": 0,
+    "cost": 0
+  },
+  {
+    "date": "2026-02-06",
+    "input": 0,
+    "output": 0,
+    "cacheRead": 0,
+    "cacheWrite": 0,
+    "total": 0,
+    "cost": 0
+  },
+  {
+    "date": "2026-02-07",
+    "input": 0,
+    "output": 0,
+    "cacheRead": 0,
+    "cacheWrite": 0,
+    "total": 0,
+    "cost": 0
+  },
+  {
+    "date": "2026-02-08",
+    "input": 0,
+    "output": 0,
+    "cacheRead": 0,
+    "cacheWrite": 0,
+    "total": 0,
+    "cost": 0
+  },
+  {
+    "date": "2026-02-09",
+    "input": 0,
+    "output": 0,
+    "cacheRead": 0,
+    "cacheWrite": 0,
+    "total": 0,
+    "cost": 0
+  },
+  {
+    "date": "2026-02-10",
+    "input": 0,
+    "output": 0,
+    "cacheRead": 0,
+    "cacheWrite": 0,
+    "total": 0,
+    "cost": 0
+  },
+  {
+    "date": "2026-02-11",
+    "input": 0,
+    "output": 0,
+    "cacheRead": 0,
+    "cacheWrite": 0,
+    "total": 0,
+    "cost": 0
+  },
+  {
+    "date": "2026-02-12",
+    "input": 0,
+    "output": 0,
+    "cacheRead": 0,
+    "cacheWrite": 0,
+    "total": 0,
+    "cost": 0
+  },
+  {
+    "date": "2026-02-13",
+    "input": 0,
+    "output": 0,
+    "cacheRead": 0,
+    "cacheWrite": 0,
+    "total": 0,
+    "cost": 0
+  },
+  {
+    "date": "2026-02-14",
+    "input": 0,
+    "output": 0,
+    "cacheRead": 0,
+    "cacheWrite": 0,
+    "total": 0,
+    "cost": 0
+  },
+  {
+    "date": "2026-02-15",
+    "input": 0,
+    "output": 0,
+    "cacheRead": 0,
+    "cacheWrite": 0,
+    "total": 0,
+    "cost": 0
+  },
+  {
+    "date": "2026-02-16",
+    "input": 14553,
+    "output": 127509,
+    "cacheRead": 6461649,
+    "cacheWrite": 202733,
+    "total": 6806444,
+    "cost": 7.7541137500000065
+  },
+  {
+    "date": "2026-02-17",
+    "input": 2523,
+    "output": 55016,
+    "cacheRead": 2475168,
+    "cacheWrite": 119478,
+    "total": 2652185,
+    "cost": 2.4881095000000013
+  },
+  {
+    "date": "2026-02-18",
+    "input": 396,
+    "output": 15440,
+    "cacheRead": 418691,
+    "cacheWrite": 29336,
+    "total": 463863,
+    "cost": 1.2860505000000002
+  },
+  {
+    "date": "2026-02-19",
+    "input": 622,
+    "output": 18406,
+    "cacheRead": 511998,
+    "cacheWrite": 42416,
+    "total": 573442,
+    "cost": 1.0788945
+  },
+  {
+    "date": "2026-02-20",
+    "input": 9131,
+    "output": 306619,
+    "cacheRead": 59449116,
+    "cacheWrite": 699361,
+    "total": 60464227,
+    "cost": 42.69369775
+  },
+  {
+    "date": "2026-02-21",
+    "input": 4610,
+    "output": 143809,
+    "cacheRead": 6869131,
+    "cacheWrite": 254745,
+    "total": 7272295,
+    "cost": 7.9597285000000005
+  },
+  {
+    "date": "2026-02-22",
+    "input": 2032,
+    "output": 73605,
+    "cacheRead": 3042892,
+    "cacheWrite": 159748,
+    "total": 3278277,
+    "cost": 3.6027265000000015
+  },
+  {
+    "date": "2026-02-23",
+    "input": 7377,
+    "output": 252099,
+    "cacheRead": 31440933,
+    "cacheWrite": 899844,
+    "total": 32600253,
+    "cost": 31.29666775
+  },
+  {
+    "date": "2026-02-24",
+    "input": 10478,
+    "output": 342498,
+    "cacheRead": 51275648,
+    "cacheWrite": 1211444,
+    "total": 52840068,
+    "cost": 50.99086475000001
+  },
+  {
+    "date": "2026-02-25",
+    "input": 9073,
+    "output": 307809,
+    "cacheRead": 42041917,
+    "cacheWrite": 1124885,
+    "total": 43483684,
+    "cost": 45.66192725000002
+  },
+  {
+    "date": "2026-02-26",
+    "input": 7044,
+    "output": 262095,
+    "cacheRead": 26745127,
+    "cacheWrite": 981269,
+    "total": 27995535,
+    "cost": 29.656515000000005
+  },
+  {
+    "date": "2026-02-27",
+    "input": 13005,
+    "output": 392549,
+    "cacheRead": 76593181,
+    "cacheWrite": 1536172,
+    "total": 78534907,
+    "cost": 67.58127025000001
+  },
+  {
+    "date": "2026-02-28",
+    "input": 8182,
+    "output": 268149,
+    "cacheRead": 29983591,
+    "cacheWrite": 997409,
+    "total": 31257331,
+    "cost": 31.786267249999993
+  },
+  {
+    "date": "2026-03-01",
+    "input": 6718,
+    "output": 268496,
+    "cacheRead": 48042749,
+    "cacheWrite": 1846230,
+    "total": 50164193,
+    "cost": 42.30630200000002
+  },
+  {
+    "date": "2026-03-02",
+    "input": 6382,
+    "output": 280458,
+    "cacheRead": 23737456,
+    "cacheWrite": 1677431,
+    "total": 25701727,
+    "cost": 29.39603175000004
+  }
+];
+
+        // Calculate stats
+        const activeDays = data.filter(d => d.total > 0);
+        const totalTokens = data.reduce((sum, d) => sum + d.total, 0);
+        const totalCost = data.reduce((sum, d) => sum + d.cost, 0);
+        const avgDaily = activeDays.length > 0 ? totalTokens / activeDays.length : 0;
+        const peakDay = activeDays.reduce((max, d) => d.total > max.total ? d : max, {total: 0, date: '-'});
+
+        // Format numbers
+        function formatNumber(num) {
+            if (num >= 1e9) return (num / 1e9).toFixed(1) + 'B';
+            if (num >= 1e6) return (num / 1e6).toFixed(1) + 'M';
+            if (num >= 1e3) return (num / 1e3).toFixed(1) + 'K';
+            return num.toFixed(0);
+        }
+
+        // Update stats
+        document.getElementById('totalTokens').textContent = formatNumber(totalTokens);
+        document.getElementById('totalCost').textContent = '$' + totalCost.toFixed(2);
+        document.getElementById('avgDaily').textContent = formatNumber(avgDaily);
+        document.getElementById('peakDay').textContent = peakDay.date.slice(5);
+
+        // Chart options
+        const chartOptions = {
+            responsive: true,
+            maintainAspectRatio: true,
+            plugins: {
+                legend: { display: false }
+            },
+            scales: {
+                x: {
+                    grid: { color: 'rgba(255,255,255,0.1)' },
+                    ticks: { color: '#888' }
+                },
+                y: {
+                    grid: { color: 'rgba(255,255,255,0.1)' },
+                    ticks: { color: '#888' }
+                }
+            }
+        };
+
+        // Token chart
+        new Chart(document.getElementById('tokenChart'), {
+            type: 'bar',
+            data: {
+                labels: data.map(d => d.date.slice(5)),
+                datasets: [{
+                    data: data.map(d => d.total),
+                    backgroundColor: 'rgba(0, 212, 255, 0.7)',
+                    borderColor: '#00d4ff',
+                    borderWidth: 1,
+                    borderRadius: 4
+                }]
+            },
+            options: {
+                ...chartOptions,
+                scales: {
+                    ...chartOptions.scales,
+                    y: {
+                        ...chartOptions.scales.y,
+                        ticks: {
+                            ...chartOptions.scales.y.ticks,
+                            callback: v => formatNumber(v)
+                        }
+                    }
+                }
+            }
+        });
+
+        // Cost chart
+        new Chart(document.getElementById('costChart'), {
+            type: 'line',
+            data: {
+                labels: data.map(d => d.date.slice(5)),
+                datasets: [{
+                    data: data.map(d => d.cost),
+                    borderColor: '#7b2cbf',
+                    backgroundColor: 'rgba(123, 44, 191, 0.2)',
+                    fill: true,
+                    tension: 0.3,
+                    pointRadius: 3,
+                    pointBackgroundColor: '#7b2cbf'
+                }]
+            },
+            options: {
+                ...chartOptions,
+                scales: {
+                    ...chartOptions.scales,
+                    y: {
+                        ...chartOptions.scales.y,
+                        ticks: {
+                            ...chartOptions.scales.y.ticks,
+                            callback: v => '$' + v.toFixed(0)
+                        }
+                    }
+                }
+            }
+        });
+
+        // Breakdown chart
+        new Chart(document.getElementById('breakdownChart'), {
+            type: 'bar',
+            data: {
+                labels: data.map(d => d.date.slice(5)),
+                datasets: [
+                    {
+                        label: 'Input',
+                        data: data.map(d => d.input),
+                        backgroundColor: '#00d4ff',
+                        stack: 'stack0'
+                    },
+                    {
+                        label: 'Output',
+                        data: data.map(d => d.output),
+                        backgroundColor: '#7b2cbf',
+                        stack: 'stack0'
+                    },
+                    {
+                        label: 'Cache Read',
+                        data: data.map(d => d.cacheRead),
+                        backgroundColor: '#00ff88',
+                        stack: 'stack0'
+                    },
+                    {
+                        label: 'Cache Write',
+                        data: data.map(d => d.cacheWrite),
+                        backgroundColor: '#ff6b6b',
+                        stack: 'stack0'
+                    }
+                ]
+            },
+            options: {
+                ...chartOptions,
+                plugins: { legend: { display: false } },
+                scales: {
+                    ...chartOptions.scales,
+                    x: { ...chartOptions.scales.x, stacked: true },
+                    y: {
+                        ...chartOptions.scales.y,
+                        stacked: true,
+                        ticks: {
+                            ...chartOptions.scales.y.ticks,
+                            callback: v => formatNumber(v)
+                        }
+                    }
+                }
+            }
+        });
+    </script>
+</body>
+</html>

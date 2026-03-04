@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Frisbee Frenzy - CRAZY Edition</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 40px 20px;
+            overflow: hidden;
+        }
+        
+        .label { color: #555; font-size: 12px; margin-bottom: 25px; font-family: sans-serif; }
+        
+        /* === V4: 疯狂版 === */
+        .logo-crazy {
+            position: relative;
+            padding: 40px 60px;
+        }
+        
+        /* 能量爆发背景 */
+        .energy-burst {
+            position: absolute;
+            width: 500px;
+            height: 300px;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: radial-gradient(ellipse at center, rgba(255,100,0,0.15) 0%, transparent 70%);
+            z-index: 0;
+        }
+        
+        /* 震动线条 */
+        .shake-lines {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            top: 0;
+            left: 0;
+            z-index: 1;
+            pointer-events: none;
+        }
+        .shake-line {
+            position: absolute;
+            background: rgba(255,200,0,0.3);
+            border-radius: 2px;
+        }
+        .shake-line:nth-child(1) { width: 40px; height: 4px; top: 20%; left: 5%; transform: rotate(-20deg); }
+        .shake-line:nth-child(2) { width: 30px; height: 3px; top: 30%; right: 8%; transform: rotate(15deg); }
+        .shake-line:nth-child(3) { width: 35px; height: 4px; bottom: 25%; left: 10%; transform: rotate(25deg); }
+        .shake-line:nth-child(4) { width: 25px; height: 3px; bottom: 35%; right: 5%; transform: rotate(-30deg); }
+        .shake-line:nth-child(5) { width: 20px; height: 3px; top: 45%; left: 2%; transform: rotate(10deg); }
+        .shake-line:nth-child(6) { width: 28px; height: 3px; top: 55%; right: 3%; transform: rotate(-15deg); }
+        
+        /* FRISBEE - 整体倾斜但稳定 */
+        .frisbee-row {
+            display: flex;
+            align-items: baseline;
+            position: relative;
+            z-index: 2;
+            transform: rotate(-8deg);
+        }
+        
+        .frisbee-letter {
+            font-family: 'Arial Black', Impact, sans-serif;
+            font-weight: 900;
+            line-height: 1;
+            background: linear-gradient(180deg, #FFF44F 0%, #FFD700 25%, #FFA500 60%, #FF6600 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            filter: drop-shadow(3px 4px 0 #CC3300) drop-shadow(5px 6px 0 #991100) drop-shadow(-2px -2px 0 #9932CC);
+        }
+        
+        .frisbee-letter:nth-child(1) { font-size: 85px; transform: rotate(-2deg); }
+        .frisbee-letter:nth-child(2) { font-size: 80px; transform: rotate(1deg) translateY(-2px); }
+        .frisbee-letter:nth-child(3) { font-size: 82px; transform: rotate(-1deg); }
+        .frisbee-letter:nth-child(4) { font-size: 78px; transform: rotate(2deg) translateY(3px); }
+        .frisbee-letter:nth-child(5) { font-size: 84px; transform: rotate(-1deg); }
+        .frisbee-letter:nth-child(6) { font-size: 80px; transform: rotate(1deg) translateY(-1px); }
+        .frisbee-letter:nth-child(7) { font-size: 83px; transform: rotate(-2deg); }
+        
+        /* 飞盘 - 嵌入并旋转 */
+        .disc-container {
+            position: relative;
+            margin-left: 5px;
+            animation: discSpin 3s linear infinite;
+        }
+        
+        @keyframes discSpin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .disc {
+            width: 70px;
+            height: 70px;
+            background: linear-gradient(135deg, #00D4FF 0%, #0088CC 50%, #004466 100%);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 
+                inset -5px -5px 15px rgba(0,0,0,0.5),
+                inset 5px 5px 15px rgba(255,255,255,0.2),
+                0 0 25px rgba(0,200,255,0.6),
+                3px 3px 0 #003355;
+        }
+        
+        .disc-inner {
+            width: 42px;
+            height: 42px;
+            background: linear-gradient(135deg, #66EEFF 0%, #00CCFF 100%);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .disc .star {
+            font-size: 24px;
+            color: #FFFACD;
+            text-shadow: 0 0 10px rgba(255,250,205,1);
+            animation: discSpin 3s linear infinite reverse;
+        }
+        
+        /* FRENZY - 疯狂！每个字母都在抖 */
+        .frenzy-row {
+            display: flex;
+            align-items: baseline;
+            justify-content: center;
+            position: relative;
+            z-index: 2;
+            margin-top: 0px;
+            margin-left: 35px;
+            transform: rotate(-8deg);
+        }
+        
+        .frenzy-letter {
+            font-family: 'Arial Black', Impact, sans-serif;
+            font-weight: 900;
+            line-height: 1;
+            background: linear-gradient(180deg, #FF6B35 0%, #FF4500 40%, #E62E00 70%, #B81C00 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            filter: drop-shadow(2px 3px 0 #8B0000) drop-shadow(4px 5px 0 #550000) drop-shadow(-2px -2px 0 #7B2CBF);
+            animation: crazyShake 0.1s ease-in-out infinite;
+        }
+        
+        /* 每个字母不同的疯狂程度 */
+        .frenzy-letter:nth-child(1) { 
+            font-size: 62px; 
+            transform: rotate(-8deg) translateY(2px); 
+            animation-delay: 0s;
+        }
+        .frenzy-letter:nth-child(2) { 
+            font-size: 58px; 
+            transform: rotate(10deg) translateY(-8px) translateX(-2px); 
+            animation-delay: 0.02s;
+        }
+        .frenzy-letter:nth-child(3) { 
+            font-size: 66px; 
+            transform: rotate(-5deg) translateY(5px); 
+            animation-delay: 0.04s;
+        }
+        .frenzy-letter:nth-child(4) { 
+            font-size: 54px; 
+            transform: rotate(12deg) translateY(-10px) translateX(2px); 
+            animation-delay: 0.06s;
+        }
+        .frenzy-letter:nth-child(5) { 
+            font-size: 60px; 
+            transform: rotate(-6deg) translateY(3px); 
+            animation-delay: 0.08s;
+        }
+        .frenzy-letter:nth-child(6) { 
+            font-size: 64px; 
+            transform: rotate(8deg) translateY(-5px); 
+            animation-delay: 0.1s;
+        }
+        
+        @keyframes crazyShake {
+            0%, 100% { transform: translate(0, 0) rotate(var(--base-rotate, 0deg)); }
+            25% { transform: translate(-1px, 1px) rotate(calc(var(--base-rotate, 0deg) - 2deg)); }
+            50% { transform: translate(1px, -1px) rotate(calc(var(--base-rotate, 0deg) + 2deg)); }
+            75% { transform: translate(-1px, -1px) rotate(calc(var(--base-rotate, 0deg) + 1deg)); }
+        }
+        
+        /* 速度线 - 从飞盘射出 */
+        .speed-trails {
+            position: absolute;
+            right: -40px;
+            top: 35px;
+            z-index: 1;
+        }
+        .speed-trail {
+            height: 5px;
+            background: linear-gradient(90deg, rgba(0,200,255,0.9), rgba(0,200,255,0));
+            margin-bottom: 8px;
+            border-radius: 3px;
+            animation: trailPulse 0.8s ease-in-out infinite;
+        }
+        .speed-trail:nth-child(1) { width: 50px; animation-delay: 0s; }
+        .speed-trail:nth-child(2) { width: 70px; margin-left: -15px; animation-delay: 0.15s; }
+        .speed-trail:nth-child(3) { width: 45px; animation-delay: 0.3s; }
+        
+        @keyframes trailPulse {
+            0%, 100% { opacity: 0.4; transform: scaleX(0.8); }
+            50% { opacity: 1; transform: scaleX(1); }
+        }
+        
+        /* 爆炸碎片 */
+        .fragments {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            top: 0;
+            left: 0;
+            z-index: 1;
+            pointer-events: none;
+        }
+        .fragment {
+            position: absolute;
+            width: 8px;
+            height: 8px;
+            background: #FFD700;
+            clip-path: polygon(50% 0%, 100% 100%, 0% 100%);
+            opacity: 0.7;
+        }
+        .fragment:nth-child(1) { top: 15%; left: 20%; transform: rotate(30deg); }
+        .fragment:nth-child(2) { top: 25%; right: 15%; transform: rotate(-45deg); background: #FF6600; }
+        .fragment:nth-child(3) { bottom: 20%; left: 15%; transform: rotate(60deg); background: #00BFFF; }
+        .fragment:nth-child(4) { bottom: 30%; right: 20%; transform: rotate(-20deg); }
+        .fragment:nth-child(5) { top: 40%; left: 8%; transform: rotate(90deg); width: 6px; height: 6px; background: #FF4500; }
+        .fragment:nth-child(6) { top: 50%; right: 10%; transform: rotate(-60deg); width: 6px; height: 6px; background: #00DDFF; }
+        
+        /* 星星闪烁 */
+        .sparkle {
+            position: absolute;
+            font-size: 16px;
+            color: #FFD700;
+            text-shadow: 0 0 8px rgba(255,215,0,0.8);
+            animation: sparkle 1s ease-in-out infinite;
+        }
+        .sparkle:nth-child(1) { top: 10%; left: 25%; animation-delay: 0s; }
+        .sparkle:nth-child(2) { top: 20%; right: 20%; animation-delay: 0.3s; }
+        .sparkle:nth-child(3) { bottom: 15%; left: 30%; animation-delay: 0.6s; }
+        .sparkle:nth-child(4) { bottom: 25%; right: 25%; animation-delay: 0.2s; font-size: 12px; }
+        
+        @keyframes sparkle {
+            0%, 100% { opacity: 0.3; transform: scale(0.8); }
+            50% { opacity: 1; transform: scale(1.2); }
+        }
+        
+        .note {
+            margin-top: 50px;
+            color: #666;
+            font-size: 13px;
+            font-family: sans-serif;
+            text-align: center;
+            line-height: 1.8;
+        }
+        .note strong { color: #FF6B35; }
+    </style>
+</head>
+<body>
+    <div class="label">V4: 疯狂版 🔥</div>
+    
+    <div class="logo-crazy">
+        <!-- 能量背景 -->
+        <div class="energy-burst"></div>
+        
+        <!-- 震动线 -->
+        <div class="shake-lines">
+            <div class="shake-line"></div>
+            <div class="shake-line"></div>
+            <div class="shake-line"></div>
+            <div class="shake-line"></div>
+            <div class="shake-line"></div>
+            <div class="shake-line"></div>
+        </div>
+        
+        <!-- 碎片 -->
+        <div class="fragments">
+            <div class="fragment"></div>
+            <div class="fragment"></div>
+            <div class="fragment"></div>
+            <div class="fragment"></div>
+            <div class="fragment"></div>
+            <div class="fragment"></div>
+        </div>
+        
+        <!-- 星星 -->
+        <div class="sparkle">✦</div>
+        <div class="sparkle">✦</div>
+        <div class="sparkle">✦</div>
+        <div class="sparkle">✦</div>
+        
+        <!-- FRISBEE -->
+        <div class="frisbee-row">
+            <span class="frisbee-letter">F</span>
+            <span class="frisbee-letter">R</span>
+            <span class="frisbee-letter">I</span>
+            <span class="frisbee-letter">S</span>
+            <span class="frisbee-letter">B</span>
+            <span class="frisbee-letter">E</span>
+            <span class="frisbee-letter">E</span>
+            
+            <!-- 飞盘 -->
+            <div class="disc-container">
+                <div class="disc">
+                    <div class="disc-inner">
+                        <span class="star">★</span>
+                    </div>
+                </div>
+                <div class="speed-trails">
+                    <div class="speed-trail"></div>
+                    <div class="speed-trail"></div>
+                    <div class="speed-trail"></div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- FRENZY - 疯狂抖动 -->
+        <div class="frenzy-row">
+            <span class="frenzy-letter">F</span>
+            <span class="frenzy-letter">R</span>
+            <span class="frenzy-letter">E</span>
+            <span class="frenzy-letter">N</span>
+            <span class="frenzy-letter">Z</span>
+            <span class="frenzy-letter">Y</span>
+        </div>
+    </div>
+    
+    <div class="note">
+        <strong>FRENZY 字母各自疯狂</strong>：大小不一、角度错位、持续抖动<br>
+        飞盘旋转 + 速度线脉冲 + 碎片飞溅 + 星星闪烁
+    </div>
+</body>
+</html>

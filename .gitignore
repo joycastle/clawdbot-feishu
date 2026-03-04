@@ -3,3 +3,13 @@ package-lock.json
 *.js.map
 dist/
 config/aws-s3.json
+workspace-backup/tmp/
+workspace-backup/download/
+workspace-backup/*.zip
+workspace-backup/config/
+workspace-backup/memory/tools/grafana-configs.md
+workspace-backup/memory/reference/ms-grafana-config.md
+workspace-backup/skills/*/scripts/
+workspace-backup/skills/jiankong/
+workspace-backup/skills/bf-jiankong/
+workspace-backup/skills/ms-jiankong/

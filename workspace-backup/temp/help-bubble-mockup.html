@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <style>
+    body {
+      background: linear-gradient(180deg, #e8f4fc 0%, #d0e8f5 100%);
+      font-family: 'Arial Rounded MT Bold', 'Helvetica Rounded', Arial, sans-serif;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      margin: 0;
+      gap: 60px;
+    }
+    .container {
+      display: flex;
+      gap: 80px;
+      padding: 40px;
+    }
+    .option {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 20px;
+    }
+    .label {
+      font-size: 18px;
+      color: #555;
+      font-weight: bold;
+    }
+    .bubble-wrap {
+      position: relative;
+      width: 120px;
+      height: 80px;
+    }
+    
+    /* 原版紫色气泡 */
+    .bubble-original {
+      background: linear-gradient(180deg, #9b6fb5 0%, #7c5a99 100%);
+      color: white;
+      font-size: 22px;
+      font-weight: bold;
+      padding: 12px 20px;
+      border-radius: 20px;
+      position: relative;
+      text-align: center;
+      box-shadow: 0 3px 6px rgba(0,0,0,0.2);
+    }
+    .bubble-original::after {
+      content: '';
+      position: absolute;
+      bottom: -12px;
+      left: 50%;
+      transform: translateX(-50%);
+      border: 8px solid transparent;
+      border-top-color: #7c5a99;
+    }
+    
+    /* 改进版冰蓝色气泡 */
+    .bubble-ice {
+      background: linear-gradient(180deg, #a8d8ea 0%, #7ec8e3 100%);
+      color: #2c5f7c;
+      font-size: 22px;
+      font-weight: bold;
+      padding: 12px 20px;
+      border-radius: 20px;
+      position: relative;
+      text-align: center;
+      border: 3px solid white;
+      box-shadow: 0 0 15px rgba(255,255,255,0.8), 0 3px 6px rgba(0,0,0,0.15);
+    }
+    .bubble-ice::after {
+      content: '';
+      position: absolute;
+      bottom: -12px;
+      left: 50%;
+      transform: translateX(-50%);
+      border: 8px solid transparent;
+      border-top-color: #7ec8e3;
+    }
+    .bubble-ice::before {
+      content: '❄';
+      position: absolute;
+      top: -8px;
+      right: -5px;
+      font-size: 16px;
+    }
+    
+    /* 角色化方案 - 小鸭子 */
+    .duck-option {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    .duck {
+      font-size: 50px;
+      animation: shake 0.5s ease-in-out infinite;
+    }
+    @keyframes shake {
+      0%, 100% { transform: rotate(-3deg); }
+      50% { transform: rotate(3deg); }
+    }
+    .duck-icon {
+      font-size: 28px;
+      color: #5ba3c0;
+      animation: bounce 0.6s ease-in-out infinite;
+    }
+    @keyframes bounce {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-5px); }
+    }
+    
+    .status {
+      font-size: 14px;
+      color: #888;
+      margin-top: 5px;
+    }
+    .bad { color: #c0392b; }
+    .good { color: #27ae60; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <!-- 原版 -->
+    <div class="option">
+      <div class="label">❌ 原版</div>
+      <div class="bubble-original">HELP!</div>
+      <div class="status bad">紫色跳脱，不融合</div>
+    </div>
+    
+    <!-- 方案一：冰蓝色 -->
+    <div class="option">
+      <div class="label">✅ 方案一：冰蓝色</div>
+      <div class="bubble-ice">HELP!</div>
+      <div class="status good">融入冰雪主题</div>
+    </div>
+    
+    <!-- 方案三：角色化 -->
+    <div class="option">
+      <div class="label">✅ 方案三：角色化</div>
+      <div class="duck-option">
+        <div class="duck-icon">❄️ ❗</div>
+        <div class="duck">🐤</div>
+      </div>
+      <div class="status good">去掉气泡，动作表达</div>
+    </div>
+  </div>
+</body>
+</html>

@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Frisbee Frenzy Logo 草图</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            background: #1a1a2e;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 30px 20px;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+        }
+        h1 {
+            color: #fff;
+            margin-bottom: 10px;
+            font-size: 24px;
+        }
+        .subtitle {
+            color: #888;
+            margin-bottom: 40px;
+            font-size: 14px;
+        }
+        .logo-container {
+            background: linear-gradient(135deg, #2d5a27 0%, #4a8f42 50%, #2d5a27 100%);
+            border-radius: 20px;
+            padding: 60px 80px;
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+            margin-bottom: 40px;
+        }
+        
+        /* 飞行轨迹弧线 */
+        .arc-trail {
+            position: absolute;
+            width: 500px;
+            height: 200px;
+            border: none;
+            border-bottom: 4px solid rgba(0, 170, 255, 0.3);
+            border-radius: 0 0 50% 50%;
+            top: -60px;
+            left: -100px;
+            transform: rotate(-15deg);
+        }
+        .arc-trail-2 {
+            position: absolute;
+            width: 450px;
+            height: 180px;
+            border: none;
+            border-bottom: 3px solid rgba(0, 170, 255, 0.2);
+            border-radius: 0 0 50% 50%;
+            top: -40px;
+            left: -80px;
+            transform: rotate(-15deg);
+        }
+        
+        /* 速度线 */
+        .speed-line {
+            position: absolute;
+            height: 3px;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent);
+            border-radius: 2px;
+        }
+        .speed-line-1 { width: 60px; top: 80px; left: 20px; transform: rotate(-10deg); }
+        .speed-line-2 { width: 40px; top: 100px; left: 30px; transform: rotate(-8deg); }
+        .speed-line-3 { width: 50px; top: 120px; left: 15px; transform: rotate(-12deg); }
+        
+        .logo-text {
+            position: relative;
+            z-index: 2;
+        }
+        
+        /* FRISBEE 文字 */
+        .frisbee {
+            font-family: 'Arial Black', sans-serif;
+            font-size: 72px;
+            font-weight: 900;
+            letter-spacing: 4px;
+            transform: rotate(-8deg) skewX(-5deg);
+            display: block;
+            position: relative;
+            /* 多层文字效果 */
+            color: #FFD700;
+            text-shadow: 
+                3px 3px 0 #FF6B00,
+                6px 6px 0 #CC4400,
+                -2px -2px 0 #9932CC,
+                -4px -4px 0 #6B238E,
+                8px 8px 15px rgba(0,0,0,0.5);
+        }
+        
+        /* FRENZY 文字 - 改成蓝色系 */
+        .frenzy {
+            font-family: 'Arial Black', sans-serif;
+            font-size: 52px;
+            font-weight: 900;
+            letter-spacing: 6px;
+            transform: rotate(-8deg) skewX(-5deg);
+            margin-top: -10px;
+            margin-left: 40px;
+            display: block;
+            /* 蓝色系，呼应飞盘 */
+            color: #00BFFF;
+            text-shadow: 
+                2px 2px 0 #0080AA,
+                4px 4px 0 #005577,
+                -2px -2px 0 #FF6B00,
+                6px 6px 10px rgba(0,0,0,0.5);
+            /* 字母轻微抖动效果用 letter-spacing 变化模拟 */
+        }
+        
+        /* 飞盘图标 */
+        .frisbee-disc {
+            position: absolute;
+            right: -20px;
+            top: 30px;
+            width: 80px;
+            height: 80px;
+            z-index: 3;
+            animation: float 2s ease-in-out infinite;
+        }
+        
+        @keyframes float {
+            0%, 100% { transform: translateY(0) rotate(0deg); }
+            50% { transform: translateY(-10px) rotate(15deg); }
+        }
+        
+        .disc-body {
+            width: 80px;
+            height: 80px;
+            background: linear-gradient(135deg, #00BFFF 0%, #0080FF 50%, #0050AA 100%);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 
+                inset -5px -5px 15px rgba(0,0,0,0.3),
+                inset 5px 5px 15px rgba(255,255,255,0.2),
+                5px 5px 20px rgba(0,0,0,0.4);
+            position: relative;
+        }
+        
+        .disc-body::before {
+            content: '★';
+            font-size: 36px;
+            color: #FFE4B5;
+            text-shadow: 0 0 10px rgba(255,228,181,0.8);
+        }
+        
+        /* 旋转线条 */
+        .spin-lines {
+            position: absolute;
+            width: 100px;
+            height: 100px;
+            top: -10px;
+            right: -30px;
+            pointer-events: none;
+        }
+        .spin-line {
+            position: absolute;
+            width: 15px;
+            height: 3px;
+            background: rgba(0, 191, 255, 0.6);
+            border-radius: 2px;
+        }
+        .spin-line:nth-child(1) { top: 10px; right: 5px; transform: rotate(30deg); }
+        .spin-line:nth-child(2) { top: 25px; right: -5px; transform: rotate(60deg); }
+        .spin-line:nth-child(3) { top: 45px; right: -8px; transform: rotate(90deg); }
+        
+        /* 说明文字 */
+        .notes {
+            background: rgba(255,255,255,0.1);
+            border-radius: 12px;
+            padding: 25px 30px;
+            max-width: 500px;
+            color: #ccc;
+            font-size: 14px;
+            line-height: 1.8;
+        }
+        .notes h3 {
+            color: #FFD700;
+            margin-bottom: 15px;
+            font-size: 16px;
+        }
+        .notes ul {
+            list-style: none;
+        }
+        .notes li {
+            margin-bottom: 8px;
+            padding-left: 20px;
+            position: relative;
+        }
+        .notes li::before {
+            content: '→';
+            position: absolute;
+            left: 0;
+            color: #00BFFF;
+        }
+    </style>
+</head>
+<body>
+    <h1>Frisbee Frenzy Logo 优化草图</h1>
+    <p class="subtitle">王总出品 · 仅供参考</p>
+    
+    <div class="logo-container">
+        <!-- 轨迹弧线 -->
+        <div class="arc-trail"></div>
+        <div class="arc-trail-2"></div>
+        
+        <!-- 速度线 -->
+        <div class="speed-line speed-line-1"></div>
+        <div class="speed-line speed-line-2"></div>
+        <div class="speed-line speed-line-3"></div>
+        
+        <!-- Logo 文字 -->
+        <div class="logo-text">
+            <span class="frisbee">FRISBEE</span>
+            <span class="frenzy">FRENZY</span>
+        </div>
+        
+        <!-- 飞盘 -->
+        <div class="frisbee-disc">
+            <div class="disc-body"></div>
+            <div class="spin-lines">
+                <div class="spin-line"></div>
+                <div class="spin-line"></div>
+                <div class="spin-line"></div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="notes">
+        <h3>优化要点</h3>
+        <ul>
+            <li><strong>FRENZY 改蓝色</strong> - 与飞盘呼应，拉开层级</li>
+            <li><strong>加弧线轨迹</strong> - 暗示飞盘飞行路径</li>
+            <li><strong>速度线</strong> - 增加动感</li>
+            <li><strong>飞盘放大 + 旋转线</strong> - 强化存在感</li>
+            <li><strong>整体保持倾斜</strong> - 延续动感风格</li>
+        </ul>
+    </div>
+</body>
+</html>

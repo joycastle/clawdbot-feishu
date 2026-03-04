@@ -15,13 +15,14 @@
 | 5 | **memory** | 记忆系统 - 分层结构详解 |
 | 6 | **rag** | RAG 知识检索 - 设计与不足 |
 | 7 | **analyze** | 分析能力 - 视频、日志 |
+| 8 | **code-analysis** | 代码分析 - 调用图、影响范围 |
 
 ### 飞书能力
 
 | # | 主题 | 说明 |
 |---|------|------|
-| 8 | **feishu-basic** | 基础 - 历史、表情、欢迎新人 |
-| 9 | **feishu-project** | 飞书项目 - 工作项、缺陷 |
-| 10 | **feishu-task** | 飞书任务 - 个人待办 |
-| 11 | **feishu-bitable** | 多维表格 |
-| 12 | **feishu-sheets** | 电子表格 |
+| 9 | **feishu-basic** | 基础 - 历史、表情、欢迎新人 |
+| 10 | **feishu-project** | 飞书项目 - 工作项、缺陷 |
+| 11 | **feishu-task** | 飞书任务 - 个人待办 |
+| 12 | **feishu-bitable** | 多维表格 |
+| 13 | **feishu-sheets** | 电子表格 |

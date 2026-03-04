@@ -1,0 +1,692 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bingo Frenzy 监控日报 - 2026年3月1日</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;700;900&family=Noto+Sans+SC:wght@400;500;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --paper-bg: #f5f1e8;
+            --ink-black: #1a1a1a;
+            --ink-gray: #4a4a4a;
+            --accent-red: #c41e3a;
+            --accent-green: #2e7d32;
+            --accent-orange: #e65100;
+            --border-color: #2a2a2a;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            background: linear-gradient(135deg, #e8e4db 0%, #f5f1e8 50%, #e8e4db 100%);
+            font-family: 'Noto Serif SC', serif;
+            color: var(--ink-black);
+            line-height: 1.8;
+            min-height: 100vh;
+        }
+        
+        .newspaper {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: var(--paper-bg);
+            box-shadow: 0 0 50px rgba(0,0,0,0.3);
+            position: relative;
+        }
+        
+        .newspaper::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
+            opacity: 0.03;
+            pointer-events: none;
+        }
+        
+        /* Header */
+        .masthead {
+            text-align: center;
+            padding: 30px 40px 20px;
+            border-bottom: 4px double var(--border-color);
+            position: relative;
+        }
+        
+        .date-line {
+            font-family: 'Noto Sans SC', sans-serif;
+            font-size: 14px;
+            letter-spacing: 3px;
+            color: var(--ink-gray);
+            margin-bottom: 10px;
+        }
+        
+        .paper-title {
+            font-size: 56px;
+            font-weight: 900;
+            letter-spacing: 15px;
+            margin: 10px 0;
+            text-shadow: 2px 2px 0 rgba(0,0,0,0.1);
+        }
+        
+        .subtitle {
+            font-size: 16px;
+            font-style: italic;
+            color: var(--ink-gray);
+            letter-spacing: 5px;
+        }
+        
+        .edition-info {
+            display: flex;
+            justify-content: space-between;
+            padding: 10px 40px;
+            border-bottom: 2px solid var(--border-color);
+            font-family: 'Noto Sans SC', sans-serif;
+            font-size: 12px;
+            color: var(--ink-gray);
+        }
+        
+        /* Status Banner */
+        .status-banner {
+            background: var(--accent-green);
+            color: white;
+            padding: 12px 20px;
+            text-align: center;
+            font-weight: bold;
+            letter-spacing: 2px;
+            font-family: 'Noto Sans SC', sans-serif;
+        }
+        
+        .status-banner.warning {
+            background: var(--accent-orange);
+        }
+        
+        /* Main Content */
+        .content {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 0;
+        }
+        
+        .main-column {
+            border-right: 1px solid var(--border-color);
+            padding: 30px;
+        }
+        
+        .side-column {
+            padding: 30px;
+        }
+        
+        /* Headlines */
+        .headline {
+            font-size: 32px;
+            font-weight: 900;
+            line-height: 1.3;
+            margin-bottom: 15px;
+            border-bottom: 3px solid var(--accent-red);
+            padding-bottom: 10px;
+        }
+        
+        .headline-secondary {
+            font-size: 22px;
+            font-weight: 700;
+            line-height: 1.4;
+            margin-bottom: 10px;
+            color: var(--ink-black);
+        }
+        
+        .byline {
+            font-family: 'Noto Sans SC', sans-serif;
+            font-size: 12px;
+            color: var(--ink-gray);
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 1px dashed var(--border-color);
+        }
+        
+        /* Metrics Box */
+        .metrics-highlight {
+            background: linear-gradient(135deg, #fff8e7 0%, #f5f1e8 100%);
+            border: 2px solid var(--accent-red);
+            padding: 25px;
+            margin: 25px 0;
+            position: relative;
+        }
+        
+        .metrics-highlight::before {
+            content: '📊 核心指标';
+            position: absolute;
+            top: -12px;
+            left: 20px;
+            background: var(--accent-red);
+            color: white;
+            padding: 2px 15px;
+            font-size: 12px;
+            font-weight: bold;
+        }
+        
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 20px;
+            margin-top: 10px;
+        }
+        
+        .metric-item {
+            text-align: center;
+        }
+        
+        .metric-value {
+            font-size: 28px;
+            font-weight: 900;
+            color: var(--accent-red);
+            font-family: 'Noto Sans SC', sans-serif;
+        }
+        
+        .metric-label {
+            font-size: 12px;
+            color: var(--ink-gray);
+            margin-top: 5px;
+        }
+        
+        /* Section Headers */
+        .section-header {
+            display: flex;
+            align-items: center;
+            margin: 30px 0 20px;
+            gap: 15px;
+        }
+        
+        .section-header::before,
+        .section-header::after {
+            content: '';
+            flex: 1;
+            height: 2px;
+            background: var(--border-color);
+        }
+        
+        .section-title {
+            font-size: 18px;
+            font-weight: 700;
+            letter-spacing: 5px;
+            white-space: nowrap;
+        }
+        
+        /* Data Table */
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 15px 0;
+            font-family: 'Noto Sans SC', sans-serif;
+            font-size: 14px;
+        }
+        
+        .data-table th {
+            background: var(--ink-black);
+            color: white;
+            padding: 10px 15px;
+            text-align: left;
+            font-weight: 500;
+        }
+        
+        .data-table td {
+            padding: 10px 15px;
+            border-bottom: 1px solid #ddd;
+        }
+        
+        .data-table tr:nth-child(even) {
+            background: rgba(0,0,0,0.02);
+        }
+        
+        .data-table .number {
+            font-family: 'Courier New', monospace;
+            text-align: right;
+        }
+        
+        .data-table .good {
+            color: var(--accent-green);
+            font-weight: bold;
+        }
+        
+        .data-table .warning {
+            color: var(--accent-orange);
+            font-weight: bold;
+        }
+        
+        .data-table .bad {
+            color: var(--accent-red);
+            font-weight: bold;
+        }
+        
+        /* News Cards */
+        .news-card {
+            background: white;
+            padding: 20px;
+            margin-bottom: 20px;
+            border-left: 4px solid var(--accent-red);
+            box-shadow: 3px 3px 0 rgba(0,0,0,0.1);
+        }
+        
+        .news-card.green {
+            border-left-color: var(--accent-green);
+        }
+        
+        .news-card.orange {
+            border-left-color: var(--accent-orange);
+        }
+        
+        .news-card h3 {
+            font-size: 16px;
+            font-weight: 700;
+            margin-bottom: 10px;
+            line-height: 1.4;
+        }
+        
+        .news-card p {
+            font-size: 13px;
+            color: var(--ink-gray);
+            line-height: 1.6;
+        }
+        
+        .news-card .stat {
+            font-family: 'Courier New', monospace;
+            background: #f0f0f0;
+            padding: 2px 6px;
+            border-radius: 3px;
+        }
+        
+        /* Quick Stats */
+        .quick-stats {
+            background: var(--ink-black);
+            color: white;
+            padding: 20px;
+            margin: 20px 0;
+        }
+        
+        .quick-stats h4 {
+            color: var(--accent-red);
+            font-size: 14px;
+            margin-bottom: 15px;
+            letter-spacing: 3px;
+        }
+        
+        .quick-stats ul {
+            list-style: none;
+        }
+        
+        .quick-stats li {
+            padding: 8px 0;
+            border-bottom: 1px solid #333;
+            font-size: 13px;
+            display: flex;
+            justify-content: space-between;
+            font-family: 'Noto Sans SC', sans-serif;
+        }
+        
+        .quick-stats .label {
+            color: #aaa;
+        }
+        
+        .quick-stats .value {
+            font-family: 'Courier New', monospace;
+            color: #4fc3f7;
+        }
+        
+        /* Version Badge */
+        .version-badge {
+            display: inline-block;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            font-size: 11px;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-family: 'Courier New', monospace;
+            margin-top: 10px;
+        }
+        
+        /* Footer */
+        .footer {
+            text-align: center;
+            padding: 30px;
+            border-top: 4px double var(--border-color);
+            font-family: 'Noto Sans SC', sans-serif;
+            font-size: 12px;
+            color: var(--ink-gray);
+        }
+        
+        .footer-quote {
+            font-style: italic;
+            margin-bottom: 10px;
+            font-size: 14px;
+        }
+        
+        /* Night Watch Section */
+        .night-watch {
+            background: linear-gradient(135deg, #1a237e 0%, #283593 100%);
+            color: white;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 0;
+        }
+        
+        .night-watch h4 {
+            color: #ffd54f;
+            font-size: 14px;
+            margin-bottom: 15px;
+            letter-spacing: 3px;
+        }
+        
+        .night-watch .time-range {
+            font-size: 11px;
+            color: #90caf9;
+            margin-bottom: 10px;
+        }
+        
+        .night-watch-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 15px;
+        }
+        
+        .night-stat {
+            text-align: center;
+        }
+        
+        .night-stat .value {
+            font-size: 20px;
+            font-weight: 900;
+            font-family: 'Noto Sans SC', sans-serif;
+        }
+        
+        .night-stat .label {
+            font-size: 11px;
+            color: #90caf9;
+            margin-top: 3px;
+        }
+        
+        /* Responsive */
+        @media (max-width: 900px) {
+            .content {
+                grid-template-columns: 1fr;
+            }
+            .main-column {
+                border-right: none;
+                border-bottom: 1px solid var(--border-color);
+            }
+            .paper-title {
+                font-size: 36px;
+                letter-spacing: 8px;
+            }
+            .headline {
+                font-size: 24px;
+            }
+            .metrics-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+            .night-watch-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+    </style>
+</head>
+<body>
+    <article class="newspaper">
+        <div class="status-banner">
+            ✅ 系统运行正常 · 24小时成功率 99.98% · 当前在线 16,241
+        </div>
+        
+        <header class="masthead">
+            <div class="date-line">公元二〇二六年 · 三月一日 · 星期日</div>
+            <h1 class="paper-title">监控日报</h1>
+            <div class="subtitle">— Bingo Frenzy 正式服 24h 运维报告 —</div>
+        </header>
+        
+        <div class="edition-info">
+            <span>📍 生产环境</span>
+            <span>🤖 Grafana 数据自动采集</span>
+            <span>🕐 生成时间: 2026-03-01 12:00 UTC</span>
+        </div>
+        
+        <div class="content">
+            <main class="main-column">
+                <!-- 核心指标 -->
+                <div class="metrics-highlight">
+                    <div class="metrics-grid">
+                        <div class="metric-item">
+                            <div class="metric-value">9.5亿</div>
+                            <div class="metric-label">24h 总请求</div>
+                        </div>
+                        <div class="metric-item">
+                            <div class="metric-value">10.7K</div>
+                            <div class="metric-label">当前 QPS</div>
+                        </div>
+                        <div class="metric-item">
+                            <div class="metric-value">14.5ms</div>
+                            <div class="metric-label">平均延迟</div>
+                        </div>
+                        <div class="metric-item">
+                            <div class="metric-value">99.98%</div>
+                            <div class="metric-label">成功率</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <h2 class="headline">正式服稳定运行，各项指标健康</h2>
+                <div class="byline">数据来源: Grafana Prometheus · 统计周期: 过去24小时</div>
+                
+                <!-- 服务 QPS -->
+                <div class="section-header">
+                    <span class="section-title">⚡ 实时 QPS</span>
+                </div>
+                
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>服务</th>
+                            <th>当前 QPS</th>
+                            <th>延迟 (ms)</th>
+                            <th>状态</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>🔌 Connector</td>
+                            <td class="number">5,371</td>
+                            <td class="number">12.7</td>
+                            <td class="good">● 正常</td>
+                        </tr>
+                        <tr>
+                            <td>🏠 Hall</td>
+                            <td class="number">2,544</td>
+                            <td class="number">20.6</td>
+                            <td class="good">● 正常</td>
+                        </tr>
+                        <tr>
+                            <td>🔧 Misc</td>
+                            <td class="number">2,176</td>
+                            <td class="number">10.2</td>
+                            <td class="good">● 正常</td>
+                        </tr>
+                        <tr>
+                            <td>🏆 Club</td>
+                            <td class="number">389</td>
+                            <td class="number">0.9</td>
+                            <td class="good">● 正常</td>
+                        </tr>
+                        <tr>
+                            <td>💬 Chat</td>
+                            <td class="number">231</td>
+                            <td class="number">&lt;1</td>
+                            <td class="good">● 正常</td>
+                        </tr>
+                        <tr>
+                            <td>🔴 Redpoint</td>
+                            <td class="number">19</td>
+                            <td class="number">3.8</td>
+                            <td class="good">● 正常</td>
+                        </tr>
+                    </tbody>
+                </table>
+                
+                <!-- 24小时统计 -->
+                <div class="section-header">
+                    <span class="section-title">📈 24小时统计</span>
+                </div>
+                
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>服务</th>
+                            <th>请求总数</th>
+                            <th>错误数</th>
+                            <th>成功率</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>🔌 Connector</td>
+                            <td class="number">487,411,918</td>
+                            <td class="number">-</td>
+                            <td class="good">-</td>
+                        </tr>
+                        <tr>
+                            <td>🏠 Hall</td>
+                            <td class="number">223,765,739</td>
+                            <td class="number">15,035</td>
+                            <td class="good">99.993%</td>
+                        </tr>
+                        <tr>
+                            <td>🔧 Misc</td>
+                            <td class="number">203,524,999</td>
+                            <td class="number">6,030</td>
+                            <td class="good">99.997%</td>
+                        </tr>
+                        <tr>
+                            <td>🏆 Club</td>
+                            <td class="number">35,437,455</td>
+                            <td class="number">111,025</td>
+                            <td class="warning">99.69%</td>
+                        </tr>
+                    </tbody>
+                </table>
+                
+                <!-- 问题关注 -->
+                <div class="section-header">
+                    <span class="section-title">⚠️ 需关注</span>
+                </div>
+                
+                <div class="news-card orange">
+                    <h3>Club 服务错误率略高</h3>
+                    <p>Club 服务 24 小时错误数 <span class="stat">111,025</span>，成功率 <span class="stat">99.69%</span>，低于其他服务。建议检查错误码分布，确认是否为正常业务逻辑返回。</p>
+                </div>
+                
+                <div class="news-card green">
+                    <h3>✅ Hall / Misc 表现优异</h3>
+                    <p>Hall 和 Misc 服务成功率均超过 <span class="stat">99.99%</span>，延迟稳定在 <span class="stat">10-21ms</span> 范围内，表现优异。</p>
+                </div>
+            </main>
+            
+            <aside class="side-column">
+                <!-- 在线人数 -->
+                <div class="section-header">
+                    <span class="section-title">👥 在线人数</span>
+                </div>
+                
+                <div class="quick-stats">
+                    <ul>
+                        <li>
+                            <span class="label">当前在线</span>
+                            <span class="value">16,241</span>
+                        </li>
+                        <li>
+                            <span class="label">24h 最高</span>
+                            <span class="value">20,566</span>
+                        </li>
+                        <li>
+                            <span class="label">24h 最低</span>
+                            <span class="value">14,418</span>
+                        </li>
+                        <li>
+                            <span class="label">24h 平均</span>
+                            <span class="value">17,423</span>
+                        </li>
+                    </ul>
+                </div>
+                
+                <div class="version-badge">connector-v1.133.0.0</div>
+                
+                <!-- 凌晨观察 -->
+                <div class="night-watch">
+                    <h4>🌙 凌晨观察</h4>
+                    <div class="time-range">北京时间 02:00 - 06:00</div>
+                    <div class="night-watch-grid">
+                        <div class="night-stat">
+                            <div class="value">19,158</div>
+                            <div class="label">平均在线</div>
+                        </div>
+                        <div class="night-stat">
+                            <div class="value">6,126</div>
+                            <div class="label">平均 QPS</div>
+                        </div>
+                        <div class="night-stat">
+                            <div class="value">18,612</div>
+                            <div class="label">最低在线</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="news-card green">
+                    <h3>🌙 凌晨运行稳定</h3>
+                    <p>凌晨低峰期在线人数保持在 <span class="stat">18,612 - 19,516</span>，QPS 稳定在 <span class="stat">6,126</span>，无异常波动。</p>
+                </div>
+                
+                <!-- 凌晨错误 -->
+                <div class="section-header">
+                    <span class="section-title">📋 凌晨错误</span>
+                </div>
+                
+                <div class="quick-stats">
+                    <ul>
+                        <li>
+                            <span class="label">Hall 错误</span>
+                            <span class="value">2,747</span>
+                        </li>
+                        <li>
+                            <span class="label">Misc 错误</span>
+                            <span class="value">1,113</span>
+                        </li>
+                        <li>
+                            <span class="label">Club 错误</span>
+                            <span class="value">21,811</span>
+                        </li>
+                    </ul>
+                </div>
+                
+                <!-- 总结 -->
+                <div class="section-header">
+                    <span class="section-title">📝 小结</span>
+                </div>
+                
+                <div class="news-card" style="background: linear-gradient(135deg, #e8f5e9 0%, #f5f1e8 100%); border-left-color: var(--accent-green);">
+                    <h3 style="color: var(--accent-green);">系统整体健康</h3>
+                    <p>
+                        过去 24 小时系统稳定运行，处理请求 <strong>9.5 亿次</strong>，整体成功率 <strong>99.98%</strong>。建议持续关注 Club 服务错误码分布。
+                    </p>
+                </div>
+            </aside>
+        </div>
+        
+        <footer class="footer">
+            <p class="footer-quote">"Monitoring is not about dashboards, it's about understanding." — Unknown SRE</p>
+            <p>Bingo Frenzy 监控日报 · 自动生成 · Powered by Grafana & Clawdbot</p>
+            <p style="margin-top: 10px; font-size: 11px;">© 2026 · 数据来源: Prometheus · 仅供内部参考</p>
+        </footer>
+    </article>
+</body>
+</html>

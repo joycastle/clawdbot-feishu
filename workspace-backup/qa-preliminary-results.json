@@ -1,0 +1,804 @@
+[
+  {
+    "index": 1,
+    "pid": "751060435",
+    "pay_level": "P1",
+    "satisfaction": "1",
+    "risk": "中",
+    "red_lines": [],
+    "issues": [
+      "缺少安抚语",
+      "未回应退款诉求"
+    ],
+    "issue_category": "bug",
+    "agent": "bingocs_bv"
+  },
+  {
+    "index": 2,
+    "pid": "801461526",
+    "pay_level": "P2",
+    "satisfaction": "1",
+    "risk": "高",
+    "red_lines": [
+      "无视平台信息：玩家说Apple，客服要GPA订单"
+    ],
+    "issues": [
+      "玩家反馈：没看信息/回答错误"
+    ],
+    "issue_category": "付费",
+    "agent": "bingocs_bv"
+  },
+  {
+    "index": 3,
+    "pid": "544145379",
+    "pay_level": "P1",
+    "satisfaction": "1",
+    "risk": "中",
+    "red_lines": [],
+    "issues": [
+      "缺少安抚语"
+    ],
+    "issue_category": "付费",
+    "agent": "bingocs_bv"
+  },
+  {
+    "index": 4,
+    "pid": "696585344",
+    "pay_level": "P1",
+    "satisfaction": "1",
+    "risk": "高",
+    "red_lines": [
+      "质疑玩家：暗示玩家看错"
+    ],
+    "issues": [
+      "缺少安抚语"
+    ],
+    "issue_category": "付费",
+    "agent": "bingocs_bv"
+  },
+  {
+    "index": 5,
+    "pid": "954155048",
+    "pay_level": "P0",
+    "satisfaction": "1",
+    "risk": "中",
+    "red_lines": [],
+    "issues": [
+      "缺少安抚语"
+    ],
+    "issue_category": "bug",
+    "agent": "bingocs_bv"
+  },
+  {
+    "index": 6,
+    "pid": "386743177",
+    "pay_level": "P0",
+    "satisfaction": "2",
+    "risk": "低",
+    "red_lines": [],
+    "issues": [],
+    "issue_category": "bug",
+    "agent": "bingocs_bv"
+  },
+  {
+    "index": 7,
+    "pid": "917205658",
+    "pay_level": "P1",
+    "satisfaction": "1",
+    "risk": "中",
+    "red_lines": [],
+    "issues": [
+      "缺少安抚语"
+    ],
+    "issue_category": "其他",
+    "agent": "bingocs_bv"
+  },
+  {
+    "index": 8,
+    "pid": "313927813",
+    "pay_level": "P2",
+    "satisfaction": "1",
+    "risk": "低",
+    "red_lines": [],
+    "issues": [],
+    "issue_category": "bug",
+    "agent": "bingocs_bv"
+  },
+  {
+    "index": 9,
+    "pid": "752952491",
+    "pay_level": "P1",
+    "satisfaction": "1",
+    "risk": "中",
+    "red_lines": [],
+    "issues": [
+      "缺少安抚语"
+    ],
+    "issue_category": "付费",
+    "agent": "bingocs_bv"
+  },
+  {
+    "index": 10,
+    "pid": "211658809",
+    "pay_level": "P2",
+    "satisfaction": "1",
+    "risk": "中",
+    "red_lines": [],
+    "issues": [
+      "缺少安抚语"
+    ],
+    "issue_category": "bug",
+    "agent": "bingocs_bv"
+  },
+  {
+    "index": 11,
+    "pid": "446010023",
+    "pay_level": "P1",
+    "satisfaction": "1",
+    "risk": "中",
+    "red_lines": [],
+    "issues": [
+      "缺少安抚语"
+    ],
+    "issue_category": "bug",
+    "agent": "bingocs_bv"
+  },
+  {
+    "index": 12,
+    "pid": "945362259",
+    "pay_level": "P1",
+    "satisfaction": "1",
+    "risk": "低",
+    "red_lines": [],
+    "issues": [],
+    "issue_category": "玩法",
+    "agent": "bingocs_bv"
+  },
+  {
+    "index": 13,
+    "pid": "871657944",
+    "pay_level": "P1",
+    "satisfaction": "1",
+    "risk": "中",
+    "red_lines": [],
+    "issues": [
+      "缺少安抚语"
+    ],
+    "issue_category": "bug",
+    "agent": "bingocs_bv"
+  },
+  {
+    "index": 14,
+    "pid": "483078447",
+    "pay_level": "P1",
+    "satisfaction": "1",
+    "risk": "中",
+    "red_lines": [],
+    "issues": [
+      "缺少安抚语"
+    ],
+    "issue_category": "bug",
+    "agent": "bingocs_bv"
+  },
+  {
+    "index": 15,
+    "pid": "272404955",
+    "pay_level": "P0",
+    "satisfaction": "1",
+    "risk": "低",
+    "red_lines": [],
+    "issues": [],
+    "issue_category": "付费",
+    "agent": "bingocs_bv"
+  },
+  {
+    "index": 16,
+    "pid": "394977654",
+    "pay_level": "P1",
+    "satisfaction": "1",
+    "risk": "中",
+    "red_lines": [],
+    "issues": [
+      "缺少安抚语"
+    ],
+    "issue_category": "付费",
+    "agent": "bingocs_bv"
+  },
+  {
+    "index": 17,
+    "pid": "213655067",
+    "pay_level": "P1",
+    "satisfaction": "1",
+    "risk": "中",
+    "red_lines": [],
+    "issues": [
+      "缺少安抚语"
+    ],
+    "issue_category": "其他",
+    "agent": "bingocs_bv"
+  },
+  {
+    "index": 18,
+    "pid": "897481817",
+    "pay_level": "P1",
+    "satisfaction": "1",
+    "risk": "中",
+    "red_lines": [],
+    "issues": [
+      "缺少安抚语"
+    ],
+    "issue_category": "玩法",
+    "agent": "bingocs_bv"
+  },
+  {
+    "index": 19,
+    "pid": "313291066",
+    "pay_level": "P1",
+    "satisfaction": "1",
+    "risk": "中",
+    "red_lines": [],
+    "issues": [
+      "缺少安抚语"
+    ],
+    "issue_category": "bug",
+    "agent": "bingocs_bv"
+  },
+  {
+    "index": 20,
+    "pid": "623786597",
+    "pay_level": "P0",
+    "satisfaction": "1",
+    "risk": "中",
+    "red_lines": [],
+    "issues": [
+      "缺少安抚语"
+    ],
+    "issue_category": "付费",
+    "agent": "bingocs_bv"
+  },
+  {
+    "index": 21,
+    "pid": "395616390",
+    "pay_level": "P1",
+    "satisfaction": "1",
+    "risk": "低",
+    "red_lines": [],
+    "issues": [],
+    "issue_category": "bug",
+    "agent": "bingocs_bv"
+  },
+  {
+    "index": 22,
+    "pid": "303240827",
+    "pay_level": "P1",
+    "satisfaction": "",
+    "risk": "低",
+    "red_lines": [],
+    "issues": [],
+    "issue_category": "付费",
+    "agent": "bingocs_bv"
+  },
+  {
+    "index": 23,
+    "pid": "297653281",
+    "pay_level": "P1",
+    "satisfaction": "",
+    "risk": "低",
+    "red_lines": [],
+    "issues": [],
+    "issue_category": "付费",
+    "agent": "bingocs_bv"
+  },
+  {
+    "index": 24,
+    "pid": "431527392",
+    "pay_level": "P3",
+    "satisfaction": "",
+    "risk": "低",
+    "red_lines": [],
+    "issues": [],
+    "issue_category": "其他",
+    "agent": "bingocs_bv"
+  },
+  {
+    "index": 25,
+    "pid": "371045456",
+    "pay_level": "P0",
+    "satisfaction": "",
+    "risk": "低",
+    "red_lines": [],
+    "issues": [],
+    "issue_category": "其他",
+    "agent": "bingocs_bf+pm"
+  },
+  {
+    "index": 26,
+    "pid": "100721170",
+    "pay_level": "P0",
+    "satisfaction": "",
+    "risk": "低",
+    "red_lines": [],
+    "issues": [],
+    "issue_category": "其他",
+    "agent": "bingocs_bv"
+  },
+  {
+    "index": 27,
+    "pid": "471041179",
+    "pay_level": "P1",
+    "satisfaction": "5",
+    "risk": "低",
+    "red_lines": [],
+    "issues": [],
+    "issue_category": "bug",
+    "agent": "bingocs_bv"
+  },
+  {
+    "index": 28,
+    "pid": "909437381",
+    "pay_level": "P1",
+    "satisfaction": "",
+    "risk": "低",
+    "red_lines": [],
+    "issues": [],
+    "issue_category": "bug",
+    "agent": "bingocs_bv"
+  },
+  {
+    "index": 29,
+    "pid": "131793174",
+    "pay_level": "P0",
+    "satisfaction": "5",
+    "risk": "低",
+    "red_lines": [],
+    "issues": [],
+    "issue_category": "付费",
+    "agent": "bingocs_bv"
+  },
+  {
+    "index": 30,
+    "pid": "829730859",
+    "pay_level": "P1",
+    "satisfaction": "5",
+    "risk": "低",
+    "red_lines": [],
+    "issues": [],
+    "issue_category": "bug",
+    "agent": "bingocs_bv"
+  },
+  {
+    "index": 31,
+    "pid": "635824038",
+    "pay_level": "P2",
+    "satisfaction": "",
+    "risk": "低",
+    "red_lines": [],
+    "issues": [],
+    "issue_category": "付费",
+    "agent": "bingocs_bv"
+  },
+  {
+    "index": 32,
+    "pid": "575626919",
+    "pay_level": "P0",
+    "satisfaction": "",
+    "risk": "中",
+    "red_lines": [],
+    "issues": [
+      "未回应退款诉求"
+    ],
+    "issue_category": "bug",
+    "agent": "bingocs_bv"
+  },
+  {
+    "index": 33,
+    "pid": "341287611",
+    "pay_level": "P1",
+    "satisfaction": "5",
+    "risk": "低",
+    "red_lines": [],
+    "issues": [],
+    "issue_category": "bug",
+    "agent": "bingocs_bf+pm"
+  },
+  {
+    "index": 34,
+    "pid": "248986209",
+    "pay_level": "P0",
+    "satisfaction": "",
+    "risk": "低",
+    "red_lines": [],
+    "issues": [],
+    "issue_category": "玩法",
+    "agent": "bingocs_bv"
+  },
+  {
+    "index": 35,
+    "pid": "340412489",
+    "pay_level": "P1",
+    "satisfaction": "5",
+    "risk": "低",
+    "red_lines": [],
+    "issues": [],
+    "issue_category": "bug",
+    "agent": "bingocs_bv"
+  },
+  {
+    "index": 36,
+    "pid": "135772761",
+    "pay_level": "P1",
+    "satisfaction": "",
+    "risk": "低",
+    "red_lines": [],
+    "issues": [],
+    "issue_category": "bug",
+    "agent": "bingocs_bv"
+  },
+  {
+    "index": 37,
+    "pid": "276081042",
+    "pay_level": "P1",
+    "satisfaction": "",
+    "risk": "低",
+    "red_lines": [],
+    "issues": [],
+    "issue_category": "bug",
+    "agent": "bingocs_bv"
+  },
+  {
+    "index": 38,
+    "pid": "784233381",
+    "pay_level": "P2",
+    "satisfaction": "",
+    "risk": "低",
+    "red_lines": [],
+    "issues": [],
+    "issue_category": "付费",
+    "agent": "bingocs_bv"
+  },
+  {
+    "index": 39,
+    "pid": "604860299",
+    "pay_level": "P2",
+    "satisfaction": "",
+    "risk": "低",
+    "red_lines": [],
+    "issues": [],
+    "issue_category": "付费",
+    "agent": "bingocs_bv"
+  },
+  {
+    "index": 40,
+    "pid": "470832263",
+    "pay_level": "P1",
+    "satisfaction": "3",
+    "risk": "低",
+    "red_lines": [],
+    "issues": [],
+    "issue_category": "付费",
+    "agent": "bingocs_bv"
+  },
+  {
+    "index": 41,
+    "pid": "259825092",
+    "pay_level": "P1",
+    "satisfaction": "",
+    "risk": "低",
+    "red_lines": [],
+    "issues": [],
+    "issue_category": "bug",
+    "agent": "bingocs_bv"
+  },
+  {
+    "index": 42,
+    "pid": "572550163",
+    "pay_level": "P1",
+    "satisfaction": "5",
+    "risk": "低",
+    "red_lines": [],
+    "issues": [],
+    "issue_category": "bug",
+    "agent": "bingocs_bv"
+  },
+  {
+    "index": 43,
+    "pid": "9ff2dfab3abbb09fa197b98b299eaaba",
+    "pay_level": "Other",
+    "satisfaction": "",
+    "risk": "低",
+    "red_lines": [],
+    "issues": [],
+    "issue_category": "bug",
+    "agent": "bingocs_bf+pm"
+  },
+  {
+    "index": 44,
+    "pid": "175616819",
+    "pay_level": "P1",
+    "satisfaction": "",
+    "risk": "低",
+    "red_lines": [],
+    "issues": [],
+    "issue_category": "bug",
+    "agent": "bingocs_bv"
+  },
+  {
+    "index": 45,
+    "pid": "932226447",
+    "pay_level": "P1",
+    "satisfaction": "",
+    "risk": "低",
+    "red_lines": [],
+    "issues": [],
+    "issue_category": "付费",
+    "agent": "bingocs_bv"
+  },
+  {
+    "index": 46,
+    "pid": "882164594",
+    "pay_level": "P0",
+    "satisfaction": "5",
+    "risk": "低",
+    "red_lines": [],
+    "issues": [],
+    "issue_category": "bug",
+    "agent": "bingocs_bv"
+  },
+  {
+    "index": 47,
+    "pid": "154762370",
+    "pay_level": "P1",
+    "satisfaction": "",
+    "risk": "低",
+    "red_lines": [],
+    "issues": [],
+    "issue_category": "付费",
+    "agent": "bingocs_bv"
+  },
+  {
+    "index": 48,
+    "pid": "647065044",
+    "pay_level": "P0",
+    "satisfaction": "",
+    "risk": "低",
+    "red_lines": [],
+    "issues": [],
+    "issue_category": "bug",
+    "agent": "bingocs_bv"
+  },
+  {
+    "index": 49,
+    "pid": "346278788",
+    "pay_level": "P1",
+    "satisfaction": "",
+    "risk": "低",
+    "red_lines": [],
+    "issues": [],
+    "issue_category": "付费",
+    "agent": "bingocs_bv"
+  },
+  {
+    "index": 50,
+    "pid": "322324713",
+    "pay_level": "P3",
+    "satisfaction": "",
+    "risk": "低",
+    "red_lines": [],
+    "issues": [],
+    "issue_category": "玩法",
+    "agent": "bingocs_bv"
+  },
+  {
+    "index": 51,
+    "pid": "302183861",
+    "pay_level": "P0",
+    "satisfaction": "",
+    "risk": "低",
+    "red_lines": [],
+    "issues": [],
+    "issue_category": "bug",
+    "agent": "bingocs_bv"
+  },
+  {
+    "index": 52,
+    "pid": "625224133",
+    "pay_level": "P1",
+    "satisfaction": "5",
+    "risk": "中",
+    "red_lines": [],
+    "issues": [
+      "未回应退款诉求"
+    ],
+    "issue_category": "付费",
+    "agent": "bingocs_bv"
+  },
+  {
+    "index": 53,
+    "pid": "252307079",
+    "pay_level": "P2",
+    "satisfaction": "",
+    "risk": "低",
+    "red_lines": [],
+    "issues": [],
+    "issue_category": "付费",
+    "agent": "bingocs_bv"
+  },
+  {
+    "index": 54,
+    "pid": "233290673",
+    "pay_level": "Other",
+    "satisfaction": "",
+    "risk": "低",
+    "red_lines": [],
+    "issues": [],
+    "issue_category": "bug",
+    "agent": "bingocs_bv"
+  },
+  {
+    "index": 55,
+    "pid": "572550163",
+    "pay_level": "P1",
+    "satisfaction": "5",
+    "risk": "低",
+    "red_lines": [],
+    "issues": [],
+    "issue_category": "付费",
+    "agent": "bingocs_bv"
+  },
+  {
+    "index": 56,
+    "pid": "115763423",
+    "pay_level": "P2",
+    "satisfaction": "5",
+    "risk": "低",
+    "red_lines": [],
+    "issues": [],
+    "issue_category": "bug",
+    "agent": "bingocs_bv"
+  },
+  {
+    "index": 57,
+    "pid": "652603014",
+    "pay_level": "P1",
+    "satisfaction": "3",
+    "risk": "低",
+    "red_lines": [],
+    "issues": [],
+    "issue_category": "付费",
+    "agent": "bingocs_bv"
+  },
+  {
+    "index": 58,
+    "pid": "115763423",
+    "pay_level": "P2",
+    "satisfaction": "",
+    "risk": "低",
+    "red_lines": [],
+    "issues": [],
+    "issue_category": "bug",
+    "agent": "bingocs_bv"
+  },
+  {
+    "index": 59,
+    "pid": "869368110",
+    "pay_level": "P0",
+    "satisfaction": "",
+    "risk": "低",
+    "red_lines": [],
+    "issues": [],
+    "issue_category": "其他",
+    "agent": "bingocs_bv"
+  },
+  {
+    "index": 60,
+    "pid": "333402335",
+    "pay_level": "Other",
+    "satisfaction": "",
+    "risk": "低",
+    "red_lines": [],
+    "issues": [],
+    "issue_category": "其他",
+    "agent": "bingocs_bv"
+  },
+  {
+    "index": 61,
+    "pid": "478557495",
+    "pay_level": "P1",
+    "satisfaction": "5",
+    "risk": "低",
+    "red_lines": [],
+    "issues": [],
+    "issue_category": "bug",
+    "agent": "bingocs_bv"
+  },
+  {
+    "index": 62,
+    "pid": "833899314",
+    "pay_level": "P0",
+    "satisfaction": "",
+    "risk": "低",
+    "red_lines": [],
+    "issues": [],
+    "issue_category": "bug",
+    "agent": "bingocs_bv"
+  },
+  {
+    "index": 63,
+    "pid": "538125709",
+    "pay_level": "P1",
+    "satisfaction": "5",
+    "risk": "中",
+    "red_lines": [],
+    "issues": [
+      "未回应退款诉求"
+    ],
+    "issue_category": "玩法",
+    "agent": "bingocs_bv"
+  },
+  {
+    "index": 64,
+    "pid": "907564708",
+    "pay_level": "P2",
+    "satisfaction": "5",
+    "risk": "低",
+    "red_lines": [],
+    "issues": [],
+    "issue_category": "付费",
+    "agent": "bingocs_bv"
+  },
+  {
+    "index": 65,
+    "pid": "765050318",
+    "pay_level": "P1",
+    "satisfaction": "",
+    "risk": "低",
+    "red_lines": [],
+    "issues": [],
+    "issue_category": "付费",
+    "agent": "bingocs_bv"
+  },
+  {
+    "index": 66,
+    "pid": "892682805",
+    "pay_level": "P0",
+    "satisfaction": "",
+    "risk": "低",
+    "red_lines": [],
+    "issues": [],
+    "issue_category": "bug",
+    "agent": "bingocs_bv"
+  },
+  {
+    "index": 67,
+    "pid": "127297360",
+    "pay_level": "P0",
+    "satisfaction": "",
+    "risk": "低",
+    "red_lines": [],
+    "issues": [],
+    "issue_category": "bug",
+    "agent": "support2"
+  },
+  {
+    "index": 68,
+    "pid": "778572627",
+    "pay_level": "P1",
+    "satisfaction": "",
+    "risk": "低",
+    "red_lines": [],
+    "issues": [],
+    "issue_category": "付费",
+    "agent": "bingocs_bv"
+  },
+  {
+    "index": 69,
+    "pid": "649989988",
+    "pay_level": "P1",
+    "satisfaction": "",
+    "risk": "低",
+    "red_lines": [],
+    "issues": [],
+    "issue_category": "bug",
+    "agent": "bingocs_bv"
+  }
+]

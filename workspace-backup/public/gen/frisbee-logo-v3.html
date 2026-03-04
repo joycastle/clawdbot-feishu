@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Frisbee Frenzy Logo V3</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            background: #2a2a35;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 40px 20px;
+        }
+        
+        .label { color: #666; font-size: 12px; margin-bottom: 30px; font-family: sans-serif; }
+        
+        /* === LOGO V3 - 融合版 === */
+        .logo-v3 {
+            position: relative;
+            transform: rotate(-8deg) skewX(-3deg);
+        }
+        
+        .main-text {
+            display: flex;
+            align-items: center;
+            position: relative;
+        }
+        
+        /* FRISBE 部分 */
+        .frisbe {
+            font-family: 'Arial Black', Impact, sans-serif;
+            font-size: 80px;
+            font-weight: 900;
+            letter-spacing: -2px;
+            background: linear-gradient(180deg, #FFF44F 0%, #FFD700 30%, #FFA500 70%, #E65C00 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            filter: drop-shadow(3px 3px 0 #8B2500) drop-shadow(5px 5px 0 #5D1A00) drop-shadow(-2px -2px 0 #9D4EDD);
+            position: relative;
+            z-index: 2;
+        }
+        
+        /* E 用飞盘替代 */
+        .disc-e {
+            width: 75px;
+            height: 75px;
+            position: relative;
+            margin-left: -8px;
+            margin-right: 2px;
+            z-index: 3;
+        }
+        
+        .disc-body {
+            width: 75px;
+            height: 75px;
+            background: linear-gradient(135deg, #00D4FF 0%, #0099CC 40%, #006699 80%, #003355 100%);
+            border-radius: 50%;
+            position: relative;
+            box-shadow: 
+                inset -6px -6px 20px rgba(0,0,0,0.5),
+                inset 6px 6px 20px rgba(255,255,255,0.2),
+                4px 4px 0 #003355,
+                6px 6px 0 #001a33,
+                -2px -2px 0 #9D4EDD,
+                0 0 30px rgba(0, 180, 255, 0.4);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            /* 飞盘边缘高光 */
+            border: 3px solid rgba(255,255,255,0.15);
+        }
+        
+        .disc-inner {
+            width: 45px;
+            height: 45px;
+            background: linear-gradient(135deg, #66E0FF 0%, #00BFFF 50%, #0088BB 100%);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: inset 0 2px 8px rgba(255,255,255,0.5), inset 0 -2px 8px rgba(0,0,0,0.2);
+        }
+        
+        .star {
+            font-size: 28px;
+            color: #FFFACD;
+            text-shadow: 0 0 10px rgba(255,250,205,0.9);
+        }
+        
+        /* 飞盘动态线 - 从飞盘射出穿过后面 */
+        .disc-trails {
+            position: absolute;
+            right: -50px;
+            top: 50%;
+            transform: translateY(-50%);
+            z-index: 1;
+        }
+        .trail {
+            height: 4px;
+            background: linear-gradient(90deg, rgba(0,200,255,0.8), rgba(0,200,255,0));
+            margin-bottom: 8px;
+            border-radius: 2px;
+        }
+        .trail:nth-child(1) { width: 45px; }
+        .trail:nth-child(2) { width: 60px; margin-left: -10px; }
+        .trail:nth-child(3) { width: 40px; margin-left: 5px; }
+        
+        /* FRENZY 部分 */
+        .frenzy-row {
+            display: flex;
+            justify-content: center;
+            margin-top: -5px;
+            margin-left: 20px;
+        }
+        
+        .frenzy {
+            font-family: 'Arial Black', Impact, sans-serif;
+            font-size: 56px;
+            font-weight: 900;
+            letter-spacing: 4px;
+            background: linear-gradient(180deg, #FF8C00 0%, #FF6600 40%, #E63900 70%, #B22222 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            filter: drop-shadow(2px 2px 0 #6B0000) drop-shadow(4px 4px 0 #400000) drop-shadow(-2px -2px 0 #7B2CBF);
+        }
+        
+        /* === V3-B 另一方案：弧线穿过 === */
+        .logo-v3b {
+            margin-top: 80px;
+            position: relative;
+        }
+        
+        .v3b-text {
+            font-family: 'Arial Black', Impact, sans-serif;
+            font-size: 72px;
+            font-weight: 900;
+            letter-spacing: 1px;
+            transform: rotate(-6deg);
+            background: linear-gradient(180deg, #FFF44F 0%, #FFD700 30%, #FF8C00 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            filter: drop-shadow(3px 3px 0 #B22222) drop-shadow(5px 5px 0 #660000) drop-shadow(-2px -2px 0 #8B008B);
+            position: relative;
+            z-index: 2;
+        }
+        
+        /* 大弧线穿过文字 */
+        .through-arc {
+            position: absolute;
+            width: 320px;
+            height: 100px;
+            border: 10px solid transparent;
+            border-top: 10px solid #00BFFF;
+            border-radius: 160px 160px 0 0;
+            top: 20px;
+            left: 30px;
+            z-index: 3;
+            filter: drop-shadow(0 -3px 0 #006699) drop-shadow(0 0 15px rgba(0,191,255,0.5));
+        }
+        
+        .through-arc::before {
+            content: '★';
+            position: absolute;
+            right: -25px;
+            top: -10px;
+            font-size: 40px;
+            color: #00BFFF;
+            text-shadow: 0 0 15px rgba(0,191,255,0.8), 2px 2px 0 #003366;
+        }
+        
+        .v3b-sub {
+            font-family: 'Arial Black', Impact, sans-serif;
+            font-size: 52px;
+            font-weight: 900;
+            letter-spacing: 6px;
+            transform: rotate(-6deg);
+            margin-top: -8px;
+            margin-left: 30px;
+            background: linear-gradient(180deg, #00DDFF 0%, #0099DD 50%, #0066AA 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            filter: drop-shadow(2px 2px 0 #003366) drop-shadow(4px 4px 0 #001133) drop-shadow(-2px -2px 0 #8B008B);
+        }
+        
+        .note {
+            margin-top: 50px;
+            padding: 20px 25px;
+            background: rgba(255,255,255,0.05);
+            border-radius: 10px;
+            color: #999;
+            font-size: 13px;
+            font-family: sans-serif;
+            line-height: 1.8;
+            max-width: 450px;
+        }
+        .note strong { color: #FFD700; }
+        .note .blue { color: #00BFFF; }
+    </style>
+</head>
+<body>
+    <div class="label">V3-A: 飞盘替代字母 E</div>
+    
+    <!-- 方案A：飞盘替代 E -->
+    <div class="logo-v3">
+        <div class="main-text">
+            <span class="frisbe">FRISB</span>
+            <div class="disc-e">
+                <div class="disc-body">
+                    <div class="disc-inner">
+                        <span class="star">★</span>
+                    </div>
+                </div>
+                <div class="disc-trails">
+                    <div class="trail"></div>
+                    <div class="trail"></div>
+                    <div class="trail"></div>
+                </div>
+            </div>
+            <span class="frisbe">E</span>
+        </div>
+        <div class="frenzy-row">
+            <span class="frenzy">FRENZY</span>
+        </div>
+    </div>
+    
+    <div class="label" style="margin-top:60px;">V3-B: 弧线穿过文字</div>
+    
+    <!-- 方案B：弧线穿过 -->
+    <div class="logo-v3b">
+        <div class="v3b-text">FRISBEE</div>
+        <div class="through-arc"></div>
+        <div class="v3b-sub">FRENZY</div>
+    </div>
+    
+    <div class="note">
+        <strong>方案A</strong>：飞盘直接替代字母，图文融合<br>
+        <span class="blue">方案B</span>：弧线轨迹穿过文字，像飞盘划过
+    </div>
+</body>
+</html>

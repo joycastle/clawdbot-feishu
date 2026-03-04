@@ -8,7 +8,8 @@
 | 飞鹏 | ou_eea6cc1621c22c5b244c481a93fdcd71 | 7111649403009564700 | 任务提醒 |
 | 宪伟 | ou_3ab16b4d7291102e94d6716f7fca43b9 | - | 管理员 |
 | 阿昆 | ou_f2d5e36c65defae86e3213473b26abcf | - | 管理员 |
-| Justin | ou_841797e6c6009a30dddb49dd7276bb6c | - | Boss |
+| 何森 | ou_841797e6c6009a30dddb49dd7276bb6c | - | - |
+| 杰哥 | ou_95f8a87a50e9b80da3f02aebc3018e24 | - | Justin, Boss |
 | 文武 | ou_06b83e00d9a4bdfc279f73ea9edb8c29 | - | - |
 | 话费提醒用户 | ou_26e9a8041a25de6602f98ea8fa465309 | - | 月末话费 |
 

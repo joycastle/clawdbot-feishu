@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <script src="https://cdn.jsdelivr.net/npm/mermaid/dist/mermaid.min.js"></script>
+  <style>
+    body { 
+      background: white; 
+      display: flex; 
+      justify-content: center; 
+      padding: 20px;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    }
+    .mermaid { 
+      font-size: 14px;
+    }
+  </style>
+</head>
+<body>
+  <div class="mermaid">
+flowchart TD
+    START([对局开始]) --> ROLL{随机判断<br/>random < pressure_robot_rate?}
+    
+    ROLL -->|是| PRESSURE[启用紧咬模式]
+    ROLL -->|否| NORMAL[使用原有机器人逻辑]
+    
+    PRESSURE --> INIT[随机生成达标分数<br/>qualify_score = random范围内]
+    
+    INIT --> LOOP[/每次加分检查点/]
+    
+    LOOP --> CALC[计算目标分数<br/>target = player_score - random分差]
+    CALC --> COMPARE{target > 当前bot_score?}
+    
+    COMPARE -->|是| UPDATE[bot_score = target<br/>机器人追分]
+    COMPARE -->|否| KEEP[bot_score不变<br/>只涨不跌]
+    
+    UPDATE --> ENDCHECK{对局结束?}
+    KEEP --> ENDCHECK
+    
+    ENDCHECK -->|否| LOOP
+    ENDCHECK -->|是| QUALIFY{player_score >= qualify_score?}
+    
+    QUALIFY -->|是,玩家达标| WIN[玩家获胜<br/>机器人最后少加分]
+    QUALIFY -->|否,玩家未达标| LOSE[机器人获胜<br/>最后时刻反超]
+    
+    WIN --> END([对局结束])
+    LOSE --> END
+    NORMAL --> END
+
+    style PRESSURE fill:#4CAF50,color:white
+    style WIN fill:#2196F3,color:white
+    style LOSE fill:#f44336,color:white
+    style QUALIFY fill:#FF9800,color:white
+  </div>
+  <script>
+    mermaid.initialize({ 
+      startOnLoad: true,
+      theme: 'default',
+      flowchart: {
+        useMaxWidth: false,
+        htmlLabels: true,
+        curve: 'basis'
+      }
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bingo Frenzy 测试服监控日报 - 2026年3月4日</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;700;900&display=swap');
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { background: #f5f0e6; font-family: 'Noto Serif SC', serif; color: #2c2c2c; min-height: 100vh; padding: 20px; }
+        .newspaper { max-width: 1000px; margin: 0 auto; background: #fffef9; box-shadow: 0 0 30px rgba(0,0,0,0.2); border: 1px solid #d4c5a9; }
+        .header { background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%); color: #f8f8f8; padding: 25px 30px; text-align: center; border-bottom: 4px solid #ffd700; }
+        .header h1 { font-size: 2.2em; font-weight: 900; letter-spacing: 6px; margin-bottom: 8px; }
+        .header .subtitle { font-size: 1em; color: #ccc; letter-spacing: 3px; }
+        .header .date { margin-top: 12px; font-size: 0.95em; color: #ffd700; }
+        .main-content { padding: 25px; }
+        .headline { text-align: center; padding: 20px 0; border-bottom: 3px double #333; margin-bottom: 25px; }
+        .headline h2 { font-size: 1.6em; font-weight: 900; color: #1a1a2e; }
+        .stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px; margin-bottom: 30px; }
+        .stat-card { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 20px; border-radius: 10px; text-align: center; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
+        .stat-card.green { background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%); }
+        .stat-card.orange { background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); }
+        .stat-card.blue { background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); }
+        .stat-card .value { font-size: 1.8em; font-weight: 900; }
+        .stat-card .label { font-size: 0.85em; opacity: 0.9; margin-top: 5px; }
+        .section { margin-bottom: 30px; }
+        .section-title { font-size: 1.2em; font-weight: 700; color: #1a1a2e; border-left: 4px solid #ffd700; padding-left: 12px; margin-bottom: 15px; }
+        table { width: 100%; border-collapse: collapse; font-size: 0.85em; }
+        th { background: #1a1a2e; color: white; padding: 10px 8px; text-align: left; font-weight: 600; }
+        td { padding: 8px; border-bottom: 1px solid #e0e0e0; }
+        tr:hover { background: #f5f5f5; }
+        .status-ok { color: #27ae60; font-weight: 600; }
+        .status-warn { color: #f39c12; font-weight: 600; }
+        .status-danger { color: #e74c3c; font-weight: 600; }
+        .highlight-box { background: linear-gradient(135deg, #fff9e6 0%, #fff3cd 100%); border: 2px solid #ffd700; border-radius: 10px; padding: 20px; margin-bottom: 25px; }
+        .highlight-box h3 { color: #856404; margin-bottom: 12px; font-size: 1.05em; }
+        .highlight-box ul { list-style: none; padding-left: 0; }
+        .highlight-box li { padding: 5px 0; padding-left: 25px; position: relative; }
+        .highlight-box li:before { content: "⚠️"; position: absolute; left: 0; }
+        .good-box { background: linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%); border: 2px solid #4caf50; }
+        .good-box h3 { color: #2e7d32; }
+        .good-box li:before { content: "✅"; }
+        .footer { background: #1a1a2e; color: #888; text-align: center; padding: 15px; font-size: 0.85em; }
+        @media (max-width: 768px) { .stats-grid { grid-template-columns: repeat(2, 1fr); } .header h1 { font-size: 1.6em; letter-spacing: 3px; } }
+    </style>
+</head>
+<body>
+    <div class="newspaper">
+        <div class="header">
+            <h1>🎰 BINGO FRENZY</h1>
+            <div class="subtitle">测试服 24 小时监控日报</div>
+            <div class="date">2026年3月4日 星期三 | 北京时间 11:42 发布</div>
+        </div>
+        
+        <div class="main-content">
+            <div class="headline">
+                <h2>📊 系统运行平稳，24h 请求量 9.12 亿次</h2>
+            </div>
+            
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="value">9.12亿</div>
+                    <div class="label">24h 请求总量</div>
+                </div>
+                <div class="stat-card green">
+                    <div class="value">44.5</div>
+                    <div class="label">当前 QPS</div>
+                </div>
+                <div class="stat-card orange">
+                    <div class="value">88.8ms</div>
+                    <div class="label">P95 响应延迟</div>
+                </div>
+                <div class="stat-card blue">
+                    <div class="value">19.4ms</div>
+                    <div class="label">P50 响应延迟</div>
+                </div>
+            </div>
+            
+            <div class="highlight-box good-box">
+                <h3>✨ 运行状态良好</h3>
+                <ul>
+                    <li>24h 无 5xx 服务端错误</li>
+                    <li>24h 无 4xx 客户端错误</li>
+                    <li>响应延迟正常，P95 < 100ms</li>
+                </ul>
+            </div>
+            
+            <div class="highlight-box">
+                <h3>⚠️ 需要关注</h3>
+                <ul>
+                    <li><strong>bingo-prod-m3-nk-ts</strong>: 负载 14.88，CPU 17.9%（较高）</li>
+                    <li><strong>bingo-prod-m3-arm</strong>: 负载 7.41</li>
+                    <li><strong>bingo-docker-develop</strong>: 磁盘使用率 80.1%</li>
+                    <li><strong>bingo-docker-develop-1</strong>: 磁盘 72.4%，内存 67.8%</li>
+                </ul>
+            </div>
+            
+            <div class="section">
+                <h3 class="section-title">🖥️ 生产环境服务器</h3>
+                <table>
+                    <thead>
+                        <tr><th>服务器</th><th>CPU</th><th>内存</th><th>磁盘</th><th>负载</th></tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>bingo-prod-m3-nk-ts</td>
+                            <td class="status-warn">17.9%</td>
+                            <td class="status-ok">27.9%</td>
+                            <td class="status-ok">30.4%</td>
+                            <td class="status-danger">14.88</td>
+                        </tr>
+                        <tr>
+                            <td>bingo-prod-m3-arm</td>
+                            <td class="status-ok">14.3%</td>
+                            <td class="status-ok">39.4%</td>
+                            <td class="status-ok">17.7%</td>
+                            <td class="status-warn">7.41</td>
+                        </tr>
+                        <tr>
+                            <td>bingo-prod-consumer-0</td>
+                            <td class="status-ok">10.6%</td>
+                            <td class="status-ok">22.8%</td>
+                            <td class="status-warn">62.2%</td>
+                            <td class="status-ok">1.43</td>
+                        </tr>
+                        <tr>
+                            <td>bingo-prod-consumer-1</td>
+                            <td class="status-ok">11.6%</td>
+                            <td class="status-ok">21.5%</td>
+                            <td class="status-warn">59.1%</td>
+                            <td class="status-ok">1.63</td>
+                        </tr>
+                        <tr>
+                            <td>bingo-prod-metrics-arm-0</td>
+                            <td class="status-ok">9.2%</td>
+                            <td class="status-ok">30.2%</td>
+                            <td class="status-ok">16.0%</td>
+                            <td class="status-ok">0.38</td>
+                        </tr>
+                        <tr>
+                            <td>bingo-prod-tournament-schedule</td>
+                            <td class="status-ok">9.9%</td>
+                            <td class="status-ok">22.3%</td>
+                            <td class="status-ok">47.7%</td>
+                            <td class="status-ok">0.36</td>
+                        </tr>
+                        <tr>
+                            <td>bingo-chat</td>
+                            <td class="status-ok">2.1%</td>
+                            <td class="status-ok">47.4%</td>
+                            <td class="status-ok">18.3%</td>
+                            <td class="status-ok">0.16</td>
+                        </tr>
+                        <tr>
+                            <td>bingo-prod-club-0</td>
+                            <td class="status-ok">4.8%</td>
+                            <td class="status-ok">24.8%</td>
+                            <td class="status-ok">23.1%</td>
+                            <td class="status-ok">0.06</td>
+                        </tr>
+                        <tr>
+                            <td>bingo-prod-club-1</td>
+                            <td class="status-ok">4.8%</td>
+                            <td class="status-ok">25.0%</td>
+                            <td class="status-ok">23.2%</td>
+                            <td class="status-ok">0.13</td>
+                        </tr>
+                        <tr>
+                            <td>bingo-prod-m8-club</td>
+                            <td class="status-ok">4.9%</td>
+                            <td class="status-ok">25.3%</td>
+                            <td class="status-ok">23.3%</td>
+                            <td class="status-ok">0.15</td>
+                        </tr>
+                        <tr>
+                            <td>bingo-prod-m9-club</td>
+                            <td class="status-ok">4.9%</td>
+                            <td class="status-ok">30.7%</td>
+                            <td class="status-ok">15.1%</td>
+                            <td class="status-ok">0.02</td>
+                        </tr>
+                        <tr>
+                            <td>bingo-prod-payment-0</td>
+                            <td class="status-ok">2.8%</td>
+                            <td class="status-ok">15.4%</td>
+                            <td class="status-ok">29.0%</td>
+                            <td class="status-ok">0.11</td>
+                        </tr>
+                        <tr>
+                            <td>bingo-prod-payment-1</td>
+                            <td class="status-ok">2.7%</td>
+                            <td class="status-ok">15.5%</td>
+                            <td class="status-ok">28.8%</td>
+                            <td class="status-ok">0.04</td>
+                        </tr>
+                        <tr>
+                            <td>bingo-prod-mail</td>
+                            <td class="status-ok">1.0%</td>
+                            <td class="status-ok">19.5%</td>
+                            <td class="status-ok">15.8%</td>
+                            <td class="status-ok">0.00</td>
+                        </tr>
+                        <tr>
+                            <td>prod-m8</td>
+                            <td class="status-ok">0.9%</td>
+                            <td class="status-ok">22.2%</td>
+                            <td class="status-warn">60.5%</td>
+                            <td class="status-ok">0.00</td>
+                        </tr>
+                        <tr>
+                            <td>prod-m9</td>
+                            <td class="status-ok">0.9%</td>
+                            <td class="status-ok">42.4%</td>
+                            <td class="status-warn">52.5%</td>
+                            <td class="status-ok">0.01</td>
+                        </tr>
+                        <tr>
+                            <td>prod-prod-fission-arm-0</td>
+                            <td class="status-ok">1.6%</td>
+                            <td class="status-ok">22.1%</td>
+                            <td class="status-ok">22.6%</td>
+                            <td class="status-ok">0.02</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            
+            <div class="section">
+                <h3 class="section-title">🔧 开发/测试环境</h3>
+                <table>
+                    <thead>
+                        <tr><th>服务器</th><th>CPU</th><th>内存</th><th>磁盘</th><th>负载</th></tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>bingo-docker-develop</td>
+                            <td class="status-ok">12.9%</td>
+                            <td class="status-ok">37.0%</td>
+                            <td class="status-danger">80.1%</td>
+                            <td class="status-ok">1.01</td>
+                        </tr>
+                        <tr>
+                            <td>bingo-docker-develop-1</td>
+                            <td class="status-warn">16.3%</td>
+                            <td class="status-warn">67.8%</td>
+                            <td class="status-warn">72.4%</td>
+                            <td class="status-ok">1.01</td>
+                        </tr>
+                        <tr>
+                            <td>bingo-docker-design</td>
+                            <td class="status-ok">14.2%</td>
+                            <td class="status-ok">44.0%</td>
+                            <td class="status-ok">46.5%</td>
+                            <td class="status-ok">0.88</td>
+                        </tr>
+                        <tr>
+                            <td>bingo-docker-test</td>
+                            <td class="status-ok">10.2%</td>
+                            <td class="status-ok">37.6%</td>
+                            <td class="status-warn">62.7%</td>
+                            <td class="status-ok">0.72</td>
+                        </tr>
+                        <tr>
+                            <td>bingo-docker-master</td>
+                            <td class="status-ok">12.5%</td>
+                            <td class="status-ok">15.6%</td>
+                            <td class="status-ok">-</td>
+                            <td class="status-ok">0.35</td>
+                        </tr>
+                        <tr>
+                            <td>bingo-develop-model</td>
+                            <td class="status-ok">2.0%</td>
+                            <td class="status-warn">56.7%</td>
+                            <td class="status-ok">47.9%</td>
+                            <td class="status-ok">0.06</td>
+                        </tr>
+                        <tr>
+                            <td>bingo-ml</td>
+                            <td class="status-ok">0.5%</td>
+                            <td class="status-ok">32.5%</td>
+                            <td class="status-ok">39.3%</td>
+                            <td class="status-ok">0.14</td>
+                        </tr>
+                        <tr>
+                            <td>bingo-logstash</td>
+                            <td class="status-ok">2.6%</td>
+                            <td class="status-ok">36.8%</td>
+                            <td class="status-ok">28.4%</td>
+                            <td class="status-ok">0.14</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            
+            <div class="section">
+                <h3 class="section-title">📊 Kafka 集群 (AWS MSK)</h3>
+                <table>
+                    <thead>
+                        <tr><th>Broker</th><th>CPU</th></tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>b-1.prod-msk-cluster</td>
+                            <td class="status-ok">13.6%</td>
+                        </tr>
+                        <tr>
+                            <td>b-2.prod-msk-cluster</td>
+                            <td class="status-ok">14.8%</td>
+                        </tr>
+                        <tr>
+                            <td>b-4.prod-msk-cluster</td>
+                            <td class="status-ok">12.8%</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        
+        <div class="footer">
+            Bingo Frenzy 测试服监控系统 | 数据采集: 2026-03-04 11:42 北京时间 | 自动生成
+        </div>
+    </div>
+</body>
+</html>

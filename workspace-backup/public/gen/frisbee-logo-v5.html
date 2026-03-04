@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Frisbee Frenzy - Pro Version</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            background: #3a3a4a;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 40px 20px;
+        }
+        
+        .label { 
+            color: #888; 
+            font-size: 12px; 
+            margin-bottom: 30px; 
+            font-family: sans-serif; 
+        }
+        
+        /* === 主 Logo 容器 === */
+        .logo-pro {
+            position: relative;
+            transform: rotate(-6deg) skewX(-2deg);
+        }
+        
+        /* 弧线轨迹 - 像 Speed Drifters 的轮胎弧线 */
+        .arc-container {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            top: 0;
+            left: 0;
+            overflow: visible;
+        }
+        
+        /* 主弧线 - 从左上划到右边飞盘 */
+        .main-arc {
+            position: absolute;
+            width: 420px;
+            height: 120px;
+            border: none;
+            border-bottom: 12px solid;
+            border-image: linear-gradient(90deg, rgba(0,150,255,0.2), #0099DD 50%, #00CCFF 100%) 1;
+            border-radius: 0 0 50% 50% / 0 0 100% 100%;
+            top: -15px;
+            left: -20px;
+            z-index: 1;
+        }
+        
+        /* FRISBEE 行 */
+        .frisbee-row {
+            display: flex;
+            align-items: center;
+            position: relative;
+            z-index: 3;
+        }
+        
+        .frisbee-text {
+            font-family: 'Arial Black', Impact, sans-serif;
+            font-size: 78px;
+            font-weight: 900;
+            letter-spacing: -1px;
+            line-height: 0.9;
+            /* 金属黄金渐变 */
+            background: linear-gradient(
+                180deg, 
+                #FFFFA0 0%, 
+                #FFE135 15%, 
+                #FFD700 30%, 
+                #FFAA00 50%,
+                #FF8C00 70%,
+                #E65C00 100%
+            );
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            /* 多层阴影模拟描边 */
+            filter: 
+                drop-shadow(0 2px 0 #E65C00)
+                drop-shadow(0 4px 0 #CC4400)
+                drop-shadow(0 6px 0 #993300)
+                drop-shadow(-3px -1px 0 #9932CC)
+                drop-shadow(-5px -2px 0 #7722AA)
+                drop-shadow(0 8px 15px rgba(0,0,0,0.5));
+        }
+        
+        /* 飞盘 - 紧贴文字右侧 */
+        .disc-wrapper {
+            position: relative;
+            margin-left: -5px;
+            z-index: 4;
+        }
+        
+        .disc {
+            width: 72px;
+            height: 72px;
+            background: linear-gradient(
+                135deg,
+                #66E5FF 0%,
+                #00CCFF 20%,
+                #0099DD 50%,
+                #0077AA 80%,
+                #005588 100%
+            );
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow:
+                inset -4px -4px 12px rgba(0,0,0,0.4),
+                inset 4px 4px 12px rgba(255,255,255,0.25),
+                -2px -1px 0 #00AADD,
+                3px 3px 0 #004466,
+                5px 5px 0 #002233,
+                0 0 20px rgba(0,180,255,0.5);
+            border: 2px solid rgba(255,255,255,0.15);
+        }
+        
+        .disc-inner {
+            width: 44px;
+            height: 44px;
+            background: linear-gradient(135deg, #99EEFF 0%, #33DDFF 50%, #00AACC 100%);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: inset 0 2px 6px rgba(255,255,255,0.6);
+        }
+        
+        .star {
+            font-size: 26px;
+            color: #FFF8DC;
+            text-shadow: 0 0 8px rgba(255,248,220,0.9);
+        }
+        
+        /* 飞盘后的速度线 */
+        .disc-trails {
+            position: absolute;
+            left: -45px;
+            top: 50%;
+            transform: translateY(-50%);
+            z-index: -1;
+        }
+        
+        .trail {
+            height: 4px;
+            background: linear-gradient(90deg, transparent, rgba(0,200,255,0.5), rgba(0,200,255,0.8));
+            margin-bottom: 6px;
+            border-radius: 2px;
+        }
+        .trail:nth-child(1) { width: 35px; margin-left: 10px; }
+        .trail:nth-child(2) { width: 50px; }
+        .trail:nth-child(3) { width: 30px; margin-left: 15px; }
+        
+        /* FRENZY 行 */
+        .frenzy-row {
+            position: relative;
+            z-index: 2;
+            margin-top: -2px;
+            margin-left: 25px;
+        }
+        
+        .frenzy-text {
+            font-family: 'Arial Black', Impact, sans-serif;
+            font-size: 58px;
+            font-weight: 900;
+            letter-spacing: 3px;
+            line-height: 0.9;
+            /* 橙红渐变 */
+            background: linear-gradient(
+                180deg,
+                #FFAA66 0%,
+                #FF8844 20%,
+                #FF6622 50%,
+                #EE4400 80%,
+                #CC2200 100%
+            );
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            filter:
+                drop-shadow(0 2px 0 #CC2200)
+                drop-shadow(0 4px 0 #991100)
+                drop-shadow(0 6px 0 #660000)
+                drop-shadow(-3px -1px 0 #9932CC)
+                drop-shadow(-5px -2px 0 #7722AA)
+                drop-shadow(0 6px 12px rgba(0,0,0,0.4));
+        }
+        
+        /* 底部装饰线 - 类似 Speed Winner 的粉色线 */
+        .bottom-accent {
+            position: absolute;
+            bottom: -8px;
+            left: 30px;
+            right: 20px;
+            height: 6px;
+            background: linear-gradient(90deg, transparent, #CC44FF 20%, #FF44CC 80%, transparent);
+            border-radius: 3px;
+            z-index: 1;
+        }
+        
+        .note {
+            margin-top: 50px;
+            background: rgba(0,0,0,0.2);
+            padding: 20px 25px;
+            border-radius: 10px;
+            color: #aaa;
+            font-size: 13px;
+            font-family: sans-serif;
+            line-height: 1.8;
+            max-width: 480px;
+        }
+        .note strong { color: #FFD700; }
+        .note .blue { color: #00CCFF; }
+        .note .purple { color: #CC44FF; }
+    </style>
+</head>
+<body>
+    <div class="label">V5: 参考赛车 Logo 风格优化</div>
+    
+    <div class="logo-pro">
+        <!-- 弧线轨迹 -->
+        <div class="arc-container">
+            <div class="main-arc"></div>
+        </div>
+        
+        <!-- FRISBEE + 飞盘 -->
+        <div class="frisbee-row">
+            <span class="frisbee-text">FRISBEE</span>
+            <div class="disc-wrapper">
+                <div class="disc-trails">
+                    <div class="trail"></div>
+                    <div class="trail"></div>
+                    <div class="trail"></div>
+                </div>
+                <div class="disc">
+                    <div class="disc-inner">
+                        <span class="star">★</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- FRENZY -->
+        <div class="frenzy-row">
+            <span class="frenzy-text">FRENZY</span>
+        </div>
+        
+        <!-- 底部装饰 -->
+        <div class="bottom-accent"></div>
+    </div>
+    
+    <div class="note">
+        <strong>优化点</strong>（参考 Speed Drifters 等）：<br>
+        • 金属质感渐变 + 多层描边立体感<br>
+        • <span class="blue">飞盘紧贴文字</span>，不是分离贴图<br>
+        • 弧线从左上划入，引导视觉到飞盘<br>
+        • <span class="purple">底部装饰线</span>收束整体（类似 Speed Winner）<br>
+        • 整体紧凑，元素融合
+    </div>
+</body>
+</html>

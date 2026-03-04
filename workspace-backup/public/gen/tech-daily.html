@@ -1,0 +1,727 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>科技日报 | 2026年3月4日</title>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;700;900&family=Noto+Sans+SC:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary-color: #1a1a2e;
+            --accent-color: #e94560;
+            --secondary-accent: #0f3460;
+            --bg-color: #faf8f5;
+            --text-color: #2d2d2d;
+            --border-color: #d4d0c8;
+            --card-bg: #ffffff;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Noto Sans SC', sans-serif;
+            background: var(--bg-color);
+            color: var(--text-color);
+            line-height: 1.7;
+        }
+        
+        .newspaper {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        /* Header */
+        .header {
+            text-align: center;
+            padding: 30px 20px;
+            border-bottom: 4px double var(--primary-color);
+            margin-bottom: 30px;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            color: white;
+            border-radius: 8px 8px 0 0;
+        }
+        
+        .header h1 {
+            font-family: 'Noto Serif SC', serif;
+            font-size: 3.5rem;
+            font-weight: 900;
+            letter-spacing: 8px;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+        
+        .header .subtitle {
+            font-size: 1rem;
+            opacity: 0.9;
+            letter-spacing: 2px;
+        }
+        
+        .header .date {
+            margin-top: 15px;
+            font-size: 1.1rem;
+            padding: 8px 20px;
+            background: var(--accent-color);
+            display: inline-block;
+            border-radius: 20px;
+        }
+        
+        /* Section */
+        .section {
+            margin-bottom: 40px;
+            background: var(--card-bg);
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+            overflow: hidden;
+        }
+        
+        .section-header {
+            background: linear-gradient(135deg, var(--secondary-accent) 0%, #1a1a2e 100%);
+            color: white;
+            padding: 18px 25px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        
+        .section-header .icon {
+            font-size: 1.8rem;
+        }
+        
+        .section-header h2 {
+            font-family: 'Noto Serif SC', serif;
+            font-size: 1.5rem;
+            font-weight: 700;
+        }
+        
+        .section-content {
+            padding: 25px;
+        }
+        
+        /* Two Column Layout */
+        .two-columns {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 30px;
+        }
+        
+        @media (max-width: 768px) {
+            .two-columns {
+                grid-template-columns: 1fr;
+            }
+        }
+        
+        .column-title {
+            font-family: 'Noto Serif SC', serif;
+            font-size: 1.2rem;
+            color: var(--secondary-accent);
+            margin-bottom: 15px;
+            padding-bottom: 8px;
+            border-bottom: 2px solid var(--accent-color);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        /* Repo Card */
+        .repo-card {
+            padding: 15px;
+            margin-bottom: 12px;
+            border-radius: 8px;
+            background: linear-gradient(135deg, #f8f9fa 0%, #fff 100%);
+            border-left: 4px solid var(--accent-color);
+            transition: all 0.3s ease;
+        }
+        
+        .repo-card:hover {
+            transform: translateX(5px);
+            box-shadow: 0 4px 15px rgba(233, 69, 96, 0.15);
+        }
+        
+        .repo-card .repo-name {
+            font-weight: 700;
+            color: var(--secondary-accent);
+            font-size: 1rem;
+            margin-bottom: 6px;
+        }
+        
+        .repo-card .repo-name a {
+            color: inherit;
+            text-decoration: none;
+        }
+        
+        .repo-card .repo-name a:hover {
+            color: var(--accent-color);
+        }
+        
+        .repo-card .repo-desc {
+            font-size: 0.9rem;
+            color: #666;
+            line-height: 1.5;
+        }
+        
+        .repo-card .repo-meta {
+            margin-top: 8px;
+            font-size: 0.8rem;
+            color: #888;
+        }
+        
+        .repo-card .repo-meta .lang {
+            background: var(--accent-color);
+            color: white;
+            padding: 2px 8px;
+            border-radius: 10px;
+            margin-right: 8px;
+        }
+        
+        /* Skill Card */
+        .skill-card {
+            padding: 18px;
+            margin-bottom: 15px;
+            border-radius: 10px;
+            background: linear-gradient(135deg, #fff5f7 0%, #fff 100%);
+            border: 1px solid #ffe0e6;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .skill-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 4px;
+            height: 100%;
+            background: linear-gradient(180deg, var(--accent-color), #ff6b8a);
+        }
+        
+        .skill-card .skill-name {
+            font-weight: 700;
+            font-size: 1.1rem;
+            color: var(--primary-color);
+            margin-bottom: 8px;
+        }
+        
+        .skill-card .skill-desc {
+            font-size: 0.9rem;
+            color: #555;
+            margin-bottom: 10px;
+        }
+        
+        .skill-card .skill-stats {
+            font-size: 0.85rem;
+            color: var(--accent-color);
+            font-weight: 500;
+            margin-bottom: 8px;
+        }
+        
+        .skill-card .install-cmd {
+            font-family: 'Monaco', 'Consolas', monospace;
+            font-size: 0.82rem;
+            background: #1a1a2e;
+            color: #4ade80;
+            padding: 8px 12px;
+            border-radius: 6px;
+            display: inline-block;
+        }
+        
+        /* Tips Section */
+        .tips-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 20px;
+        }
+        
+        .tip-card {
+            padding: 20px;
+            border-radius: 10px;
+            background: #fff;
+            border: 1px solid #e0e0e0;
+            transition: all 0.3s ease;
+        }
+        
+        .tip-card:hover {
+            box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+            transform: translateY(-3px);
+        }
+        
+        .tip-card .tool-name {
+            font-weight: 700;
+            font-size: 1.1rem;
+            color: var(--secondary-accent);
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .tip-card .tip-list {
+            list-style: none;
+        }
+        
+        .tip-card .tip-list li {
+            padding: 6px 0;
+            font-size: 0.9rem;
+            border-bottom: 1px dashed #eee;
+        }
+        
+        .tip-card .tip-list li:last-child {
+            border-bottom: none;
+        }
+        
+        .tip-card code {
+            font-family: 'Monaco', 'Consolas', monospace;
+            background: #f0f4f8;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 0.85rem;
+            color: var(--accent-color);
+        }
+        
+        /* News Section */
+        .news-item {
+            padding: 18px;
+            margin-bottom: 15px;
+            border-radius: 10px;
+            background: linear-gradient(135deg, #f8fafc 0%, #fff 100%);
+            border-left: 4px solid var(--secondary-accent);
+        }
+        
+        .news-item .news-title {
+            font-weight: 700;
+            font-size: 1.05rem;
+            color: var(--primary-color);
+            margin-bottom: 8px;
+        }
+        
+        .news-item .news-source {
+            font-size: 0.8rem;
+            color: var(--accent-color);
+            margin-bottom: 6px;
+        }
+        
+        .news-item .news-summary {
+            font-size: 0.9rem;
+            color: #555;
+            line-height: 1.6;
+        }
+        
+        /* AIOps Section */
+        .aiops-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 15px;
+        }
+        
+        .aiops-card {
+            padding: 15px;
+            border-radius: 8px;
+            background: linear-gradient(135deg, #e8f4f8 0%, #fff 100%);
+            border: 1px solid #d0e8ef;
+        }
+        
+        .aiops-card .aiops-title {
+            font-weight: 600;
+            color: var(--secondary-accent);
+            margin-bottom: 8px;
+        }
+        
+        .aiops-card .aiops-desc {
+            font-size: 0.9rem;
+            color: #666;
+        }
+        
+        /* Footer */
+        .footer {
+            text-align: center;
+            padding: 25px;
+            background: var(--primary-color);
+            color: white;
+            border-radius: 0 0 8px 8px;
+            margin-top: 30px;
+        }
+        
+        .footer p {
+            opacity: 0.8;
+            font-size: 0.9rem;
+        }
+        
+        /* Badge */
+        .badge {
+            display: inline-block;
+            padding: 3px 10px;
+            border-radius: 12px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            margin-left: 8px;
+        }
+        
+        .badge-hot {
+            background: linear-gradient(135deg, #ff6b6b, #ee5a24);
+            color: white;
+        }
+        
+        .badge-new {
+            background: linear-gradient(135deg, #4ade80, #22c55e);
+            color: white;
+        }
+        
+        .badge-trend {
+            background: linear-gradient(135deg, #60a5fa, #3b82f6);
+            color: white;
+        }
+        
+        /* New Skills Badge */
+        .new-skill {
+            background: linear-gradient(135deg, #ecfdf5 0%, #fff 100%);
+            border-color: #a7f3d0;
+        }
+        
+        .new-skill::before {
+            background: linear-gradient(180deg, #22c55e, #4ade80);
+        }
+    </style>
+</head>
+<body>
+    <div class="newspaper">
+        <!-- Header -->
+        <header class="header">
+            <h1>📰 科技日报</h1>
+            <p class="subtitle">TECH DAILY · AI · GITHUB · TOOLS · NEWS</p>
+            <p class="date">🗓️ 2026年3月4日 星期三</p>
+        </header>
+
+        <!-- GitHub Trending -->
+        <section class="section">
+            <div class="section-header">
+                <span class="icon">🔥</span>
+                <h2>GitHub 热门趋势</h2>
+            </div>
+            <div class="section-content">
+                <div class="two-columns">
+                    <!-- Daily -->
+                    <div>
+                        <h3 class="column-title">📊 日榜 TOP 6 <span class="badge badge-hot">HOT</span></h3>
+                        
+                        <div class="repo-card">
+                            <div class="repo-name"><a href="https://github.com/ruvnet/RuView" target="_blank">🥇 ruvnet/RuView</a></div>
+                            <div class="repo-desc">π WiFi DensePose：用普通 WiFi 信号实现实时人体姿态估计、生命体征监测和存在检测——无需任何摄像头</div>
+                            <div class="repo-meta"><span class="lang">Python</span> WiFi 黑科技</div>
+                        </div>
+                        
+                        <div class="repo-card">
+                            <div class="repo-name"><a href="https://github.com/K-Dense-AI/claude-scientific-skills" target="_blank">🥈 K-Dense-AI/claude-scientific-skills</a></div>
+                            <div class="repo-desc">一套开箱即用的 Agent Skills，覆盖研究、科学、工程、分析、金融和写作场景</div>
+                            <div class="repo-meta"><span class="lang">Skill</span> Claude 科研神器</div>
+                        </div>
+                        
+                        <div class="repo-card">
+                            <div class="repo-name"><a href="https://github.com/moeru-ai/airi" target="_blank">🥉 moeru-ai/airi</a></div>
+                            <div class="repo-desc">💖🧸 自托管 AI 伴侣，支持实时语音聊天、Minecraft/Factorio 游戏陪玩，Web/macOS/Windows 全平台</div>
+                            <div class="repo-meta"><span class="lang">TypeScript</span> 赛博老婆</div>
+                        </div>
+                        
+                        <div class="repo-card">
+                            <div class="repo-name"><a href="https://github.com/CodebuffAI/codebuff" target="_blank">4️⃣ CodebuffAI/codebuff</a></div>
+                            <div class="repo-desc">在终端直接生成代码！轻量级命令行代码生成器</div>
+                            <div class="repo-meta"><span class="lang">CLI</span> 终端代码神器</div>
+                        </div>
+                        
+                        <div class="repo-card">
+                            <div class="repo-name"><a href="https://github.com/superset-sh/superset" target="_blank">5️⃣ superset-sh/superset</a></div>
+                            <div class="repo-desc">AI Agent 时代的 IDE——在一台机器上运行 Claude Code、Codex 等多个 Agent 军团</div>
+                            <div class="repo-meta"><span class="lang">TypeScript</span> Agent IDE</div>
+                        </div>
+                        
+                        <div class="repo-card">
+                            <div class="repo-name"><a href="https://github.com/alibaba/OpenSandbox" target="_blank">6️⃣ alibaba/OpenSandbox</a></div>
+                            <div class="repo-desc">阿里开源的通用 AI 沙箱平台，支持多语言 SDK、Docker/K8s 运行时，适用于 Coding Agent、GUI Agent、AI 代码执行</div>
+                            <div class="repo-meta"><span class="lang">Go</span> 阿里出品</div>
+                        </div>
+                    </div>
+                    
+                    <!-- Weekly -->
+                    <div>
+                        <h3 class="column-title">📈 周榜 TOP 6 <span class="badge badge-trend">TREND</span></h3>
+                        
+                        <div class="repo-card">
+                            <div class="repo-name"><a href="https://github.com/abhigyanpatwari/GitNexus" target="_blank">🥇 abhigyanpatwari/GitNexus</a></div>
+                            <div class="repo-desc">零服务器代码智能引擎——纯浏览器端知识图谱，拖入 GitHub 仓库即可生成交互式代码图谱 + Graph RAG Agent</div>
+                            <div class="repo-meta"><span class="lang">JavaScript</span> 代码可视化</div>
+                        </div>
+                        
+                        <div class="repo-card">
+                            <div class="repo-name"><a href="https://github.com/bytedance/deer-flow" target="_blank">🥈 bytedance/deer-flow</a></div>
+                            <div class="repo-desc">字节跳动开源 SuperAgent 框架——集研究、编码、创作于一体，支持沙箱、记忆、工具、技能和子 Agent</div>
+                            <div class="repo-meta"><span class="lang">Python</span> 字节出品 🦌</div>
+                        </div>
+                        
+                        <div class="repo-card">
+                            <div class="repo-name"><a href="https://github.com/muratcankoylan/Agent-Skills-for-Context-Engineering" target="_blank">🥉 Agent-Skills-for-Context-Engineering</a></div>
+                            <div class="repo-desc">上下文工程、多 Agent 架构和生产级 Agent 系统的全套技能包</div>
+                            <div class="repo-meta"><span class="lang">Skill</span> 上下文工程</div>
+                        </div>
+                        
+                        <div class="repo-card">
+                            <div class="repo-name"><a href="https://github.com/ruvnet/ruvector" target="_blank">4️⃣ ruvnet/ruvector</a></div>
+                            <div class="repo-desc">高性能实时自学习向量图神经网络数据库，Rust 实现，本周 2,081 ⭐</div>
+                            <div class="repo-meta"><span class="lang">Rust</span> ⭐ 2,669 | 🍴 268</div>
+                        </div>
+                        
+                        <div class="repo-card">
+                            <div class="repo-name"><a href="https://github.com/shareAI-lab/learn-claude-code" target="_blank">5️⃣ shareAI-lab/learn-claude-code</a></div>
+                            <div class="repo-desc">Bash is all you need——从零开始手写一个迷你 Claude Code Agent</div>
+                            <div class="repo-meta"><span class="lang">Bash</span> 学习资源</div>
+                        </div>
+                        
+                        <div class="repo-card">
+                            <div class="repo-name"><a href="https://github.com/obra/superpowers" target="_blank">6️⃣ obra/superpowers</a></div>
+                            <div class="repo-desc">一个真正有效的 Agent 技能框架和软件开发方法论</div>
+                            <div class="repo-meta"><span class="lang">Python</span> Agent 框架</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ClawHub Skills -->
+        <section class="section">
+            <div class="section-header">
+                <span class="icon">🦞</span>
+                <h2>ClawHub 热门技能</h2>
+            </div>
+            <div class="section-content">
+                <div class="two-columns">
+                    <!-- Popular Skills -->
+                    <div>
+                        <h3 class="column-title">🏆 热门技能 TOP 8 <span class="badge badge-hot">POPULAR</span></h3>
+                        
+                        <div class="skill-card">
+                            <div class="skill-name">🥇 Capability Evolver</div>
+                            <div class="skill-desc">自动进化 Agent 能力，根据使用模式持续优化技能配置</div>
+                            <div class="skill-stats">📥 35,000+ 下载</div>
+                            <code class="install-cmd">clawhub install capability-evolver</code>
+                        </div>
+                        
+                        <div class="skill-card">
+                            <div class="skill-name">🥈 Wacli</div>
+                            <div class="skill-desc">WhatsApp 命令行接口，让 Agent 通过 CLI 操作 WhatsApp</div>
+                            <div class="skill-stats">📥 16,000+ 下载</div>
+                            <code class="install-cmd">clawhub install wacli</code>
+                        </div>
+                        
+                        <div class="skill-card">
+                            <div class="skill-name">🥉 ByteRover</div>
+                            <div class="skill-desc">字节级文件漫游器，精准定位和操作二进制文件</div>
+                            <div class="skill-stats">📥 16,000+ 下载</div>
+                            <code class="install-cmd">clawhub install byterover</code>
+                        </div>
+                        
+                        <div class="skill-card">
+                            <div class="skill-name">4️⃣ Self-Improving Agent</div>
+                            <div class="skill-desc">自我改进型 Agent，能从错误中学习并自动优化行为</div>
+                            <div class="skill-stats">📥 15,000+ 下载</div>
+                            <code class="install-cmd">clawhub install self-improving-agent</code>
+                        </div>
+                        
+                        <div class="skill-card">
+                            <div class="skill-name">5️⃣ Agent Browser</div>
+                            <div class="skill-desc">让 Agent 具备完整浏览器自动化能力</div>
+                            <div class="skill-stats">📥 11,000+ 下载</div>
+                            <code class="install-cmd">clawhub install agent-browser</code>
+                        </div>
+                        
+                        <div class="skill-card">
+                            <div class="skill-name">6️⃣ GitHub</div>
+                            <div class="skill-desc">GitHub 全功能集成，PR/Issue/Action 一站式管理</div>
+                            <div class="skill-stats">📥 10,000+ 下载</div>
+                            <code class="install-cmd">clawhub install github</code>
+                        </div>
+                        
+                        <div class="skill-card">
+                            <div class="skill-name">7️⃣ Summarize</div>
+                            <div class="skill-desc">智能摘要生成，支持长文档、代码库、会议记录</div>
+                            <div class="skill-stats">📥 10,000+ 下载</div>
+                            <code class="install-cmd">clawhub install summarize</code>
+                        </div>
+                        
+                        <div class="skill-card">
+                            <div class="skill-name">8️⃣ Sonoscli</div>
+                            <div class="skill-desc">Sonos 音响控制技能，智能家居必备</div>
+                            <div class="skill-stats">📥 10,000+ 下载</div>
+                            <code class="install-cmd">clawhub install sonoscli</code>
+                        </div>
+                    </div>
+                    
+                    <!-- New Skills -->
+                    <div>
+                        <h3 class="column-title">✨ 新鲜发布 <span class="badge badge-new">NEW</span></h3>
+                        
+                        <div class="skill-card new-skill">
+                            <div class="skill-name">🆕 ATXP (Agent Task Execution Protocol)</div>
+                            <div class="skill-desc">标准化的 Agent 任务执行协议，让多 Agent 协作更高效</div>
+                            <div class="skill-stats">📥 14,000+ 下载 | 🔥 快速增长</div>
+                            <code class="install-cmd">clawhub install atxp</code>
+                        </div>
+                        
+                        <div class="skill-card new-skill">
+                            <div class="skill-name">🆕 Gog (Graph of Graphs)</div>
+                            <div class="skill-desc">图的图——构建和查询多层知识图谱</div>
+                            <div class="skill-stats">📥 14,000+ 下载 | 知识图谱</div>
+                            <code class="install-cmd">clawhub install gog</code>
+                        </div>
+                        
+                        <div class="skill-card new-skill">
+                            <div class="skill-name">🆕 Fast.io Storage</div>
+                            <div class="skill-desc">持久化文件存储，解决 Agent 会话间数据保留问题</div>
+                            <div class="skill-stats">推荐指数 ⭐⭐⭐⭐⭐</div>
+                            <code class="install-cmd">clawhub install fast-io</code>
+                        </div>
+                        
+                        <div class="skill-card new-skill">
+                            <div class="skill-name">🆕 Playwright Web Scraper</div>
+                            <div class="skill-desc">基于 Playwright 的网页抓取技能，支持动态页面</div>
+                            <div class="skill-stats">推荐指数 ⭐⭐⭐⭐⭐</div>
+                            <code class="install-cmd">clawhub install playwright-scraper</code>
+                        </div>
+                        
+                        <div class="skill-card new-skill">
+                            <div class="skill-name">🆕 Notion Manager</div>
+                            <div class="skill-desc">Notion 全功能管理，数据库、页面、块操作一应俱全</div>
+                            <div class="skill-stats">推荐指数 ⭐⭐⭐⭐</div>
+                            <code class="install-cmd">clawhub install notion</code>
+                        </div>
+                        
+                        <p style="margin-top: 20px; padding: 15px; background: #fef3c7; border-radius: 8px; font-size: 0.9rem;">
+                            ⚠️ <strong>安全提示</strong>：2026年2月的 ClawHavoc 事件揭示了 341 个恶意技能。安装前请检查技能来源和评价，优先选择官方认证技能。
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- AI Tools Tips -->
+        <section class="section">
+            <div class="section-header">
+                <span class="icon">🤖</span>
+                <h2>AI 工具使用技巧</h2>
+            </div>
+            <div class="section-content">
+                <div class="tips-grid">
+                    <!-- Claude Code -->
+                    <div class="tip-card">
+                        <div class="tool-name">🟣 Claude Code 技巧</div>
+                        <ul class="tip-list">
+                            <li><code>/compact</code> 压缩对话，释放上下文空间</li>
+                            <li><code>Esc + Esc</code> 或 <code>/rewind</code> 选择性压缩</li>
+                            <li><code>/context</code> 审计当前上下文准确性</li>
+                            <li><code>/insights</code> 查看会话洞察统计</li>
+                            <li><code>Shift+Tab</code> Plan Mode 隐藏功能</li>
+                            <li><code>@文件名</code> 快速引用文件</li>
+                            <li>关闭 auto-compact 手动管理更精准</li>
+                            <li>使用 <code>lazy-router</code> MCP 减少启动开销</li>
+                        </ul>
+                    </div>
+                    
+                    <!-- ChatGPT -->
+                    <div class="tip-card">
+                        <div class="tool-name">🟢 ChatGPT / GPT-4 技巧</div>
+                        <ul class="tip-list">
+                            <li><strong>Custom Instructions 模板：</strong></li>
+                            <li>角色设定：<code>R=A</code> 分析师 / <code>R=L</code> 法律 / <code>R=G</code> 通用</li>
+                            <li>详细程度：<code>V=0</code> 简洁 / <code>V=2</code> 详细</li>
+                            <li>输出首行显示设置：<code>(R=G, V=2)</code></li>
+                            <li><strong>Code Interpreter 实战：</strong></li>
+                            <li>上传数据文件 → 自动分析生成图表</li>
+                            <li>复杂计算用 Python 而非纯推理</li>
+                        </ul>
+                    </div>
+                    
+                    <!-- Gemini -->
+                    <div class="tip-card">
+                        <div class="tool-name">🔵 Google Gemini 技巧</div>
+                        <ul class="tip-list">
+                            <li><strong>Python SDK 快速上手：</strong></li>
+                            <li><code>pip install google-generativeai</code></li>
+                            <li>设置 <code>GOOGLE_API_KEY</code> 环境变量</li>
+                            <li><code>genai.configure(api_key=...)</code></li>
+                            <li><code>model = genai.GenerativeModel('gemini-pro')</code></li>
+                            <li><strong>代码执行能力：</strong></li>
+                            <li>生成并运行 Python 代码解决复杂任务</li>
+                            <li>支持输出图表和可视化</li>
+                        </ul>
+                    </div>
+                    
+                    <!-- AIOps -->
+                    <div class="tip-card">
+                        <div class="tool-name">⚙️ AIOps 最佳实践</div>
+                        <ul class="tip-list">
+                            <li><strong>告警降噪策略：</strong></li>
+                            <li>事件关联（Event Correlation）聚合告警</li>
+                            <li>动态阈值替代静态阈值</li>
+                            <li>拓扑感知分组（Topology-aware Grouping）</li>
+                            <li>Auto-Pause 暂停瞬态告警</li>
+                            <li><strong>自然语言日志查询：</strong></li>
+                            <li>"查找过去1小时的500错误"</li>
+                            <li>"显示内存使用率超过90%的服务"</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- AI News -->
+        <section class="section">
+            <div class="section-header">
+                <span class="icon">🆕</span>
+                <h2>AI 热点资讯</h2>
+            </div>
+            <div class="section-content">
+                <div class="news-item">
+                    <div class="news-title">🔴 美国政府停用 Anthropic，全面转向 OpenAI</div>
+                    <div class="news-source">Reuters / NYTimes | 2026-03-03</div>
+                    <div class="news-summary">
+                        特朗普下令美国国务院、财政部、卫生部在6个月内停止使用 Anthropic 产品。此前国防部将 Anthropic 列为"国家安全供应链风险"。争议焦点在于 AI 安全护栏——Anthropic 拒绝移除某些军事场景限制。国务院已将其聊天机器人 StateChat 切换至 OpenAI 的 GPT-4.1。
+                    </div>
+                </div>
+                
+                <div class="news-item">
+                    <div class="news-title">💼 OpenAI 与五角大楼签约，部署至保密军事网络</div>
+                    <div class="news-source">Business Insider | 2026-03-02</div>
+                    <div class="news-summary">
+                        OpenAI 接手 Anthropic 放弃的国防部合同，将在保密军事网络部署 AI 模型。CEO Sam Altman 在 X 上公开答疑，试图解释公司决定。Altman 表示将修订合同条款以回应外界对大规模监控的担忧。
+                    </div>
+                </div>
+                
+                <div class="news-item">
+                    <div class="news-title">💰 OpenAI 寻求 1000-1100 亿美元融资</div>
+                    <div class="news-source">MLQ.ai | 2026-03-01</div>
+                    <div class="news-summary">
+                        OpenAI 正与 Amazon、Nvidia、SoftBank 洽谈新一轮融资，预计将公司估值推高至 7300-8500 亿美元。据报道 2026 年预计亏损 140 亿美元，但投资者对 AGI 赛道的信心不减。
+                    </div>
+                </div>
+                
+                <div class="news-item">
+                    <div class="news-title">🏆 三月模型竞赛：Anthropic 暂时领先</div>
+                    <div class="news-source">LLM Stats | 2026-03-04</div>
+                    <div class="news-summary">
+                        尽管政治风波不断，Anthropic 在三月模型性能评测中以 64% 的胜率暂时领先。各大厂商持续更新定价、新功能、速率限制，竞争白热化。
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Footer -->
+        <footer class="footer">
+            <p>📰 科技日报 | 每日自动生成 | Powered by Clawdbot 🦞</p>
+            <p style="margin-top: 10px; font-size: 0.8rem; opacity: 0.7;">
+                数据来源：GitHub Trending · ClawHub · Brave Search · 各大科技媒体
+            </p>
+        </footer>
+    </div>
+</body>
+</html>

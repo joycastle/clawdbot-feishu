@@ -24,6 +24,24 @@
 | Project | `larkbot-485707` |
 | Vertex AI Location | `us-central1`（Gemini 2.x）/ `global`（Gemini 3.x） |
 
+### Gemini 3 特殊配置
+
+Gemini 3 系列（gemini-3-flash-preview 等）需要 `global` region，**但 SDK 有 bug**，必须手动指定 `apiEndpoint`：
+
+```typescript
+const vertexAI = new VertexAI({
+  project: 'larkbot-485707',
+  location: 'global',
+  apiEndpoint: 'aiplatform.googleapis.com',  // ← 必须加这个！
+  googleAuthOptions: {
+    keyFilename: '/home/ubuntu/.clawdbot/credentials/google-vertex-sa.json',
+  },
+});
+const model = vertexAI.getGenerativeModel({ model: 'gemini-3-flash-preview' });
+```
+
+不加 `apiEndpoint` 会报 404（SDK 错误地构造成 `global-aiplatform.googleapis.com`）。
+
 ---
 
 ## 代码示例
@@ -80,6 +98,30 @@ console.log(result.response.candidates[0].content.parts[0].text);
 ---
 
 ## ⚠️ 常见误区
+
+### 测试 Vertex AI 用 SDK，不要用 curl！
+
+这台机器**没有 gcloud CLI**，所以：
+- ❌ `curl` + `gcloud auth print-access-token` → 会失败（command not found）
+- ✅ 用 Node.js SDK 测试
+
+**正确的测试方式：**
+```bash
+cd ~/.clawdbot/extensions/feishu && node -e "
+const { VertexAI } = require('@google-cloud/vertexai');
+const vertexAI = new VertexAI({
+  project: 'larkbot-485707',
+  location: 'us-central1',
+  googleAuthOptions: {
+    keyFilename: '/home/ubuntu/.clawdbot/credentials/google-vertex-sa.json',
+  },
+});
+const model = vertexAI.getGenerativeModel({ model: 'gemini-2.0-flash-001' });
+model.generateContent({ contents: [{ role: 'user', parts: [{ text: 'hi' }] }] })
+  .then(r => console.log('✅ 成功:', r.response.candidates[0].content.parts[0].text.slice(0,50)))
+  .catch(e => console.log('❌ 失败:', e.message));
+"
+```
 
 ### Files API vs GCS
 

@@ -1,5 +1,101 @@
 # 长期记忆
 
+## 🚫 铁律：项目代码只读
+
+**对游戏项目仓库（Bingo 等业务代码）**：
+- ✅ 可以：读取、分析、找问题、提方案
+- ❌ 禁止：修改、提交、推送
+
+**无论任何情况，不得违反。**
+
+---
+
+## 🔴 核心教训：代码链路分析要完整
+
+**2026-03-01 教训**：分析"拯救球加球函数"时给出错误结论。
+
+**问题**：
+- 只看了函数本身，没追溯调用方
+- 有工具但没用
+- 急于回答而不是先调查
+
+**标准动作**：
+1. 遇到"某函数做什么"的问题 → **先用图查询 API**
+2. 画出完整链路：上游 → 目标 → 下游
+3. 追踪数据流向（从哪来、到哪去）
+4. 再下结论
+
+**工具（优先用这个）**：
+```bash
+# 谁调用了这个函数
+curl "http://127.0.0.1:18801/graph/callers?name=函数名"
+
+# 两点间的调用路径
+curl "http://127.0.0.1:18801/graph/path?from=起点&to=终点"
+```
+
+**相关文档**：
+- `~/work/bf/nakama-ts/docs/chains/` - 已分析的链路
+- `memory/tools/code-index-api.md` - API 文档
+
+---
+
+## 🛠️ 代码索引工具包（2026-03-02）
+
+**新项目接入代码智能分析的标准流程**：
+
+```bash
+# 一键索引
+~/clawd/scripts/code-index/index-project.sh <项目名> <项目路径>
+```
+
+**已索引项目**：bf-nakama-ts, clawdbot
+
+**详细文档**：
+- `memory/tools/code-index-onboarding.md` - Onboarding 流程
+- `memory/tools/code-index-api.md` - API 完整文档
+- `scripts/code-index/README.md` - 工具包说明
+
+---
+
+## 🔴 核心教训：主动记忆
+
+**2026-02-26 教训**：14 天没写过任何 session 独立记忆，被骂了。
+
+**规则**：
+1. 每个 session 每天要有记录
+2. 跨 session 通用的内容必须同步到 MEMORY.md
+3. 不等别人提醒，自己判断、自己写
+
+详见 AGENTS.md「核心规则 #5」
+
+---
+
+## ⚠️ 已知问题：Compaction 上下文断裂
+
+### 如果你发现上下文突然断了
+**症状**：summary 显示 "Summary unavailable due to context limits. Older messages were truncated."
+
+**这是已知问题**，不是你的锅。
+
+### 根因
+- `compaction-safeguard` 扩展在 `ctx.model === undefined` 时会走 fallback
+- 旧逻辑：截断历史 + 写占位摘要 = 两头都没捞着
+- 已于 2026-02-26 应用 GPT 补丁修复
+
+### 补丁内容（简述）
+1. 通过 runtime registry 注入 model
+2. `model = ctx.model ?? runtime?.model`
+3. 没有 model 就 `{ cancel: true }` 取消压缩，绝不截断+占位
+
+### 如果补丁失效（npm 更新覆盖）
+1. 检查 `~/.npm-global/lib/node_modules/clawdbot/dist/agents/pi-extensions/compaction-safeguard.js`
+2. 看有没有 `setCompactionSafeguardRuntime` 函数
+3. 没有就需要重新应用补丁，详见 `memory/2026-02-26.md`
+4. 原始补丁：`~/.clawdbot/media/inbound/clawdbot-compaction-safeguard-fix---*`
+
+---
+
 ## 2026-02-24 凭证恢复技巧
 
 ### 从 Session 历史找回丢失的凭证/脚本

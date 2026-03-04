@@ -1,0 +1,17 @@
+{
+  "name": "code-index-tools",
+  "version": "1.0.0",
+  "type": "module",
+  "description": "通用 TypeScript 代码索引工具包",
+  "scripts": {
+    "call-graph": "tsx extract-call-graph.ts",
+    "inheritance": "tsx extract-inheritance.ts",
+    "decorators": "tsx extract-decorators.ts",
+    "summaries": "tsx extract-summaries.ts"
+  },
+  "dependencies": {
+    "better-sqlite3": "^9.4.3",
+    "ts-morph": "^21.0.1",
+    "tsx": "^4.7.1"
+  }
+}

@@ -1,0 +1,748 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bingo Voyage 监控日报 | 2026年3月4日</title>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;700;900&family=Noto+Sans+SC:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary-color: #1a1a2e;
+            --accent-color: #e94560;
+            --secondary-accent: #0f3460;
+            --bg-color: #f4f1ea;
+            --text-color: #2d2d2d;
+            --border-color: #d4d0c8;
+            --card-bg: #fffef9;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Noto Sans SC', sans-serif;
+            background: var(--bg-color);
+            color: var(--text-color);
+            line-height: 1.7;
+        }
+        
+        .newspaper {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        /* Header */
+        .header {
+            text-align: center;
+            padding: 30px 20px;
+            border-bottom: 4px double var(--primary-color);
+            margin-bottom: 30px;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            color: white;
+            border-radius: 8px 8px 0 0;
+        }
+        
+        .header h1 {
+            font-family: 'Noto Serif SC', serif;
+            font-size: 3rem;
+            font-weight: 900;
+            letter-spacing: 6px;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+        
+        .header .subtitle {
+            font-size: 1rem;
+            opacity: 0.9;
+            letter-spacing: 2px;
+        }
+        
+        .header .date {
+            margin-top: 15px;
+            font-size: 1.1rem;
+            padding: 8px 20px;
+            background: var(--accent-color);
+            display: inline-block;
+            border-radius: 20px;
+        }
+        
+        /* Section */
+        .section {
+            margin-bottom: 30px;
+            background: var(--card-bg);
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+            overflow: hidden;
+        }
+        
+        .section-header {
+            background: linear-gradient(135deg, var(--secondary-accent) 0%, #1a1a2e 100%);
+            color: white;
+            padding: 15px 25px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        
+        .section-header .icon {
+            font-size: 1.6rem;
+        }
+        
+        .section-header h2 {
+            font-family: 'Noto Serif SC', serif;
+            font-size: 1.4rem;
+            font-weight: 700;
+        }
+        
+        .section-content {
+            padding: 25px;
+        }
+        
+        /* Overview Grid */
+        .overview-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+        }
+        
+        .overview-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 12px;
+            text-align: center;
+        }
+        
+        .overview-card.green {
+            background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+        }
+        
+        .overview-card.orange {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+        }
+        
+        .overview-card.blue {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+        }
+        
+        .overview-card .label {
+            font-size: 0.9rem;
+            opacity: 0.9;
+            margin-bottom: 8px;
+        }
+        
+        .overview-card .value {
+            font-size: 2rem;
+            font-weight: 700;
+        }
+        
+        .overview-card .unit {
+            font-size: 0.9rem;
+            opacity: 0.8;
+        }
+        
+        /* Tables */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+        }
+        
+        th, td {
+            padding: 12px 15px;
+            text-align: left;
+            border-bottom: 1px solid var(--border-color);
+        }
+        
+        th {
+            background: #f8f7f4;
+            font-weight: 600;
+            color: var(--primary-color);
+        }
+        
+        tr:hover {
+            background: #faf9f6;
+        }
+        
+        .num {
+            text-align: right;
+            font-family: 'Courier New', monospace;
+        }
+        
+        .status-ok {
+            color: #27ae60;
+            font-weight: 600;
+        }
+        
+        .status-warn {
+            color: #f39c12;
+            font-weight: 600;
+        }
+        
+        .status-error {
+            color: #e74c3c;
+            font-weight: 600;
+        }
+        
+        /* Two Column Layout */
+        .two-columns {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+        }
+        
+        @media (max-width: 900px) {
+            .two-columns {
+                grid-template-columns: 1fr;
+            }
+        }
+        
+        /* Footer */
+        .footer {
+            text-align: center;
+            padding: 20px;
+            color: #888;
+            font-size: 0.9rem;
+            border-top: 2px solid var(--border-color);
+            margin-top: 30px;
+        }
+        
+        /* Error Code Badge */
+        .error-badge {
+            display: inline-block;
+            padding: 3px 8px;
+            border-radius: 4px;
+            font-size: 0.85rem;
+            font-weight: 500;
+            background: #fee2e2;
+            color: #dc2626;
+        }
+        
+        .service-badge {
+            display: inline-block;
+            padding: 3px 8px;
+            border-radius: 4px;
+            font-size: 0.8rem;
+            font-weight: 500;
+            background: #e0e7ff;
+            color: #4338ca;
+        }
+        
+        /* Night Section */
+        .night-section {
+            background: linear-gradient(135deg, #1a1a2e 0%, #2d2d44 100%);
+            color: white;
+        }
+        
+        .night-section .section-header {
+            background: rgba(255,255,255,0.1);
+        }
+        
+        .night-section table {
+            color: white;
+        }
+        
+        .night-section th {
+            background: rgba(255,255,255,0.1);
+            color: white;
+        }
+        
+        .night-section td {
+            border-bottom-color: rgba(255,255,255,0.1);
+        }
+        
+        .night-section tr:hover {
+            background: rgba(255,255,255,0.05);
+        }
+        
+        /* Summary Box */
+        .summary-box {
+            background: linear-gradient(135deg, #ffecd2 0%, #fcb69f 100%);
+            padding: 20px;
+            border-radius: 12px;
+            margin-top: 15px;
+        }
+        
+        .summary-box h3 {
+            font-family: 'Noto Serif SC', serif;
+            margin-bottom: 10px;
+            color: #1a1a2e;
+        }
+        
+        .summary-box ul {
+            list-style: none;
+            padding-left: 0;
+        }
+        
+        .summary-box li {
+            padding: 5px 0;
+            padding-left: 20px;
+            position: relative;
+        }
+        
+        .summary-box li::before {
+            content: "•";
+            position: absolute;
+            left: 0;
+            color: var(--accent-color);
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <div class="newspaper">
+        <!-- Header -->
+        <header class="header">
+            <h1>🎰 Bingo Voyage 监控日报</h1>
+            <div class="subtitle">正式服 24 小时运行报告</div>
+            <div class="date">2026年3月4日 星期二 | 北京时间 10:32</div>
+        </header>
+        
+        <!-- Overview Section -->
+        <section class="section">
+            <div class="section-header">
+                <span class="icon">📊</span>
+                <h2>系统概览</h2>
+            </div>
+            <div class="section-content">
+                <div class="overview-grid">
+                    <div class="overview-card">
+                        <div class="label">当前在线</div>
+                        <div class="value">14,908</div>
+                        <div class="unit">玩家</div>
+                    </div>
+                    <div class="overview-card green">
+                        <div class="label">24h 请求量</div>
+                        <div class="value">9.27</div>
+                        <div class="unit">亿次</div>
+                    </div>
+                    <div class="overview-card orange">
+                        <div class="label">当前总 QPS</div>
+                        <div class="value">9,877</div>
+                        <div class="unit">请求/秒</div>
+                    </div>
+                    <div class="overview-card blue">
+                        <div class="label">客户端版本</div>
+                        <div class="value">v1.133.0</div>
+                        <div class="unit">100% 覆盖</div>
+                    </div>
+                </div>
+            </div>
+        </section>
+        
+        <!-- Golden Metrics -->
+        <section class="section">
+            <div class="section-header">
+                <span class="icon">⚡</span>
+                <h2>黄金三指标 (QPS / 延迟 / 状态)</h2>
+            </div>
+            <div class="section-content">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>服务</th>
+                            <th class="num">QPS</th>
+                            <th class="num">延迟 (ms)</th>
+                            <th class="num">24h 请求量</th>
+                            <th>状态</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><strong>Connector</strong></td>
+                            <td class="num">4,942</td>
+                            <td class="num">11.3</td>
+                            <td class="num">4.64 亿</td>
+                            <td><span class="status-ok">✅ 正常</span></td>
+                        </tr>
+                        <tr>
+                            <td><strong>Hall</strong></td>
+                            <td class="num">2,313</td>
+                            <td class="num">17.8</td>
+                            <td class="num">2.13 亿</td>
+                            <td><span class="status-ok">✅ 正常</span></td>
+                        </tr>
+                        <tr>
+                            <td><strong>Misc</strong></td>
+                            <td class="num">2,058</td>
+                            <td class="num">9.2</td>
+                            <td class="num">1.96 亿</td>
+                            <td><span class="status-ok">✅ 正常</span></td>
+                        </tr>
+                        <tr>
+                            <td><strong>Club</strong></td>
+                            <td class="num">335</td>
+                            <td class="num">0.6</td>
+                            <td class="num">0.32 亿</td>
+                            <td><span class="status-ok">✅ 正常</span></td>
+                        </tr>
+                        <tr>
+                            <td><strong>Chat</strong></td>
+                            <td class="num">212</td>
+                            <td class="num">&lt;0.1</td>
+                            <td class="num">0.20 亿</td>
+                            <td><span class="status-ok">✅ 正常</span></td>
+                        </tr>
+                        <tr>
+                            <td><strong>Redpoint</strong></td>
+                            <td class="num">19</td>
+                            <td class="num">4.4</td>
+                            <td class="num">189 万</td>
+                            <td><span class="status-ok">✅ 正常</span></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+        
+        <!-- Error Codes -->
+        <section class="section">
+            <div class="section-header">
+                <span class="icon">⚠️</span>
+                <h2>错误码 TOP 10 (24h 统计，已过滤预期错误)</h2>
+            </div>
+            <div class="section-content">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>服务</th>
+                            <th>错误码</th>
+                            <th class="num">次数</th>
+                            <th>说明</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>1</td>
+                            <td><span class="service-badge">Club</span></td>
+                            <td><span class="error-badge">CLUB_NOT_FOUND</span></td>
+                            <td class="num"><strong>107,470</strong></td>
+                            <td>俱乐部不存在（可能是已解散的俱乐部被访问）</td>
+                        </tr>
+                        <tr>
+                            <td>2</td>
+                            <td><span class="service-badge">Hall</span></td>
+                            <td><span class="error-badge">STREAM_ENTITY_NOT_FOUND</span></td>
+                            <td class="num">10,341</td>
+                            <td>流实体未找到（玩家已离线但仍有请求）</td>
+                        </tr>
+                        <tr>
+                            <td>3</td>
+                            <td><span class="service-badge">Chat</span></td>
+                            <td><span class="error-badge">STREAM_ENTITY_NOT_FOUND</span></td>
+                            <td class="num">1,528</td>
+                            <td>聊天流实体未找到</td>
+                        </tr>
+                        <tr>
+                            <td>4</td>
+                            <td><span class="service-badge">Misc</span></td>
+                            <td><span class="error-badge">APPLY_CD</span></td>
+                            <td class="num">1,384</td>
+                            <td>申请冷却中</td>
+                        </tr>
+                        <tr>
+                            <td>5</td>
+                            <td><span class="service-badge">Hall</span></td>
+                            <td><span class="error-badge">INVALID_REQ</span></td>
+                            <td class="num">1,268</td>
+                            <td>无效请求参数</td>
+                        </tr>
+                        <tr>
+                            <td>6</td>
+                            <td><span class="service-badge">Club</span></td>
+                            <td><span class="error-badge">STREAM_ENTITY_NOT_FOUND</span></td>
+                            <td class="num">1,228</td>
+                            <td>俱乐部流实体未找到</td>
+                        </tr>
+                        <tr>
+                            <td>7</td>
+                            <td><span class="service-badge">Misc</span></td>
+                            <td><span class="error-badge">INVALID_REQ</span></td>
+                            <td class="num">1,093</td>
+                            <td>无效请求参数</td>
+                        </tr>
+                        <tr>
+                            <td>8</td>
+                            <td><span class="service-badge">Misc</span></td>
+                            <td><span class="error-badge">ERR_USER_CREDENTIAL_IN_USE</span></td>
+                            <td class="num">1,074</td>
+                            <td>用户凭证已被使用</td>
+                        </tr>
+                        <tr>
+                            <td>9</td>
+                            <td><span class="service-badge">Misc</span></td>
+                            <td><span class="error-badge">INTERNAL_SERVER</span></td>
+                            <td class="num">825</td>
+                            <td>内部服务器错误 ⚠️</td>
+                        </tr>
+                        <tr>
+                            <td>10</td>
+                            <td><span class="service-badge">Hall</span></td>
+                            <td><span class="error-badge">BUYCARD_CALLBALL_LIMIT</span></td>
+                            <td class="num">528</td>
+                            <td>购卡叫球次数限制</td>
+                        </tr>
+                    </tbody>
+                </table>
+                <div class="summary-box">
+                    <h3>📋 错误码分析</h3>
+                    <ul>
+                        <li><strong>CLUB_NOT_FOUND (107K)</strong>：数量较大，建议排查是否有大量访问已解散俱乐部的情况</li>
+                        <li><strong>STREAM_ENTITY_NOT_FOUND</strong>：多服务出现，属于正常的并发竞态</li>
+                        <li><strong>INTERNAL_SERVER (825)</strong>：Misc 服务内部错误，建议关注日志排查根因</li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+        
+        <!-- Server Resources -->
+        <section class="section">
+            <div class="section-header">
+                <span class="icon">🖥️</span>
+                <h2>服务器资源 (Prod 核心服务)</h2>
+            </div>
+            <div class="section-content">
+                <div class="two-columns">
+                    <div>
+                        <h3 style="margin-bottom: 15px;">业务服务</h3>
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>服务器</th>
+                                    <th class="num">CPU</th>
+                                    <th class="num">内存</th>
+                                    <th class="num">负载</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>Hall-NEW-0</td>
+                                    <td class="num">28.4%</td>
+                                    <td class="num">25.2%</td>
+                                    <td class="num"><span class="status-warn">10.3</span></td>
+                                </tr>
+                                <tr>
+                                    <td>Hall-NEW-1</td>
+                                    <td class="num">29.0%</td>
+                                    <td class="num">24.9%</td>
+                                    <td class="num"><span class="status-warn">8.5</span></td>
+                                </tr>
+                                <tr>
+                                    <td>Misc-NEW-0</td>
+                                    <td class="num">27.5%</td>
+                                    <td class="num">10.4%</td>
+                                    <td class="num">4.5</td>
+                                </tr>
+                                <tr>
+                                    <td>Misc-NEW-1</td>
+                                    <td class="num">27.6%</td>
+                                    <td class="num">9.2%</td>
+                                    <td class="num">3.3</td>
+                                </tr>
+                                <tr>
+                                    <td>Misc-NEW-2</td>
+                                    <td class="num">28.0%</td>
+                                    <td class="num">10.8%</td>
+                                    <td class="num">3.5</td>
+                                </tr>
+                                <tr>
+                                    <td>Misc-NEW-3</td>
+                                    <td class="num">28.1%</td>
+                                    <td class="num">9.6%</td>
+                                    <td class="num">3.7</td>
+                                </tr>
+                                <tr>
+                                    <td>Club-Chat-New</td>
+                                    <td class="num">21.4%</td>
+                                    <td class="num">46.8%</td>
+                                    <td class="num"><span class="status-warn">9.0</span></td>
+                                </tr>
+                                <tr>
+                                    <td>Connector-New</td>
+                                    <td class="num">31.5%</td>
+                                    <td class="num">30.2%</td>
+                                    <td class="num">5.4</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <div>
+                        <h3 style="margin-bottom: 15px;">基础设施</h3>
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>服务器</th>
+                                    <th class="num">CPU</th>
+                                    <th class="num">内存</th>
+                                    <th class="num">磁盘</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>NATS-1-Arm</td>
+                                    <td class="num">14.5%</td>
+                                    <td class="num">10.4%</td>
+                                    <td class="num">19.3%</td>
+                                </tr>
+                                <tr>
+                                    <td>NATS-2-Arm</td>
+                                    <td class="num">24.5%</td>
+                                    <td class="num">11.9%</td>
+                                    <td class="num">19.2%</td>
+                                </tr>
+                                <tr>
+                                    <td>NATS-3-Arm</td>
+                                    <td class="num">15.4%</td>
+                                    <td class="num">9.8%</td>
+                                    <td class="num">19.2%</td>
+                                </tr>
+                                <tr>
+                                    <td>Gate-Arm-0</td>
+                                    <td class="num">3.8%</td>
+                                    <td class="num">10.1%</td>
+                                    <td class="num">36.0%</td>
+                                </tr>
+                                <tr>
+                                    <td>Gate-Arm-1</td>
+                                    <td class="num">3.0%</td>
+                                    <td class="num">9.8%</td>
+                                    <td class="num">35.3%</td>
+                                </tr>
+                                <tr>
+                                    <td>Campaign</td>
+                                    <td class="num">11.4%</td>
+                                    <td class="num"><span class="status-warn">50.8%</span></td>
+                                    <td class="num">49.3%</td>
+                                </tr>
+                                <tr>
+                                    <td>Support</td>
+                                    <td class="num">31.1%</td>
+                                    <td class="num">41.7%</td>
+                                    <td class="num">29.6%</td>
+                                </tr>
+                                <tr>
+                                    <td>Logan</td>
+                                    <td class="num">0.7%</td>
+                                    <td class="num">29.7%</td>
+                                    <td class="num"><span class="status-warn">50.8%</span></td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </section>
+        
+        <!-- Night Watch -->
+        <section class="section night-section">
+            <div class="section-header">
+                <span class="icon">🌙</span>
+                <h2>凌晨观察 (02:00-06:00 北京时间)</h2>
+            </div>
+            <div class="section-content">
+                <div class="two-columns">
+                    <div>
+                        <h3 style="margin-bottom: 15px; color: #a0aec0;">在线与流量</h3>
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>指标</th>
+                                    <th class="num">平均</th>
+                                    <th class="num">最低</th>
+                                    <th class="num">最高</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>在线人数</td>
+                                    <td class="num">18,546</td>
+                                    <td class="num">17,600</td>
+                                    <td class="num">19,144</td>
+                                </tr>
+                                <tr>
+                                    <td>Connector QPS</td>
+                                    <td class="num" colspan="3">6,150</td>
+                                </tr>
+                                <tr>
+                                    <td>Hall QPS</td>
+                                    <td class="num" colspan="3">2,831</td>
+                                </tr>
+                                <tr>
+                                    <td>Misc QPS</td>
+                                    <td class="num" colspan="3">2,606</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <div>
+                        <h3 style="margin-bottom: 15px; color: #a0aec0;">凌晨错误统计</h3>
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>服务</th>
+                                    <th class="num">错误数</th>
+                                    <th>状态</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>Hall</td>
+                                    <td class="num">2,448</td>
+                                    <td><span class="status-ok">✅ 正常</span></td>
+                                </tr>
+                                <tr>
+                                    <td>Misc</td>
+                                    <td class="num">1,192</td>
+                                    <td><span class="status-ok">✅ 正常</span></td>
+                                </tr>
+                            </tbody>
+                        </table>
+                        <p style="margin-top: 15px; color: #a0aec0; font-size: 0.9rem;">
+                            💤 凌晨低峰期运行稳定，在线人数波动 ±4.2%，错误率保持在正常范围。
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </section>
+        
+        <!-- Summary -->
+        <section class="section">
+            <div class="section-header">
+                <span class="icon">📝</span>
+                <h2>日报总结</h2>
+            </div>
+            <div class="section-content">
+                <div class="summary-box">
+                    <h3>✅ 整体状态：正常</h3>
+                    <ul>
+                        <li>24 小时共处理 <strong>9.27 亿</strong> 次请求，服务稳定</li>
+                        <li>各服务延迟正常：Hall 17.8ms、Connector 11.3ms、Misc 9.2ms</li>
+                        <li>服务器资源充足，CPU 最高 31.5%，内存最高 50.8%</li>
+                        <li>凌晨低峰期运行平稳，在线人数稳定在 17K-19K</li>
+                    </ul>
+                </div>
+                <div class="summary-box" style="background: linear-gradient(135deg, #ffeaa7 0%, #dfe6e9 100%); margin-top: 15px;">
+                    <h3>⚠️ 需关注项</h3>
+                    <ul>
+                        <li><strong>CLUB_NOT_FOUND 错误较多 (107K/24h)</strong> - 建议排查是否有访问已解散俱乐部的场景</li>
+                        <li><strong>Misc INTERNAL_SERVER 错误 (825/24h)</strong> - 建议查看日志定位根因</li>
+                        <li><strong>Hall/Club-Chat 负载较高 (8-10)</strong> - 接近核心数，高峰期需关注</li>
+                        <li><strong>Logan 磁盘使用 50.8%</strong> - 建议定期清理日志</li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+        
+        <!-- Footer -->
+        <footer class="footer">
+            <p>📊 Bingo Voyage 监控日报 | 自动生成于 2026-03-04 10:32 (北京时间)</p>
+            <p>数据来源：Grafana Prometheus | 生成者：AAA王总</p>
+        </footer>
+    </div>
+</body>
+</html>

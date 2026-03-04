@@ -1,0 +1,37 @@
+flowchart TD
+    START([对局开始]) --> ROLL{随机判断<br/>random less than pressure_robot_rate?}
+    
+    ROLL -->|否| NORMAL[使用原有机器人逻辑<br/>固定时间加固定比例分数]
+    ROLL -->|是| PRESSURE[启用紧咬机器人]
+    
+    PRESSURE --> INIT[随机生成达标分数<br/>qualify_score<br/>玩家不可见]
+    
+    INIT --> LOOP[每次加分检查点]
+    
+    LOOP --> CALC[计算目标分数<br/>target = player_score 减 随机分差]
+    
+    CALC --> COMPARE{target 大于 当前bot_score?}
+    
+    COMPARE -->|是| UPDATE[bot_score = target<br/>机器人紧咬追分]
+    COMPARE -->|否| KEEP[bot_score保持不变<br/>只涨不跌]
+    
+    UPDATE --> ENDCHECK{对局结束?}
+    KEEP --> ENDCHECK
+    
+    ENDCHECK -->|否| LOOP
+    ENDCHECK -->|是| QUALIFY{player_score 大于等于 qualify_score?}
+    
+    QUALIFY -->|玩家达标| WIN[玩家获胜<br/>机器人故意少加分<br/>险胜体验]
+    QUALIFY -->|玩家未达标| LOSE[机器人获胜<br/>最后时刻反超<br/>惜败体验]
+    
+    WIN --> END([对局结算])
+    LOSE --> END
+    NORMAL --> NORMAL_END([原逻辑结算])
+
+    style START fill:#9C27B0,color:white
+    style PRESSURE fill:#4CAF50,color:white
+    style INIT fill:#00BCD4,color:white
+    style QUALIFY fill:#FF9800,color:white
+    style WIN fill:#2196F3,color:white
+    style LOSE fill:#f44336,color:white
+    style NORMAL fill:#607D8B,color:white

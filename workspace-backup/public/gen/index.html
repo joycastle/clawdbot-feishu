@@ -1,0 +1,611 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MS 监控日报 | 2026年3月4日</title>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;700;900&family=Noto+Sans+SC:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary-color: #1a1a2e;
+            --accent-color: #e94560;
+            --secondary-accent: #0f3460;
+            --bg-color: #faf8f5;
+            --text-color: #2d2d2d;
+            --border-color: #d4d0c8;
+            --card-bg: #ffffff;
+            --success-color: #27ae60;
+            --warning-color: #f39c12;
+            --danger-color: #e74c3c;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Noto Sans SC', sans-serif;
+            background: var(--bg-color);
+            color: var(--text-color);
+            line-height: 1.7;
+        }
+        
+        .newspaper {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        .header {
+            text-align: center;
+            padding: 30px 20px;
+            border-bottom: 4px double var(--primary-color);
+            margin-bottom: 30px;
+            background: linear-gradient(135deg, #16213e 0%, #1a1a2e 100%);
+            color: white;
+            border-radius: 8px 8px 0 0;
+        }
+        
+        .header h1 {
+            font-family: 'Noto Serif SC', serif;
+            font-size: 2.8rem;
+            font-weight: 900;
+            letter-spacing: 6px;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+        
+        .header .subtitle {
+            font-size: 1rem;
+            opacity: 0.9;
+            letter-spacing: 2px;
+        }
+        
+        .header .date {
+            margin-top: 15px;
+            font-size: 1.1rem;
+            padding: 8px 20px;
+            background: var(--accent-color);
+            display: inline-block;
+            border-radius: 20px;
+        }
+        
+        .section {
+            margin-bottom: 30px;
+            background: var(--card-bg);
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+            overflow: hidden;
+        }
+        
+        .section-header {
+            background: linear-gradient(135deg, var(--secondary-accent) 0%, #1a1a2e 100%);
+            color: white;
+            padding: 15px 25px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        
+        .section-header .icon {
+            font-size: 1.6rem;
+        }
+        
+        .section-header h2 {
+            font-family: 'Noto Serif SC', serif;
+            font-size: 1.3rem;
+            font-weight: 700;
+        }
+        
+        .section-content {
+            padding: 25px;
+        }
+        
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+        }
+        
+        .stat-card {
+            background: linear-gradient(135deg, #f8f9fa 0%, #fff 100%);
+            border-radius: 12px;
+            padding: 20px;
+            text-align: center;
+            border-left: 4px solid var(--accent-color);
+            transition: transform 0.3s ease;
+        }
+        
+        .stat-card:hover {
+            transform: translateY(-3px);
+        }
+        
+        .stat-card .label {
+            font-size: 0.9rem;
+            color: #666;
+            margin-bottom: 8px;
+        }
+        
+        .stat-card .value {
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--secondary-accent);
+        }
+        
+        .stat-card .unit {
+            font-size: 0.9rem;
+            color: #888;
+        }
+        
+        .stat-card.success .value {
+            color: var(--success-color);
+        }
+        
+        .stat-card.warning .value {
+            color: var(--warning-color);
+        }
+        
+        .stat-card.danger .value {
+            color: var(--danger-color);
+        }
+        
+        .error-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+        }
+        
+        .error-table th,
+        .error-table td {
+            padding: 12px 15px;
+            text-align: left;
+            border-bottom: 1px solid #eee;
+        }
+        
+        .error-table th {
+            background: #f8f9fa;
+            font-weight: 600;
+            color: var(--secondary-accent);
+        }
+        
+        .error-table tr:hover {
+            background: #fafafa;
+        }
+        
+        .error-code {
+            font-family: monospace;
+            background: #ffe6e9;
+            color: var(--danger-color);
+            padding: 3px 8px;
+            border-radius: 4px;
+            font-weight: 600;
+        }
+        
+        .server-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 15px;
+        }
+        
+        .server-card {
+            background: linear-gradient(135deg, #f8f9fa 0%, #fff 100%);
+            border-radius: 10px;
+            padding: 18px;
+            border-left: 4px solid var(--secondary-accent);
+        }
+        
+        .server-card .server-name {
+            font-weight: 600;
+            color: var(--secondary-accent);
+            margin-bottom: 12px;
+            font-size: 0.95rem;
+        }
+        
+        .metric-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+            font-size: 0.9rem;
+        }
+        
+        .metric-row .label {
+            color: #666;
+        }
+        
+        .metric-row .value {
+            font-weight: 600;
+        }
+        
+        .progress-bar {
+            width: 100%;
+            height: 6px;
+            background: #e0e0e0;
+            border-radius: 3px;
+            overflow: hidden;
+            margin-top: 4px;
+        }
+        
+        .progress-bar .fill {
+            height: 100%;
+            border-radius: 3px;
+            transition: width 0.5s ease;
+        }
+        
+        .progress-bar .fill.low {
+            background: var(--success-color);
+        }
+        
+        .progress-bar .fill.medium {
+            background: var(--warning-color);
+        }
+        
+        .progress-bar .fill.high {
+            background: var(--danger-color);
+        }
+        
+        .summary-box {
+            background: linear-gradient(135deg, #e8f5e9 0%, #fff 100%);
+            border-radius: 10px;
+            padding: 20px;
+            border-left: 4px solid var(--success-color);
+            margin-top: 20px;
+        }
+        
+        .summary-box h3 {
+            color: var(--success-color);
+            margin-bottom: 12px;
+            font-size: 1.1rem;
+        }
+        
+        .summary-box ul {
+            list-style: none;
+            padding: 0;
+        }
+        
+        .summary-box li {
+            padding: 6px 0;
+            padding-left: 24px;
+            position: relative;
+        }
+        
+        .summary-box li::before {
+            content: '✓';
+            position: absolute;
+            left: 0;
+            color: var(--success-color);
+            font-weight: bold;
+        }
+        
+        .footer {
+            text-align: center;
+            padding: 20px;
+            color: #888;
+            font-size: 0.85rem;
+            margin-top: 30px;
+        }
+        
+        @media (max-width: 768px) {
+            .header h1 {
+                font-size: 2rem;
+                letter-spacing: 3px;
+            }
+            
+            .stats-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+            
+            .stat-card .value {
+                font-size: 1.5rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="newspaper">
+        <header class="header">
+            <h1>📊 MS 监控日报</h1>
+            <p class="subtitle">Matching Story 正式服 · 24小时运行报告</p>
+            <div class="date">2026年3月4日 星期二 · UTC 03:00</div>
+        </header>
+        
+        <section class="section">
+            <div class="section-header">
+                <span class="icon">📈</span>
+                <h2>核心业务指标</h2>
+            </div>
+            <div class="section-content">
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="label">当前在线</div>
+                        <div class="value">23,827</div>
+                        <div class="unit">人</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="label">24h 峰值</div>
+                        <div class="value">44,177</div>
+                        <div class="unit">人</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="label">当前 QPS</div>
+                        <div class="value">2,533</div>
+                        <div class="unit">req/s</div>
+                    </div>
+                    <div class="stat-card success">
+                        <div class="label">24h 请求成功率</div>
+                        <div class="value">99.94%</div>
+                        <div class="unit">2.87亿 请求</div>
+                    </div>
+                </div>
+            </div>
+        </section>
+        
+        <section class="section">
+            <div class="section-header">
+                <span class="icon">⏱️</span>
+                <h2>响应延迟</h2>
+            </div>
+            <div class="section-content">
+                <div class="stats-grid">
+                    <div class="stat-card success">
+                        <div class="label">P50 延迟</div>
+                        <div class="value">3.5</div>
+                        <div class="unit">毫秒</div>
+                    </div>
+                    <div class="stat-card success">
+                        <div class="label">P95 延迟</div>
+                        <div class="value">71</div>
+                        <div class="unit">毫秒</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="label">P99 延迟</div>
+                        <div class="value">193</div>
+                        <div class="unit">毫秒</div>
+                    </div>
+                </div>
+            </div>
+        </section>
+        
+        <section class="section">
+            <div class="section-header">
+                <span class="icon">⚠️</span>
+                <h2>错误码 TOP 10 (24h)</h2>
+            </div>
+            <div class="section-content">
+                <table class="error-table">
+                    <thead>
+                        <tr>
+                            <th>排名</th>
+                            <th>错误码</th>
+                            <th>次数</th>
+                            <th>占比</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>1</td>
+                            <td><span class="error-code">1100</span></td>
+                            <td>36,524</td>
+                            <td>0.013%</td>
+                        </tr>
+                        <tr>
+                            <td>2</td>
+                            <td><span class="error-code">4011</span></td>
+                            <td>35,371</td>
+                            <td>0.012%</td>
+                        </tr>
+                        <tr>
+                            <td>3</td>
+                            <td><span class="error-code">1057</span></td>
+                            <td>34,660</td>
+                            <td>0.012%</td>
+                        </tr>
+                        <tr>
+                            <td>4</td>
+                            <td><span class="error-code">5000</span></td>
+                            <td>7,296</td>
+                            <td>0.003%</td>
+                        </tr>
+                        <tr>
+                            <td>5</td>
+                            <td><span class="error-code">7200</span></td>
+                            <td>7,067</td>
+                            <td>0.002%</td>
+                        </tr>
+                        <tr>
+                            <td>6</td>
+                            <td><span class="error-code">7008</span></td>
+                            <td>6,667</td>
+                            <td>0.002%</td>
+                        </tr>
+                        <tr>
+                            <td>7</td>
+                            <td><span class="error-code">8014</span></td>
+                            <td>5,106</td>
+                            <td>0.002%</td>
+                        </tr>
+                        <tr>
+                            <td>8</td>
+                            <td><span class="error-code">7002</span></td>
+                            <td>4,849</td>
+                            <td>0.002%</td>
+                        </tr>
+                        <tr>
+                            <td>9</td>
+                            <td><span class="error-code">8002</span></td>
+                            <td>2,312</td>
+                            <td>0.001%</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+        
+        <section class="section">
+            <div class="section-header">
+                <span class="icon">🖥️</span>
+                <h2>服务器资源</h2>
+            </div>
+            <div class="section-content">
+                <div class="server-grid">
+                    <div class="server-card">
+                        <div class="server-name">🟢 APIServer-ARM-0</div>
+                        <div class="metric-row">
+                            <span class="label">CPU</span>
+                            <span class="value">22.9%</span>
+                        </div>
+                        <div class="progress-bar"><div class="fill low" style="width: 22.9%"></div></div>
+                        <div class="metric-row">
+                            <span class="label">内存</span>
+                            <span class="value">37.2%</span>
+                        </div>
+                        <div class="progress-bar"><div class="fill low" style="width: 37.2%"></div></div>
+                        <div class="metric-row">
+                            <span class="label">磁盘</span>
+                            <span class="value">42.8%</span>
+                        </div>
+                        <div class="progress-bar"><div class="fill medium" style="width: 42.8%"></div></div>
+                    </div>
+                    
+                    <div class="server-card">
+                        <div class="server-name">🟢 APIServer-ARM-1</div>
+                        <div class="metric-row">
+                            <span class="label">CPU</span>
+                            <span class="value">20.9%</span>
+                        </div>
+                        <div class="progress-bar"><div class="fill low" style="width: 20.9%"></div></div>
+                        <div class="metric-row">
+                            <span class="label">内存</span>
+                            <span class="value">37.0%</span>
+                        </div>
+                        <div class="progress-bar"><div class="fill low" style="width: 37%"></div></div>
+                        <div class="metric-row">
+                            <span class="label">磁盘</span>
+                            <span class="value">42.5%</span>
+                        </div>
+                        <div class="progress-bar"><div class="fill medium" style="width: 42.5%"></div></div>
+                    </div>
+                    
+                    <div class="server-card">
+                        <div class="server-name">🟢 APIServer-ARM-2</div>
+                        <div class="metric-row">
+                            <span class="label">CPU</span>
+                            <span class="value">20.7%</span>
+                        </div>
+                        <div class="progress-bar"><div class="fill low" style="width: 20.7%"></div></div>
+                        <div class="metric-row">
+                            <span class="label">内存</span>
+                            <span class="value">35.8%</span>
+                        </div>
+                        <div class="progress-bar"><div class="fill low" style="width: 35.8%"></div></div>
+                        <div class="metric-row">
+                            <span class="label">磁盘</span>
+                            <span class="value">42.3%</span>
+                        </div>
+                        <div class="progress-bar"><div class="fill medium" style="width: 42.3%"></div></div>
+                    </div>
+                    
+                    <div class="server-card">
+                        <div class="server-name">🟢 PushServer-ARM</div>
+                        <div class="metric-row">
+                            <span class="label">CPU</span>
+                            <span class="value">4.7%</span>
+                        </div>
+                        <div class="progress-bar"><div class="fill low" style="width: 4.7%"></div></div>
+                        <div class="metric-row">
+                            <span class="label">内存</span>
+                            <span class="value">23.6%</span>
+                        </div>
+                        <div class="progress-bar"><div class="fill low" style="width: 23.6%"></div></div>
+                        <div class="metric-row">
+                            <span class="label">磁盘</span>
+                            <span class="value">40.0%</span>
+                        </div>
+                        <div class="progress-bar"><div class="fill low" style="width: 40%"></div></div>
+                    </div>
+                    
+                    <div class="server-card">
+                        <div class="server-name">🟢 AsyncServer-ARM</div>
+                        <div class="metric-row">
+                            <span class="label">CPU</span>
+                            <span class="value">3.5%</span>
+                        </div>
+                        <div class="progress-bar"><div class="fill low" style="width: 3.5%"></div></div>
+                        <div class="metric-row">
+                            <span class="label">内存</span>
+                            <span class="value">14.7%</span>
+                        </div>
+                        <div class="progress-bar"><div class="fill low" style="width: 14.7%"></div></div>
+                        <div class="metric-row">
+                            <span class="label">磁盘</span>
+                            <span class="value">40.4%</span>
+                        </div>
+                        <div class="progress-bar"><div class="fill low" style="width: 40.4%"></div></div>
+                    </div>
+                    
+                    <div class="server-card">
+                        <div class="server-name">🟢 Support-ARM</div>
+                        <div class="metric-row">
+                            <span class="label">CPU</span>
+                            <span class="value">14.7%</span>
+                        </div>
+                        <div class="progress-bar"><div class="fill low" style="width: 14.7%"></div></div>
+                        <div class="metric-row">
+                            <span class="label">内存</span>
+                            <span class="value">19.1%</span>
+                        </div>
+                        <div class="progress-bar"><div class="fill low" style="width: 19.1%"></div></div>
+                        <div class="metric-row">
+                            <span class="label">磁盘</span>
+                            <span class="value">45.6%</span>
+                        </div>
+                        <div class="progress-bar"><div class="fill medium" style="width: 45.6%"></div></div>
+                    </div>
+                    
+                    <div class="server-card">
+                        <div class="server-name">🟢 Metrics Server</div>
+                        <div class="metric-row">
+                            <span class="label">CPU</span>
+                            <span class="value">5.4%</span>
+                        </div>
+                        <div class="progress-bar"><div class="fill low" style="width: 5.4%"></div></div>
+                        <div class="metric-row">
+                            <span class="label">内存</span>
+                            <span class="value">19.3%</span>
+                        </div>
+                        <div class="progress-bar"><div class="fill low" style="width: 19.3%"></div></div>
+                        <div class="metric-row">
+                            <span class="label">磁盘</span>
+                            <span class="value">20.8%</span>
+                        </div>
+                        <div class="progress-bar"><div class="fill low" style="width: 20.8%"></div></div>
+                    </div>
+                </div>
+            </div>
+        </section>
+        
+        <section class="section">
+            <div class="section-content">
+                <div class="summary-box">
+                    <h3>📋 运行状态总结</h3>
+                    <ul>
+                        <li>系统整体运行稳定，成功率 99.94%</li>
+                        <li>在线人数正常，当前 23,827 / 峰值 44,177</li>
+                        <li>P99 延迟 193ms，处于正常范围</li>
+                        <li>所有服务器 CPU/内存使用率正常</li>
+                        <li>磁盘使用率在 40-46% 之间，空间充足</li>
+                        <li>无需紧急关注的问题</li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+        
+        <footer class="footer">
+            <p>Matching Story 监控日报 · 自动生成于 2026-03-04 03:03 UTC</p>
+            <p>数据来源: Grafana Prometheus · 报告周期: 最近 24 小时</p>
+        </footer>
+    </div>
+</body>
+</html>

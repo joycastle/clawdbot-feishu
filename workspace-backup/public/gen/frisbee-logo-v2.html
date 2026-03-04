@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Frisbee Frenzy Logo V2</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            background: linear-gradient(180deg, #1e3a5f 0%, #0d1f33 100%);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 40px 20px;
+            font-family: -apple-system, sans-serif;
+        }
+        
+        .version-label {
+            color: #666;
+            font-size: 12px;
+            margin-bottom: 20px;
+        }
+        
+        .logo-wrapper {
+            position: relative;
+            width: 420px;
+            height: 180px;
+        }
+        
+        /* 主弧线包裹 - 飞盘轨迹 */
+        .arc-wrapper {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+        }
+        
+        .main-arc {
+            position: absolute;
+            width: 380px;
+            height: 160px;
+            border: 8px solid transparent;
+            border-bottom: 8px solid #0099DD;
+            border-radius: 0 0 190px 190px;
+            top: 5px;
+            left: 20px;
+            filter: drop-shadow(0 0 8px rgba(0, 153, 221, 0.5));
+        }
+        
+        .inner-arc {
+            position: absolute;
+            width: 340px;
+            height: 140px;
+            border: 4px solid transparent;
+            border-bottom: 4px solid rgba(0, 180, 255, 0.4);
+            border-radius: 0 0 170px 170px;
+            top: 20px;
+            left: 40px;
+        }
+        
+        /* 文字组 */
+        .text-group {
+            position: absolute;
+            top: 35px;
+            left: 25px;
+            transform: rotate(-6deg);
+        }
+        
+        .frisbee-text {
+            font-family: 'Arial Black', Impact, sans-serif;
+            font-size: 64px;
+            font-weight: 900;
+            letter-spacing: 2px;
+            line-height: 1;
+            color: #FFE135;
+            text-shadow: 
+                0 4px 0 #E85D04,
+                0 6px 0 #C84A03,
+                4px 4px 0 #9D4EDD,
+                -3px -2px 0 #7B2CBF,
+                0 8px 20px rgba(0,0,0,0.6);
+            position: relative;
+            z-index: 2;
+        }
+        
+        .frenzy-text {
+            font-family: 'Arial Black', Impact, sans-serif;
+            font-size: 48px;
+            font-weight: 900;
+            letter-spacing: 8px;
+            line-height: 1;
+            margin-top: 2px;
+            margin-left: 15px;
+            color: #FF6B35;
+            text-shadow: 
+                0 3px 0 #C41E3A,
+                0 5px 0 #8B0000,
+                3px 3px 0 #7B2CBF,
+                -2px -2px 0 #5A189A,
+                0 6px 15px rgba(0,0,0,0.5);
+            position: relative;
+            z-index: 2;
+        }
+        
+        /* 飞盘 - 紧贴弧线末端 */
+        .disc {
+            position: absolute;
+            right: -10px;
+            top: 50px;
+            width: 70px;
+            height: 70px;
+            z-index: 3;
+        }
+        
+        .disc-outer {
+            width: 70px;
+            height: 70px;
+            background: linear-gradient(135deg, #00B4D8 0%, #0077B6 60%, #023E8A 100%);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 
+                inset -4px -4px 10px rgba(0,0,0,0.4),
+                inset 4px 4px 10px rgba(255,255,255,0.15),
+                0 4px 15px rgba(0,0,0,0.5),
+                0 0 20px rgba(0, 180, 216, 0.4);
+            position: relative;
+        }
+        
+        .disc-inner {
+            width: 44px;
+            height: 44px;
+            background: linear-gradient(135deg, #90E0EF 0%, #00B4D8 50%, #0077B6 100%);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: inset 0 2px 4px rgba(255,255,255,0.4);
+        }
+        
+        .star {
+            font-size: 26px;
+            color: #FFF8DC;
+            text-shadow: 0 0 8px rgba(255,248,220,0.8);
+        }
+        
+        /* 动感线 - 飞盘后方 */
+        .motion-lines {
+            position: absolute;
+            right: 60px;
+            top: 65px;
+        }
+        
+        .motion-line {
+            height: 3px;
+            background: linear-gradient(90deg, transparent, rgba(0,180,255,0.6), rgba(0,180,255,0.2));
+            margin-bottom: 6px;
+            border-radius: 2px;
+        }
+        .motion-line:nth-child(1) { width: 25px; }
+        .motion-line:nth-child(2) { width: 35px; margin-left: -5px; }
+        .motion-line:nth-child(3) { width: 20px; margin-left: 5px; }
+        
+        /* 说明 */
+        .note {
+            margin-top: 40px;
+            color: #88a;
+            font-size: 13px;
+            text-align: center;
+            max-width: 400px;
+            line-height: 1.6;
+        }
+        .highlight { color: #0099DD; }
+    </style>
+</head>
+<body>
+    <div class="version-label">V2 - 紧凑版</div>
+    
+    <div class="logo-wrapper">
+        <!-- 弧线轨迹 -->
+        <div class="arc-wrapper">
+            <div class="main-arc"></div>
+            <div class="inner-arc"></div>
+        </div>
+        
+        <!-- 文字 -->
+        <div class="text-group">
+            <div class="frisbee-text">FRISBEE</div>
+            <div class="frenzy-text">FRENZY</div>
+        </div>
+        
+        <!-- 动感线 -->
+        <div class="motion-lines">
+            <div class="motion-line"></div>
+            <div class="motion-line"></div>
+            <div class="motion-line"></div>
+        </div>
+        
+        <!-- 飞盘 -->
+        <div class="disc">
+            <div class="disc-outer">
+                <div class="disc-inner">
+                    <span class="star">★</span>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="note">
+        <span class="highlight">弧线包裹文字</span>，飞盘在轨迹末端<br>
+        整体更紧凑，元素联系更强
+    </div>
+</body>
+</html>

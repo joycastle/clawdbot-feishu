@@ -1,0 +1,4 @@
+__pycache__/
+data/records.csv
+reports/
+data/daily_tracking.json

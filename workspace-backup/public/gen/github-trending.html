@@ -1,0 +1,492 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GitHub Trending 日报 - 2026年2月27日</title>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;700;900&family=Playfair+Display:wght@700;900&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Noto Serif SC', serif;
+            background: #f5f0e8;
+            color: #1a1a1a;
+            line-height: 1.6;
+        }
+        
+        .newspaper {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: #fffef9;
+            box-shadow: 0 0 30px rgba(0,0,0,0.15);
+            min-height: 100vh;
+        }
+        
+        /* 报纸头部 */
+        .masthead {
+            border-bottom: 3px solid #1a1a1a;
+            padding: 20px 40px;
+            text-align: center;
+            background: linear-gradient(to bottom, #fffef9, #f8f4ec);
+        }
+        
+        .date-line {
+            font-size: 12px;
+            letter-spacing: 3px;
+            color: #666;
+            margin-bottom: 10px;
+        }
+        
+        .paper-name {
+            font-family: 'Playfair Display', serif;
+            font-size: 72px;
+            font-weight: 900;
+            letter-spacing: -2px;
+            line-height: 1;
+            margin-bottom: 5px;
+            background: linear-gradient(135deg, #1a1a1a 0%, #444 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        
+        .paper-subtitle {
+            font-size: 14px;
+            color: #666;
+            letter-spacing: 5px;
+            text-transform: uppercase;
+        }
+        
+        .edition-info {
+            display: flex;
+            justify-content: space-between;
+            border-top: 1px solid #ccc;
+            border-bottom: 1px solid #ccc;
+            padding: 8px 40px;
+            font-size: 11px;
+            color: #888;
+        }
+        
+        /* 头条区域 */
+        .headline-section {
+            padding: 30px 40px;
+            border-bottom: 2px solid #1a1a1a;
+        }
+        
+        .section-title {
+            font-size: 14px;
+            font-weight: 700;
+            letter-spacing: 3px;
+            color: #c41e3a;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .section-title::before,
+        .section-title::after {
+            content: '';
+            flex: 1;
+            height: 1px;
+            background: #c41e3a;
+        }
+        
+        .headline {
+            font-size: 36px;
+            font-weight: 900;
+            line-height: 1.2;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        
+        /* 内容区域 */
+        .content {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 0;
+        }
+        
+        .column {
+            padding: 25px 30px;
+        }
+        
+        .column:first-child {
+            border-right: 1px solid #ddd;
+        }
+        
+        .column-title {
+            font-size: 20px;
+            font-weight: 700;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #1a1a1a;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .badge {
+            background: #c41e3a;
+            color: white;
+            padding: 3px 10px;
+            font-size: 11px;
+            border-radius: 3px;
+        }
+        
+        .badge.weekly {
+            background: #2563eb;
+        }
+        
+        /* 仓库卡片 */
+        .repo-item {
+            padding: 15px 0;
+            border-bottom: 1px dashed #ddd;
+        }
+        
+        .repo-item:last-child {
+            border-bottom: none;
+        }
+        
+        .repo-rank {
+            display: inline-block;
+            width: 28px;
+            height: 28px;
+            background: #1a1a1a;
+            color: white;
+            text-align: center;
+            line-height: 28px;
+            font-weight: 700;
+            font-size: 14px;
+            margin-right: 10px;
+            border-radius: 3px;
+        }
+        
+        .repo-rank.top3 {
+            background: linear-gradient(135deg, #c41e3a, #e74c3c);
+        }
+        
+        .repo-name {
+            font-size: 16px;
+            font-weight: 700;
+            color: #1a1a1a;
+            text-decoration: none;
+            transition: color 0.2s;
+        }
+        
+        .repo-name:hover {
+            color: #c41e3a;
+        }
+        
+        .repo-meta {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            margin: 8px 0;
+            font-size: 12px;
+            color: #666;
+        }
+        
+        .meta-item {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+        
+        .stars {
+            color: #f59e0b;
+            font-weight: 700;
+        }
+        
+        .growth {
+            color: #10b981;
+            font-weight: 700;
+        }
+        
+        .lang {
+            background: #e5e7eb;
+            padding: 2px 8px;
+            border-radius: 10px;
+            font-size: 11px;
+        }
+        
+        .repo-desc {
+            font-size: 13px;
+            color: #444;
+            line-height: 1.5;
+            margin-top: 8px;
+            padding-left: 38px;
+        }
+        
+        /* 页脚 */
+        .footer {
+            background: #1a1a1a;
+            color: #999;
+            padding: 20px 40px;
+            text-align: center;
+            font-size: 12px;
+        }
+        
+        .footer a {
+            color: #ccc;
+        }
+        
+        /* 响应式 */
+        @media (max-width: 768px) {
+            .paper-name {
+                font-size: 42px;
+            }
+            
+            .content {
+                grid-template-columns: 1fr;
+            }
+            
+            .column:first-child {
+                border-right: none;
+                border-bottom: 1px solid #ddd;
+            }
+            
+            .headline {
+                font-size: 24px;
+            }
+        }
+        
+        /* 装饰 */
+        .ornament {
+            text-align: center;
+            font-size: 24px;
+            color: #ccc;
+            padding: 15px;
+        }
+    </style>
+</head>
+<body>
+    <div class="newspaper">
+        <header class="masthead">
+            <div class="date-line">THURSDAY, FEBRUARY 27, 2026</div>
+            <h1 class="paper-name">GitHub Trending</h1>
+            <p class="paper-subtitle">开源世界的风向标</p>
+        </header>
+        
+        <div class="edition-info">
+            <span>📍 全球开发者社区</span>
+            <span>🔥 每日热门追踪</span>
+            <span>⭐ AI 智能体时代</span>
+        </div>
+        
+        <section class="headline-section">
+            <div class="section-title">今日头条</div>
+            <h2 class="headline">WiFi 穿墙识人技术引爆开源社区<br>AI 智能体框架百花齐放</h2>
+        </section>
+        
+        <div class="content">
+            <div class="column">
+                <h3 class="column-title">
+                    <span class="badge">日榜</span>
+                    今日新星 TOP 10
+                </h3>
+                
+                <article class="repo-item">
+                    <span class="repo-rank top3">1</span>
+                    <a class="repo-name" href="https://github.com/ruvnet/wifi-densepose" target="_blank">ruvnet/wifi-densepose</a>
+                    <div class="repo-meta">
+                        <span class="meta-item stars">⭐ 7,864</span>
+                        <span class="meta-item growth">📈 +362 today</span>
+                        <span class="lang">Python</span>
+                    </div>
+                    <p class="repo-desc">革命性的 WiFi 人体姿态估计系统，使用普通路由器即可实现穿墙实时全身追踪</p>
+                </article>
+                
+                <article class="repo-item">
+                    <span class="repo-rank top3">2</span>
+                    <a class="repo-name" href="https://github.com/bytedance/deer-flow" target="_blank">bytedance/deer-flow</a>
+                    <div class="repo-meta">
+                        <span class="meta-item stars">⭐ 热门</span>
+                        <span class="meta-item growth">🔥 飙升</span>
+                    </div>
+                    <p class="repo-desc">字节跳动开源的 SuperAgent 框架，支持沙箱、记忆、工具和子代理协同完成复杂任务</p>
+                </article>
+                
+                <article class="repo-item">
+                    <span class="repo-rank top3">3</span>
+                    <a class="repo-name" href="https://github.com/moonshine-ai/moonshine" target="_blank">moonshine-ai/moonshine</a>
+                    <div class="repo-meta">
+                        <span class="meta-item stars">⭐ 热门</span>
+                        <span class="lang">边缘计算</span>
+                    </div>
+                    <p class="repo-desc">为边缘设备优化的快速精准语音识别 (ASR) 引擎</p>
+                </article>
+                
+                <article class="repo-item">
+                    <span class="repo-rank">4</span>
+                    <a class="repo-name" href="https://github.com/muratcankoylan/Agent-Skills-for-Context-Engineering" target="_blank">muratcankoylan/Agent-Skills-for-Context-Engineering</a>
+                    <div class="repo-meta">
+                        <span class="meta-item stars">⭐ 热门</span>
+                    </div>
+                    <p class="repo-desc">上下文工程与多智能体架构的全面技能集合，生产级智能体系统必备</p>
+                </article>
+                
+                <article class="repo-item">
+                    <span class="repo-rank">5</span>
+                    <a class="repo-name" href="https://github.com/obra/superpowers" target="_blank">obra/superpowers</a>
+                    <div class="repo-meta">
+                        <span class="meta-item stars">⭐ 热门</span>
+                    </div>
+                    <p class="repo-desc">实战验证的智能体技能框架与软件开发方法论</p>
+                </article>
+                
+                <article class="repo-item">
+                    <span class="repo-rank">6</span>
+                    <a class="repo-name" href="https://github.com/ruvnet/claude-flow" target="_blank">ruvnet/claude-flow</a>
+                    <div class="repo-meta">
+                        <span class="meta-item stars">⭐ 热门</span>
+                    </div>
+                    <p class="repo-desc">领先的 Claude 多智能体编排平台，支持分布式群体智能与 RAG 集成</p>
+                </article>
+                
+                <article class="repo-item">
+                    <span class="repo-rank">7</span>
+                    <a class="repo-name" href="https://github.com/datawhalechina/hello-agents" target="_blank">datawhalechina/hello-agents</a>
+                    <div class="repo-meta">
+                        <span class="meta-item stars">⭐ 热门</span>
+                        <span class="lang">教程</span>
+                    </div>
+                    <p class="repo-desc">《从零开始构建智能体》中文教程，智能体原理与实践入门首选</p>
+                </article>
+                
+                <article class="repo-item">
+                    <span class="repo-rank">8</span>
+                    <a class="repo-name" href="https://github.com/abhigyanpatwari/GitNexus" target="_blank">abhigyanpatwari/GitNexus</a>
+                    <div class="repo-meta">
+                        <span class="meta-item stars">⭐ 热门</span>
+                    </div>
+                    <p class="repo-desc">零服务器代码知识图谱引擎，浏览器端运行，内置 Graph RAG 代理</p>
+                </article>
+                
+                <article class="repo-item">
+                    <span class="repo-rank">9</span>
+                    <a class="repo-name" href="https://github.com/moeru-ai/airi" target="_blank">moeru-ai/airi</a>
+                    <div class="repo-meta">
+                        <span class="meta-item stars">⭐ 热门</span>
+                    </div>
+                    <p class="repo-desc">自托管 AI 伴侣，支持实时语音聊天、Minecraft/Factorio 游戏互动</p>
+                </article>
+                
+                <article class="repo-item">
+                    <span class="repo-rank">10</span>
+                    <a class="repo-name" href="https://github.com/anthropics/claude-code" target="_blank">anthropics/claude-code</a>
+                    <div class="repo-meta">
+                        <span class="meta-item stars">⭐ 官方</span>
+                    </div>
+                    <p class="repo-desc">Anthropic 官方 CLI 编码工具，理解代码库、执行任务、管理 Git 工作流</p>
+                </article>
+            </div>
+            
+            <div class="column">
+                <h3 class="column-title">
+                    <span class="badge weekly">周榜</span>
+                    本周黑马 TOP 9
+                </h3>
+                
+                <article class="repo-item">
+                    <span class="repo-rank top3">1</span>
+                    <a class="repo-name" href="https://github.com/huggingface/skills" target="_blank">huggingface/skills</a>
+                    <div class="repo-meta">
+                        <span class="meta-item stars">⭐ 热门</span>
+                        <span class="meta-item growth">🚀 本周飙升</span>
+                    </div>
+                    <p class="repo-desc">HuggingFace 官方 Skills 项目，AI 技能标准化框架</p>
+                </article>
+                
+                <article class="repo-item">
+                    <span class="repo-rank top3">2</span>
+                    <a class="repo-name" href="https://github.com/x1xhlol/system-prompts-and-models-of-ai-tools" target="_blank">x1xhlol/system-prompts-and-models-of-ai-tools</a>
+                    <div class="repo-meta">
+                        <span class="meta-item stars">⭐ 热门</span>
+                    </div>
+                    <p class="repo-desc">主流 AI 编码工具系统提示词大全：Cursor、Windsurf、Claude Code、Devin 等</p>
+                </article>
+                
+                <article class="repo-item">
+                    <span class="repo-rank top3">3</span>
+                    <a class="repo-name" href="https://github.com/vxcontrol/pentagi" target="_blank">vxcontrol/pentagi</a>
+                    <div class="repo-meta">
+                        <span class="meta-item stars">⭐ 热门</span>
+                    </div>
+                    <p class="repo-desc">全自主 AI 渗透测试智能体系统，可执行复杂安全测试任务</p>
+                </article>
+                
+                <article class="repo-item">
+                    <span class="repo-rank">4</span>
+                    <a class="repo-name" href="https://github.com/ruvnet/ruvector" target="_blank">ruvnet/ruvector</a>
+                    <div class="repo-meta">
+                        <span class="meta-item stars">⭐ 1,802</span>
+                        <span class="meta-item growth">📈 +1,006 this week</span>
+                        <span class="lang">Rust</span>
+                    </div>
+                    <p class="repo-desc">高性能自学习向量图神经网络数据库，Rust 实现</p>
+                </article>
+                
+                <article class="repo-item">
+                    <span class="repo-rank">5</span>
+                    <a class="repo-name" href="https://github.com/clockworklabs/SpacetimeDB" target="_blank">clockworklabs/SpacetimeDB</a>
+                    <div class="repo-meta">
+                        <span class="meta-item stars">⭐ 热门</span>
+                    </div>
+                    <p class="repo-desc">光速开发体验的实时数据库，游戏和实时应用首选</p>
+                </article>
+                
+                <article class="repo-item">
+                    <span class="repo-rank">6</span>
+                    <a class="repo-name" href="https://github.com/mihail911/modern-software-dev-assignments" target="_blank">mihail911/modern-software-dev-assignments</a>
+                    <div class="repo-meta">
+                        <span class="meta-item stars">⭐ 2,514</span>
+                        <span class="meta-item growth">📈 +598 this week</span>
+                        <span class="lang">Python</span>
+                    </div>
+                    <p class="repo-desc">斯坦福 CS146S 现代软件开发课程作业，2025 秋季学期</p>
+                </article>
+                
+                <article class="repo-item">
+                    <span class="repo-rank">7</span>
+                    <a class="repo-name" href="https://github.com/LadybirdBrowser/ladybird" target="_blank">LadybirdBrowser/ladybird</a>
+                    <div class="repo-meta">
+                        <span class="meta-item stars">⭐ 热门</span>
+                    </div>
+                    <p class="repo-desc">真正独立的 Web 浏览器，从零打造的渲染引擎</p>
+                </article>
+                
+                <article class="repo-item">
+                    <span class="repo-rank">8</span>
+                    <a class="repo-name" href="https://github.com/Stremio/stremio-web" target="_blank">Stremio/stremio-web</a>
+                    <div class="repo-meta">
+                        <span class="meta-item stars">⭐ 热门</span>
+                    </div>
+                    <p class="repo-desc">Stremio 流媒体播放器 Web 版，自由观影体验</p>
+                </article>
+                
+                <article class="repo-item">
+                    <span class="repo-rank">9</span>
+                    <a class="repo-name" href="https://github.com/cloudflare/agents" target="_blank">cloudflare/agents</a>
+                    <div class="repo-meta">
+                        <span class="meta-item stars">⭐ 热门</span>
+                    </div>
+                    <p class="repo-desc">Cloudflare 官方 AI Agent 框架，边缘部署智能代理</p>
+                </article>
+            </div>
+        </div>
+        
+        <div class="ornament">❦</div>
+        
+        <footer class="footer">
+            <p>GitHub Trending Daily Report | 由 AI 自动生成 | <a href="https://github.com/trending">github.com/trending</a></p>
+            <p style="margin-top: 8px;">© 2026 开源日报 · 追踪全球开发者的脉搏</p>
+        </footer>
+    </div>
+</body>
+</html>

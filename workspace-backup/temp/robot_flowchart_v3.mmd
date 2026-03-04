@@ -1,0 +1,39 @@
+flowchart TD
+    START([对局开始]) --> ROLL{随机判断}
+    
+    ROLL -->|不触发| NORMAL[原有机器人逻辑]
+    ROLL -->|触发紧咬| PRESSURE[启用紧咬机器人]
+    
+    PRESSURE --> INIT[随机生成达标分数 qualify_score]
+    
+    INIT --> LOOP[加分检查点]
+    
+    LOOP --> LASTCHECK{是最后一次加分?}
+    
+    LASTCHECK -->|否 继续紧咬| CALC[target = player_score - 随机分差]
+    
+    CALC --> COMPARE{target 大于 bot_score?}
+    
+    COMPARE -->|是| UPDATE[bot_score = target]
+    COMPARE -->|否| KEEP[bot_score 不变]
+    
+    UPDATE --> LOOP
+    KEEP --> LOOP
+    
+    LASTCHECK -->|是 决定输赢| QUALIFY{玩家达标?}
+    
+    QUALIFY -->|达标| WIN_CALC[计算让玩家赢的加分值]
+    QUALIFY -->|未达标| LOSE_CALC[计算让机器人赢的加分值]
+    
+    WIN_CALC --> FINAL1[机器人最后一次加分]
+    LOSE_CALC --> FINAL2[机器人最后一次加分]
+    
+    FINAL1 --> END1([玩家获胜 险胜])
+    FINAL2 --> END2([机器人获胜 惜败])
+    NORMAL --> END3([原逻辑结算])
+
+    style PRESSURE fill:#4CAF50,color:white
+    style QUALIFY fill:#FF9800,color:white
+    style LASTCHECK fill:#E91E63,color:white
+    style END1 fill:#2196F3,color:white
+    style END2 fill:#f44336,color:white
