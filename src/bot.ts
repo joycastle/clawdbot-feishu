@@ -821,14 +821,45 @@ export async function handleFeishuMessage(params: {
   skipMediaConfirm?: boolean;
   /** Pre-resolved media list (passed from confirmation flow to avoid re-downloading) */
   preResolvedMediaList?: FeishuMediaInfo[];
+  /** Internal flag to skip abort-before-process logic (used for synthetic stop messages) */
+  _isAbortMessage?: boolean;
 }): Promise<void> {
-  const { cfg, event, botOpenId, runtime, chatHistories, skipMediaConfirm, preResolvedMediaList } = params;
+  const { cfg, event, botOpenId, runtime, chatHistories, skipMediaConfirm, preResolvedMediaList, _isAbortMessage } = params;
   const feishuCfg = cfg.channels?.feishu as FeishuConfig | undefined;
   const log = runtime?.log ?? console.log;
   const error = runtime?.error ?? console.error;
 
   let ctx = parseFeishuMessageEvent(event, botOpenId);
   const isGroup = ctx.chatType === "group";
+  
+  // "New message aborts current run" behavior:
+  // Before processing any user message, inject a /stop to abort any ongoing run.
+  // This makes the conversation feel more responsive - user can always interrupt.
+  // Skip if this is already an abort message to avoid infinite loop.
+  if (!_isAbortMessage && ctx.contentType === "text") {
+    const abortEvent: FeishuMessageEvent = {
+      sender: event.sender,
+      message: {
+        ...event.message,
+        message_id: `abort_${event.message.message_id}`,
+        content: JSON.stringify({ text: "/stop" }),
+      },
+    };
+    
+    // Fire-and-forget: send abort signal before processing the actual message
+    // Don't await - let it run in parallel
+    void handleFeishuMessage({
+      ...params,
+      event: abortEvent,
+      _isAbortMessage: true,
+    }).catch(() => {
+      // Ignore abort errors
+    });
+    
+    // Small delay to let abort propagate
+    await new Promise(resolve => setTimeout(resolve, 100));
+    log(`feishu: sent abort signal before processing new message`);
+  }
 
   log(`feishu: received message from ${ctx.senderOpenId} in ${ctx.chatId} (${ctx.chatType})`);
 
