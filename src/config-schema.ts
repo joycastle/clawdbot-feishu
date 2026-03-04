@@ -91,6 +91,7 @@ export const FeishuConfigSchema = z
     mediaMaxMb: z.number().positive().optional(),
     heartbeat: ChannelHeartbeatVisibilitySchema,
     renderMode: RenderModeSchema, // raw = plain text (default), card = interactive card with markdown
+    statusCard: z.boolean().optional(), // show status card (running/completed) instead of typing indicator
     confirmMediaCost: z.boolean().optional(), // prompt user to confirm cost before processing audio/video
     contextIsolation: z.boolean().optional(), // per-user, per-group, per-topic context isolation (default: true)
     // ── Bitable Video Analysis ──

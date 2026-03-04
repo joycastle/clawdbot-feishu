@@ -10,6 +10,7 @@ import { handleFeishuMessage, type FeishuMessageEvent, type FeishuBotAddedEvent 
 import { handleMediaCardAction, isMediaConfirmAction, buildProcessingCard, buildCancelledCard, buildExpiredCard, type CardActionEvent } from "./features/media-confirm.js";
 import { handleVoteCardAction, isVoteAction } from "./features/vote/index.js";
 import { handleBitableVideoCardAction, isBitableVideoAction } from "./features/big-video/bitable-video-confirm.js";
+import { isStatusCardAbortAction, buildAbortedCard } from "./features/status-card.js";
 import { probeFeishu } from "./probe.js";
 import { analyzeVideo, resolveVideoProvider } from "./features/video-analyze.js";
 import { sendCardFeishu, updateCardFeishu } from "./api/send.js";
@@ -226,10 +227,12 @@ async function monitorWebSocket(params: {
         }
 
         const actionName = actionValue?.action as string | undefined;
+        log(`feishu: card action name=${actionName}, operatorId=${operatorId}, isAdmin=${operatorIsAdmin}`);
         if (isDevLockEnabled() && !operatorIsAdmin) {
           const allowDuringLock = actionName === "cancel_media" ||
             actionName === "cancel_bitable_video" ||
-            actionName === "cancel_bitable_video_job";
+            actionName === "cancel_bitable_video_job" ||
+            actionName === "abort"; // Allow abort during dev lock
           if (!allowDuringLock) {
             return { toast: { type: "info" as const, content: "后端更新中，请稍后重试" } };
           }
@@ -488,6 +491,63 @@ async function monitorWebSocket(params: {
           const response = await handleVoteCardAction({ actionData, cfg, log });
           // Return toast for immediate feedback; debounced PATCH updates the card.
           return response ?? undefined;
+        }
+
+        // Status card abort action — trigger agent abort
+        if (isStatusCardAbortAction(actionValue)) {
+          log(`feishu: status card abort action received`);
+          const cardMessageId = actionData.context?.open_message_id;
+          
+          // Update card to "aborted" state via delayed PATCH
+          if (cardMessageId) {
+            const msgId = cardMessageId;
+            setTimeout(async () => {
+              try {
+                await updateCardFeishu({ cfg, messageId: msgId, card: buildAbortedCard() });
+                log(`feishu: status card abort PATCH succeeded (messageId=${msgId})`);
+              } catch (err) {
+                log(`feishu: status card abort PATCH failed: ${String(err)}`);
+              }
+            }, 500);
+          }
+
+          // Trigger abort by injecting a synthetic /stop message event
+          const senderOpenId = actionData.operator?.open_id || actionData.operator?.user_id;
+          
+          if (senderOpenId) {
+            log(`feishu: triggering abort via synthetic /stop message for user ${senderOpenId}`);
+            
+            // Create a synthetic message event that looks like the user sent /stop
+            const syntheticEvent: FeishuMessageEvent = {
+              sender: {
+                sender_id: { open_id: senderOpenId },
+                sender_type: "user",
+              },
+              message: {
+                message_id: `abort_${Date.now()}`,
+                chat_id: senderOpenId, // For DM, chat_id should be the user's open_id
+                chat_type: "p2p",
+                message_type: "text",
+                content: JSON.stringify({ text: "/stop" }),
+                create_time: String(Date.now()),
+              },
+            };
+            
+            // Dispatch the synthetic stop message - this should trigger the abort flow
+            void handleFeishuMessage({
+              cfg,
+              event: syntheticEvent,
+              botOpenId,
+              runtime,
+              chatHistories,
+            }).then(() => {
+              log(`feishu: synthetic /stop message dispatched successfully`);
+            }).catch((err) => {
+              log(`feishu: synthetic /stop message dispatch failed: ${String(err)}`);
+            });
+          }
+
+          return { toast: { type: "info" as const, content: "⚙️ 正在中断..." } };
         }
 
         // Unknown card action — try media confirm as fallback (backward compat)

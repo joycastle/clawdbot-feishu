@@ -15,6 +15,12 @@ import {
   removeTypingIndicator,
   type TypingIndicatorState,
 } from "./features/typing.js";
+import {
+  sendStatusCard,
+  updateStatusCard,
+  deleteStatusCard,
+  type StatusCardState,
+} from "./features/status-card.js";
 
 /**
  * Detect if text contains markdown elements that benefit from card rendering.
@@ -46,21 +52,82 @@ export function createFeishuReplyDispatcher(params: CreateFeishuReplyDispatcherP
     agentId,
   });
 
+  // Check if status card mode is enabled
+  const feishuCfgCheck = cfg.channels?.feishu as FeishuConfig | undefined;
+  const useStatusCard = feishuCfgCheck?.statusCard === true;
+
   // Feishu doesn't have a native typing indicator API.
   // We use message reactions as a typing indicator substitute.
+  // Or use status card mode for more control.
   let typingState: TypingIndicatorState | null = null;
+  let statusCardState: StatusCardState | null = null;
+  let statusCardCleanupTimer: ReturnType<typeof setTimeout> | null = null;
 
   const typingCallbacks = createTypingCallbacks({
     start: async () => {
       if (!replyToMessageId) return;
-      typingState = await addTypingIndicator({ cfg, messageId: replyToMessageId });
-      params.runtime.log?.(`feishu: added typing indicator reaction`);
+      
+      if (useStatusCard) {
+        // Cancel any pending cleanup timer
+        if (statusCardCleanupTimer) {
+          clearTimeout(statusCardCleanupTimer);
+          statusCardCleanupTimer = null;
+        }
+        
+        // Status card mode: send a card showing "processing"
+        if (statusCardState) {
+          // Already have a card - update it back to "running" if needed
+          params.runtime.log?.(`feishu: status card exists, updating to running`);
+          await updateStatusCard({
+            cfg,
+            triggerMessageId: statusCardState.triggerMessageId,
+            status: "running",
+          });
+          return;
+        }
+        statusCardState = await sendStatusCard({
+          cfg,
+          chatId,
+          triggerMessageId: replyToMessageId,
+          replyToMessageId,
+        });
+        params.runtime.log?.(`feishu: sent status card (running)`);
+      } else {
+        // Default: use typing indicator reaction
+        if (typingState) return; // Already showing typing
+        typingState = await addTypingIndicator({ cfg, messageId: replyToMessageId });
+        params.runtime.log?.(`feishu: added typing indicator reaction`);
+      }
     },
     stop: async () => {
-      if (!typingState) return;
-      await removeTypingIndicator({ cfg, state: typingState });
-      typingState = null;
-      params.runtime.log?.(`feishu: removed typing indicator reaction`);
+      if (useStatusCard) {
+        // Status card mode: update card to "completed"
+        if (statusCardState?.triggerMessageId) {
+          await updateStatusCard({
+            cfg,
+            triggerMessageId: statusCardState.triggerMessageId,
+            status: "completed",
+          });
+          // Don't delete the card - keep it as "completed" status
+          // Deleting shows "撤回了一条消息" which looks weird
+          params.runtime.log?.(`feishu: updated status card (completed)`);
+          
+          // Schedule cleanup after 5 seconds of inactivity
+          // If new activity starts, the timer will be cancelled
+          statusCardCleanupTimer = setTimeout(() => {
+            params.runtime.log?.(`feishu: status card cleanup after inactivity`);
+            statusCardState = null;
+            statusCardCleanupTimer = null;
+          }, 5000);
+        }
+        // Don't clear statusCardState here - keep it for potential continuation
+      } else {
+        // Default: remove typing indicator
+        if (!typingState) return;
+        await removeTypingIndicator({ cfg, state: typingState });
+        typingState = null;
+        params.runtime.log?.(`feishu: removed typing indicator reaction`);
+      }
     },
     onStartError: (err) => {
       logTypingFailure({
