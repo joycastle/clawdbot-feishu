@@ -18,14 +18,27 @@
  *   GET  /graph/path?from=xxx&to=xxx   两点间的调用路径
  *   GET  /graph/info?name=xxx          函数信息
  *   GET  /graph/impact?name=xxx&depth=3  影响范围分析（递归向上找调用方）
+ *   GET  /graph/callers-chain?name=xxx   递归向上追踪完整调用链
  *   GET  /graph/hotspots?limit=20        热点分析（被调用最多的函数）
  *   GET  /graph/orphans?limit=50&type=x  孤立函数（没有调用者，可能是入口或死代码）
  *   GET  /graph/stats                    图统计信息
- *   GET  /graph/cycles?limit=20&minSize=2  循环依赖检测（找出互相调用的函数组）
+ *   GET  /graph/cycles?limit=20            循环依赖检测（找出互相调用的函数组）
+ *   GET  /graph/modules?depth=3&limit=50  模块列表（按目录聚合）
+ *   GET  /graph/module-deps?module=xxx    某模块依赖哪些模块（出边）
+ *   GET  /graph/module-dependents?module=xxx  哪些模块依赖这个模块（入边）
+ *   GET  /graph/module-matrix?depth=3     模块间依赖矩阵
+ *   GET  /graph/children?name=xxx         查找子类/实现类
+ *   GET  /graph/parents?name=xxx          查找父类/接口
+ *   GET  /graph/inheritance-tree?name=xxx&direction=down  继承树
+ *   GET  /graph/inheritance-stats         继承统计
+ *   GET  /graph/decorator-targets?name=xxx  查找使用某装饰器的目标
+ *   GET  /graph/decorator-stats           装饰器统计
+ *   GET  /graph/rpc-endpoints             RPC 端点列表
+ *   GET  /graph/controllers               Controller 列表
  */
 
 import { createServer, IncomingMessage, ServerResponse } from 'http';
-import { readFileSync, existsSync, writeFileSync, mkdirSync } from 'fs';
+import { readFileSync, existsSync, writeFileSync, mkdirSync, readdirSync } from 'fs';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
 import Database from 'better-sqlite3';
@@ -39,26 +52,76 @@ if (!existsSync(DATA_DIR)) {
     mkdirSync(DATA_DIR, { recursive: true });
 }
 
-// 调用图数据库
-const GRAPH_DB_PATH = join(DATA_DIR, 'call-graph.db');
-let graphDb: Database.Database | null = null;
+// 调用图数据库 - 支持多项目（自动发现）
+const graphDbMap: Map<string, Database.Database> = new Map();
+const DEFAULT_GRAPH_PROJECT = 'bf-nakama-ts';
 
-function getGraphDb(): Database.Database | null {
-    if (!graphDb && existsSync(GRAPH_DB_PATH)) {
-        try {
-            graphDb = new Database(GRAPH_DB_PATH, { readonly: true });
-            console.log('[CodeIndex] Graph database loaded');
-        } catch (e) {
-            console.error('[CodeIndex] Failed to load graph database:', e);
-        }
+// 动态发现数据库文件
+function discoverGraphDbs(): Record<string, string> {
+    const paths: Record<string, string> = {};
+    
+    // 硬编码的特殊映射（向后兼容）
+    const legacyDb = join(DATA_DIR, 'call-graph.db');
+    if (existsSync(legacyDb)) {
+        paths['bf-nakama-ts'] = legacyDb;
     }
-    return graphDb;
+    
+    // 自动发现 *-call-graph.db 文件
+    try {
+        const files = readdirSync(DATA_DIR);
+        for (const file of files) {
+            if (file.endsWith('-call-graph.db')) {
+                const projectName = file.replace('-call-graph.db', '');
+                paths[projectName] = join(DATA_DIR, file);
+            }
+        }
+    } catch (e) {
+        console.error('[CodeIndex] Failed to discover databases:', e);
+    }
+    
+    return paths;
+}
+
+let GRAPH_DB_PATHS = discoverGraphDbs();
+
+// 刷新数据库列表
+function refreshGraphDbs(): void {
+    GRAPH_DB_PATHS = discoverGraphDbs();
+    console.log(`[CodeIndex] Discovered ${Object.keys(GRAPH_DB_PATHS).length} graph databases:`, Object.keys(GRAPH_DB_PATHS));
+}
+
+function getGraphDb(project?: string): Database.Database | null {
+    const proj = project || DEFAULT_GRAPH_PROJECT;
+    
+    if (graphDbMap.has(proj)) {
+        return graphDbMap.get(proj)!;
+    }
+    
+    // 尝试刷新发现（可能新增了项目）
+    if (!GRAPH_DB_PATHS[proj]) {
+        refreshGraphDbs();
+    }
+    
+    const dbPath = GRAPH_DB_PATHS[proj];
+    if (!dbPath || !existsSync(dbPath)) {
+        return null;
+    }
+    
+    try {
+        const db = new Database(dbPath, { readonly: true });
+        graphDbMap.set(proj, db);
+        console.log(`[CodeIndex] Graph database loaded: ${proj}`);
+        return db;
+    } catch (e) {
+        console.error('[CodeIndex] Failed to load graph database:', e);
+        return null;
+    }
 }
 
 // 图查询函数
-function graphCallers(name: string, limit = 50): any[] {
+function graphCallers(name: string, limit = 50, project?: string): any[] {
     try {
-        const db = getGraphDb();
+        const db = getGraphDb(project);
         if (!db) return [];
         
         const stmt = db.prepare(`
@@ -75,9 +138,9 @@ function graphCallers(name: string, limit = 50): any[] {
     }
 }
 
-function graphCallees(name: string, limit = 50): any[] {
+function graphCallees(name: string, limit = 50, project?: string): any[] {
     try {
-        const db = getGraphDb();
+        const db = getGraphDb(project);
         if (!db) return [];
         
         const stmt = db.prepare(`
@@ -94,8 +157,8 @@ function graphCallees(name: string, limit = 50): any[] {
     }
 }
 
-function graphPath(from: string, to: string, maxDepth = 3): any[] {
-    const db = getGraphDb();
+function graphPath(from: string, to: string, maxDepth = 3, project?: string): any[] {
+    const db = getGraphDb(project);
     if (!db) return [];
     
     // 使用 BFS 手动实现路径查找，避免复杂递归 CTE
@@ -156,11 +219,11 @@ function graphPath(from: string, to: string, maxDepth = 3): any[] {
 /**
  * 影响范围分析 - 找出修改某函数会影响哪些调用方（递归向上）
  */
-function graphImpact(name: string, maxDepth = 3, limit = 100): { 
+function graphImpact(name: string, maxDepth = 3, limit = 100, project?: string): { 
     layers: { depth: number; functions: { name: string; file: string; line: number }[] }[];
     total: number;
 } {
-    const db = getGraphDb();
+    const db = getGraphDb(project);
     if (!db) return { layers: [], total: 0 };
     
     try {
@@ -228,6 +291,71 @@ function graphImpact(name: string, maxDepth = 3, limit = 100): {
     } catch (e: any) {
         console.error('[CodeIndex] graphImpact error:', e.message);
         return { layers: [], total: 0 };
+    }
+}
+
+/**
+ * 递归向上追踪调用链 - 从某函数出发，找到完整的上游调用链
+ * 返回多条链路，每条链路是一个调用栈
+ */
+function graphCallersChain(name: string, maxDepth = 5, maxChains = 10, project?: string): {
+    chains: { path: string[]; files: string[] }[];
+    totalChains: number;
+} {
+    const db = getGraphDb(project);
+    if (!db) return { chains: [], totalChains: 0 };
+    
+    try {
+        const getCallers = db.prepare(`
+            SELECT DISTINCT caller_name, caller_file
+            FROM edges 
+            WHERE callee_name = ?
+            LIMIT 50
+        `);
+        
+        // 找起点
+        let startName = name;
+        const exactMatch = db.prepare(`SELECT name FROM nodes WHERE name = ?`).get(name) as any;
+        if (!exactMatch) {
+            const fuzzy = db.prepare(`SELECT name FROM nodes WHERE name LIKE ? LIMIT 1`).get(`%${name}%`) as any;
+            if (fuzzy) startName = fuzzy.name;
+            else return { chains: [], totalChains: 0 };
+        }
+        
+        // DFS 找所有链路
+        const chains: { path: string[]; files: string[] }[] = [];
+        
+        function dfs(current: string, path: string[], files: string[], depth: number) {
+            if (chains.length >= maxChains) return;
+            if (depth >= maxDepth) {
+                if (path.length > 1) chains.push({ path: [...path], files: [...files] });
+                return;
+            }
+            
+            const callers = getCallers.all(current) as any[];
+            if (callers.length === 0) {
+                // 到达顶层（没有调用者了）
+                if (path.length > 1) chains.push({ path: [...path], files: [...files] });
+                return;
+            }
+            
+            for (const caller of callers) {
+                if (path.includes(caller.caller_name)) continue; // 避免循环
+                path.push(caller.caller_name);
+                files.push(caller.caller_file);
+                dfs(caller.caller_name, path, files, depth + 1);
+                path.pop();
+                files.pop();
+                if (chains.length >= maxChains) return;
+            }
+        }
+        
+        dfs(startName, [startName], [''], 0);
+        
+        return { chains, totalChains: chains.length };
+    } catch (e: any) {
+        console.error('[CodeIndex] graphCallersChain error:', e.message);
+        return { chains: [], totalChains: 0 };
     }
 }
 
@@ -427,9 +555,536 @@ function graphCycles(limit = 20, _minSize = 2): {
     }
 }
 
-function graphInfo(name: string): { nodes: any[]; callerCount: number; calleeCount: number } {
+/**
+ * 从文件路径提取模块名（取到倒数第二级目录）
+ * 例如: src/bingo/campaign/rescue_rush/rpc.ts -> src/bingo/campaign/rescue_rush
+ */
+function extractModule(filePath: string, depth = 3): string {
+    const parts = filePath.split('/').filter(Boolean);
+    // 去掉文件名，取前 depth 级目录
+    const dirs = parts.slice(0, -1);
+    return dirs.slice(0, Math.min(depth, dirs.length)).join('/') || 'root';
+}
+
+/**
+ * 模块列表 - 按目录聚合，统计每个模块的函数数量
+ */
+function graphModules(depth = 3, limit = 50): { 
+    modules: { name: string; nodeCount: number; edgeCount: number }[];
+    totalModules: number;
+} {
+    const db = getGraphDb();
+    if (!db) return { modules: [], totalModules: 0 };
+    
     try {
-        const db = getGraphDb();
+        // 获取所有节点，按模块聚合
+        const nodes = db.prepare(`SELECT file FROM nodes`).all() as any[];
+        const moduleStats = new Map<string, { nodes: number; edges: number }>();
+        
+        for (const node of nodes) {
+            const mod = extractModule(node.file, depth);
+            const stats = moduleStats.get(mod) || { nodes: 0, edges: 0 };
+            stats.nodes++;
+            moduleStats.set(mod, stats);
+        }
+        
+        // 统计模块的边数（出边）
+        const edges = db.prepare(`SELECT caller_file FROM edges`).all() as any[];
+        for (const edge of edges) {
+            const mod = extractModule(edge.caller_file, depth);
+            const stats = moduleStats.get(mod);
+            if (stats) stats.edges++;
+        }
+        
+        // 排序并限制数量
+        const modules = Array.from(moduleStats.entries())
+            .map(([name, stats]) => ({ name, nodeCount: stats.nodes, edgeCount: stats.edges }))
+            .sort((a, b) => b.nodeCount - a.nodeCount)
+            .slice(0, limit);
+        
+        return { modules, totalModules: moduleStats.size };
+    } catch (e: any) {
+        console.error('[CodeIndex] graphModules error:', e.message);
+        return { modules: [], totalModules: 0 };
+    }
+}
+
+/**
+ * 模块依赖分析 - 某模块依赖哪些其他模块（出边）
+ */
+function graphModuleDeps(moduleName: string, depth = 3, limit = 30): {
+    module: string;
+    dependencies: { name: string; callCount: number; functions: string[] }[];
+    totalDeps: number;
+} {
+    const db = getGraphDb();
+    if (!db) return { module: moduleName, dependencies: [], totalDeps: 0 };
+    
+    try {
+        // 找出从该模块调用其他模块的边（JOIN nodes 获取 callee 的文件）
+        const edges = db.prepare(`
+            SELECT e.caller_file, e.caller_name, e.callee_name, n.file as callee_file
+            FROM edges e
+            LEFT JOIN nodes n ON n.name = e.callee_name
+            WHERE e.caller_file LIKE ?
+        `).all(`${moduleName}%`) as any[];
+        
+        // 按目标模块聚合
+        const depStats = new Map<string, { count: number; funcs: Set<string> }>();
+        
+        for (const edge of edges) {
+            if (!edge.callee_file) continue;  // 跳过外部函数
+            const callerMod = extractModule(edge.caller_file, depth);
+            const calleeMod = extractModule(edge.callee_file, depth);
+            
+            // 只统计跨模块调用
+            if (callerMod !== calleeMod) {
+                const stats = depStats.get(calleeMod) || { count: 0, funcs: new Set() };
+                stats.count++;
+                stats.funcs.add(edge.callee_name);
+                depStats.set(calleeMod, stats);
+            }
+        }
+        
+        // 排序
+        const dependencies = Array.from(depStats.entries())
+            .map(([name, stats]) => ({ 
+                name, 
+                callCount: stats.count, 
+                functions: Array.from(stats.funcs).slice(0, 10) 
+            }))
+            .sort((a, b) => b.callCount - a.callCount)
+            .slice(0, limit);
+        
+        return { module: moduleName, dependencies, totalDeps: depStats.size };
+    } catch (e: any) {
+        console.error('[CodeIndex] graphModuleDeps error:', e.message);
+        return { module: moduleName, dependencies: [], totalDeps: 0 };
+    }
+}
+
+/**
+ * 模块被依赖分析 - 哪些模块依赖这个模块（入边）
+ */
+function graphModuleDependents(moduleName: string, depth = 3, limit = 30): {
+    module: string;
+    dependents: { name: string; callCount: number; functions: string[] }[];
+    totalDependents: number;
+} {
+    const db = getGraphDb();
+    if (!db) return { module: moduleName, dependents: [], totalDependents: 0 };
+    
+    try {
+        // 找出调用该模块的边（通过 nodes 表关联 callee 的文件）
+        const edges = db.prepare(`
+            SELECT e.caller_file, e.caller_name, e.callee_name, n.file as callee_file
+            FROM edges e
+            JOIN nodes n ON n.name = e.callee_name
+            WHERE n.file LIKE ?
+        `).all(`${moduleName}%`) as any[];
+        
+        // 按来源模块聚合
+        const depStats = new Map<string, { count: number; funcs: Set<string> }>();
+        
+        for (const edge of edges) {
+            const callerMod = extractModule(edge.caller_file, depth);
+            const calleeMod = extractModule(edge.callee_file, depth);
+            
+            // 只统计跨模块调用
+            if (callerMod !== calleeMod) {
+                const stats = depStats.get(callerMod) || { count: 0, funcs: new Set() };
+                stats.count++;
+                stats.funcs.add(edge.caller_name);
+                depStats.set(callerMod, stats);
+            }
+        }
+        
+        // 排序
+        const dependents = Array.from(depStats.entries())
+            .map(([name, stats]) => ({ 
+                name, 
+                callCount: stats.count, 
+                functions: Array.from(stats.funcs).slice(0, 10) 
+            }))
+            .sort((a, b) => b.callCount - a.callCount)
+            .slice(0, limit);
+        
+        return { module: moduleName, dependents, totalDependents: depStats.size };
+    } catch (e: any) {
+        console.error('[CodeIndex] graphModuleDependents error:', e.message);
+        return { module: moduleName, dependents: [], totalDependents: 0 };
+    }
+}
+
+/**
+ * 模块间依赖矩阵 - 所有模块之间的调用统计
+ */
+function graphModuleMatrix(depth = 3, limit = 20): {
+    modules: string[];
+    matrix: { from: string; to: string; count: number }[];
+    totalCrossModuleCalls: number;
+} {
+    const db = getGraphDb();
+    if (!db) return { modules: [], matrix: [], totalCrossModuleCalls: 0 };
+    
+    try {
+        // JOIN nodes 获取 callee 的文件
+        const edges = db.prepare(`
+            SELECT e.caller_file, n.file as callee_file
+            FROM edges e
+            LEFT JOIN nodes n ON n.name = e.callee_name
+        `).all() as any[];
+        
+        // 按模块对聚合
+        const pairStats = new Map<string, number>();
+        const moduleSet = new Set<string>();
+        let totalCross = 0;
+        
+        for (const edge of edges) {
+            if (!edge.callee_file) continue;  // 跳过外部函数
+            const fromMod = extractModule(edge.caller_file, depth);
+            const toMod = extractModule(edge.callee_file, depth);
+            moduleSet.add(fromMod);
+            moduleSet.add(toMod);
+            
+            if (fromMod !== toMod) {
+                const key = `${fromMod}|${toMod}`;
+                pairStats.set(key, (pairStats.get(key) || 0) + 1);
+                totalCross++;
+            }
+        }
+        
+        // 取调用最多的模块
+        const topModules = Array.from(moduleSet)
+            .map(m => {
+                let count = 0;
+                pairStats.forEach((v, k) => {
+                    if (k.startsWith(m + '|') || k.endsWith('|' + m)) count += v;
+                });
+                return { name: m, count };
+            })
+            .sort((a, b) => b.count - a.count)
+            .slice(0, limit)
+            .map(m => m.name);
+        
+        // 构建矩阵（只包含 top 模块）
+        const topSet = new Set(topModules);
+        const matrix = Array.from(pairStats.entries())
+            .filter(([k]) => {
+                const [from, to] = k.split('|');
+                return topSet.has(from) && topSet.has(to);
+            })
+            .map(([k, count]) => {
+                const [from, to] = k.split('|');
+                return { from, to, count };
+            })
+            .sort((a, b) => b.count - a.count);
+        
+        return { modules: topModules, matrix, totalCrossModuleCalls: totalCross };
+    } catch (e: any) {
+        console.error('[CodeIndex] graphModuleMatrix error:', e.message);
+        return { modules: [], matrix: [], totalCrossModuleCalls: 0 };
+    }
+}
+
+/**
+ * 类型继承图 - 查找某类/接口的子类/实现类
+ */
+function graphChildren(name: string, limit = 50): {
+    children: { name: string; file: string; type: string; relation: string }[];
+    total: number;
+} {
+    const db = getGraphDb();
+    if (!db) return { children: [], total: 0 };
+    
+    try {
+        const children = db.prepare(`
+            SELECT child_name as name, child_file as file, child_type as type, relation
+            FROM inheritance
+            WHERE parent_name LIKE ?
+            ORDER BY relation, child_name
+            LIMIT ?
+        `).all(`%${name}%`, limit) as any[];
+        
+        const total = (db.prepare(`
+            SELECT COUNT(*) as cnt FROM inheritance WHERE parent_name LIKE ?
+        `).get(`%${name}%`) as any)?.cnt || 0;
+        
+        return { children, total };
+    } catch (e: any) {
+        console.error('[CodeIndex] graphChildren error:', e.message);
+        return { children: [], total: 0 };
+    }
+}
+
+/**
+ * 类型继承图 - 查找某类/接口的父类/实现的接口
+ */
+function graphParents(name: string, limit = 50): {
+    parents: { name: string; type: string; relation: string }[];
+    total: number;
+} {
+    const db = getGraphDb();
+    if (!db) return { parents: [], total: 0 };
+    
+    try {
+        const parents = db.prepare(`
+            SELECT parent_name as name, parent_type as type, relation
+            FROM inheritance
+            WHERE child_name LIKE ?
+            ORDER BY relation
+            LIMIT ?
+        `).all(`%${name}%`, limit) as any[];
+        
+        const total = (db.prepare(`
+            SELECT COUNT(*) as cnt FROM inheritance WHERE child_name LIKE ?
+        `).get(`%${name}%`) as any)?.cnt || 0;
+        
+        return { parents, total };
+    } catch (e: any) {
+        console.error('[CodeIndex] graphParents error:', e.message);
+        return { parents: [], total: 0 };
+    }
+}
+
+/**
+ * 继承树 - 递归查找完整的继承链
+ */
+function graphInheritanceTree(name: string, direction: 'up' | 'down' = 'down', maxDepth = 5): {
+    root: string;
+    tree: { name: string; file?: string; children?: any[] }[];
+    totalNodes: number;
+} {
+    const db = getGraphDb();
+    if (!db) return { root: name, tree: [], totalNodes: 0 };
+    
+    try {
+        const visited = new Set<string>();
+        let totalNodes = 0;
+        
+        function buildTree(nodeName: string, depth: number): any[] {
+            if (depth >= maxDepth || visited.has(nodeName) || totalNodes > 100) return [];
+            visited.add(nodeName);
+            totalNodes++;
+            
+            let query: any[];
+            if (direction === 'down') {
+                // 找子类
+                query = db!.prepare(`
+                    SELECT child_name as name, child_file as file, relation
+                    FROM inheritance WHERE parent_name = ?
+                `).all(nodeName) as any[];
+            } else {
+                // 找父类
+                query = db!.prepare(`
+                    SELECT parent_name as name, relation
+                    FROM inheritance WHERE child_name = ?
+                `).all(nodeName) as any[];
+            }
+            
+            return query.map(row => ({
+                name: row.name,
+                file: row.file,
+                relation: row.relation,
+                children: buildTree(row.name, depth + 1)
+            }));
+        }
+        
+        const tree = buildTree(name, 0);
+        return { root: name, tree, totalNodes };
+    } catch (e: any) {
+        console.error('[CodeIndex] graphInheritanceTree error:', e.message);
+        return { root: name, tree: [], totalNodes: 0 };
+    }
+}
+
+/**
+ * 装饰器搜索 - 查找使用某装饰器的所有目标
+ */
+function graphDecoratorTargets(decoratorName: string, limit = 100): {
+    targets: { name: string; file: string; type: string; args: string; line: number }[];
+    total: number;
+} {
+    const db = getGraphDb();
+    if (!db) return { targets: [], total: 0 };
+    
+    try {
+        const targets = db.prepare(`
+            SELECT target_name as name, file, target_type as type, decorator_args as args, line
+            FROM decorators
+            WHERE decorator_name = ?
+            ORDER BY file, line
+            LIMIT ?
+        `).all(decoratorName, limit) as any[];
+        
+        const total = (db.prepare(`
+            SELECT COUNT(*) as cnt FROM decorators WHERE decorator_name = ?
+        `).get(decoratorName) as any)?.cnt || 0;
+        
+        return { targets, total };
+    } catch (e: any) {
+        console.error('[CodeIndex] graphDecoratorTargets error:', e.message);
+        return { targets: [], total: 0 };
+    }
+}
+
+/**
+ * 装饰器统计
+ */
+function graphDecoratorStats(): {
+    total: number;
+    byDecorator: { name: string; count: number }[];
+    byType: { type: string; count: number }[];
+} | null {
+    const db = getGraphDb();
+    if (!db) return null;
+    
+    try {
+        const total = (db.prepare(`SELECT COUNT(*) as cnt FROM decorators`).get() as any)?.cnt || 0;
+        
+        const byDecorator = db.prepare(`
+            SELECT decorator_name as name, COUNT(*) as count
+            FROM decorators
+            GROUP BY decorator_name
+            ORDER BY count DESC
+            LIMIT 20
+        `).all() as any[];
+        
+        const byType = db.prepare(`
+            SELECT target_type as type, COUNT(*) as count
+            FROM decorators
+            GROUP BY target_type
+            ORDER BY count DESC
+        `).all() as any[];
+        
+        return { total, byDecorator, byType };
+    } catch (e: any) {
+        console.error('[CodeIndex] graphDecoratorStats error:', e.message);
+        return null;
+    }
+}
+
+/**
+ * RPC 端点列表 - 专门查询 @Rpc 装饰器
+ */
+function graphRpcEndpoints(limit = 200): {
+    endpoints: { name: string; file: string; rpcName: string; line: number }[];
+    total: number;
+} {
+    const db = getGraphDb();
+    if (!db) return { endpoints: [], total: 0 };
+    
+    try {
+        const endpoints = db.prepare(`
+            SELECT target_name as name, file, decorator_args as args, line
+            FROM decorators
+            WHERE decorator_name = 'Rpc'
+            ORDER BY file, line
+            LIMIT ?
+        `).all(limit) as any[];
+        
+        // 解析 RPC 名称
+        const parsed = endpoints.map(e => {
+            let rpcName = '';
+            try {
+                const args = JSON.parse(e.args);
+                rpcName = args[0] || '';
+            } catch {}
+            return { name: e.name, file: e.file, rpcName, line: e.line };
+        });
+        
+        const total = (db.prepare(`
+            SELECT COUNT(*) as cnt FROM decorators WHERE decorator_name = 'Rpc'
+        `).get() as any)?.cnt || 0;
+        
+        return { endpoints: parsed, total };
+    } catch (e: any) {
+        console.error('[CodeIndex] graphRpcEndpoints error:', e.message);
+        return { endpoints: [], total: 0 };
+    }
+}
+
+/**
+ * Controller 列表 - 专门查询 @Controller 装饰器
+ */
+function graphControllers(limit = 100): {
+    controllers: { name: string; file: string; path: string; line: number }[];
+    total: number;
+} {
+    const db = getGraphDb();
+    if (!db) return { controllers: [], total: 0 };
+    
+    try {
+        const controllers = db.prepare(`
+            SELECT target_name as name, file, decorator_args as args, line
+            FROM decorators
+            WHERE decorator_name = 'Controller'
+            ORDER BY file, line
+            LIMIT ?
+        `).all(limit) as any[];
+        
+        const parsed = controllers.map(c => {
+            let path = '';
+            try {
+                const args = JSON.parse(c.args);
+                path = args[0] || '';
+            } catch {}
+            return { name: c.name, file: c.file, path, line: c.line };
+        });
+        
+        const total = (db.prepare(`
+            SELECT COUNT(*) as cnt FROM decorators WHERE decorator_name = 'Controller'
+        `).get() as any)?.cnt || 0;
+        
+        return { controllers: parsed, total };
+    } catch (e: any) {
+        console.error('[CodeIndex] graphControllers error:', e.message);
+        return { controllers: [], total: 0 };
+    }
+}
+
+/**
+ * 继承统计
+ */
+function graphInheritanceStats(): {
+    total: number;
+    extends: number;
+    implements: number;
+    topParents: { name: string; childCount: number }[];
+    deepestTrees: { name: string; depth: number }[];
+} | null {
+    const db = getGraphDb();
+    if (!db) return null;
+    
+    try {
+        const total = (db.prepare(`SELECT COUNT(*) as cnt FROM inheritance`).get() as any)?.cnt || 0;
+        const extendsCount = (db.prepare(`SELECT COUNT(*) as cnt FROM inheritance WHERE relation = 'extends'`).get() as any)?.cnt || 0;
+        const implementsCount = (db.prepare(`SELECT COUNT(*) as cnt FROM inheritance WHERE relation = 'implements'`).get() as any)?.cnt || 0;
+        
+        const topParents = db.prepare(`
+            SELECT parent_name as name, COUNT(*) as childCount
+            FROM inheritance
+            GROUP BY parent_name
+            ORDER BY childCount DESC
+            LIMIT 10
+        `).all() as any[];
+        
+        return {
+            total,
+            extends: extendsCount,
+            implements: implementsCount,
+            topParents,
+            deepestTrees: [] // 计算深度太耗时，先留空
+        };
+    } catch (e: any) {
+        console.error('[CodeIndex] graphInheritanceStats error:', e.message);
+        return null;
+    }
+}
+
+function graphInfo(name: string, project?: string): { nodes: any[]; callerCount: number; calleeCount: number } {
+    try {
+        const db = getGraphDb(project);
         if (!db) return { nodes: [], callerCount: 0, calleeCount: 0 };
         
         const nodes = db.prepare(`
@@ -564,7 +1219,7 @@ async function handleRequest(req: IncomingMessage, res: ServerResponse) {
             return;
         }
         
-        // 列出项目
+        // 列出项目（摘要）
         if (path === '/projects') {
             sendJson({
                 ok: true,
@@ -575,6 +1230,35 @@ async function handleRequest(req: IncomingMessage, res: ServerResponse) {
                     indexedAt: p.indexedAt
                 }))
             });
+            return;
+        }
+        
+        // 列出图数据库项目
+        if (path === '/graph-projects') {
+            refreshGraphDbs();
+            const graphProjects = Object.entries(GRAPH_DB_PATHS).map(([name, dbPath]) => {
+                try {
+                    const db = getGraphDb(name);
+                    if (!db) return { name, dbPath, error: 'failed to load' };
+                    
+                    const nodeCount = (db.prepare('SELECT COUNT(*) as c FROM nodes').get() as any)?.c || 0;
+                    const edgeCount = (db.prepare('SELECT COUNT(*) as c FROM edges').get() as any)?.c || 0;
+                    
+                    let inheritanceCount = 0;
+                    let decoratorCount = 0;
+                    try {
+                        inheritanceCount = (db.prepare('SELECT COUNT(*) as c FROM inheritance').get() as any)?.c || 0;
+                    } catch {}
+                    try {
+                        decoratorCount = (db.prepare('SELECT COUNT(*) as c FROM decorators').get() as any)?.c || 0;
+                    } catch {}
+                    
+                    return { name, dbPath, nodeCount, edgeCount, inheritanceCount, decoratorCount };
+                } catch (e: any) {
+                    return { name, dbPath, error: e.message };
+                }
+            });
+            sendJson({ ok: true, graphProjects });
             return;
         }
         
@@ -643,14 +1327,15 @@ async function handleRequest(req: IncomingMessage, res: ServerResponse) {
         if (path === '/graph/callers') {
             const name = url.searchParams.get('name');
             const limit = parseInt(url.searchParams.get('limit') || '50');
+            const project = url.searchParams.get('project') || undefined;
             
             if (!name) {
                 sendJson({ ok: false, error: '缺少参数 name' }, 400);
                 return;
             }
             
-            const results = graphCallers(name, limit);
-            sendJson({ ok: true, name, count: results.length, callers: results });
+            const results = graphCallers(name, limit, project);
+            sendJson({ ok: true, name, project: project || 'bf-nakama-ts', count: results.length, callers: results });
             return;
         }
         
@@ -658,14 +1343,15 @@ async function handleRequest(req: IncomingMessage, res: ServerResponse) {
         if (path === '/graph/callees') {
             const name = url.searchParams.get('name');
             const limit = parseInt(url.searchParams.get('limit') || '50');
+            const project = url.searchParams.get('project') || undefined;
             
             if (!name) {
                 sendJson({ ok: false, error: '缺少参数 name' }, 400);
                 return;
             }
             
-            const results = graphCallees(name, limit);
-            sendJson({ ok: true, name, count: results.length, callees: results });
+            const results = graphCallees(name, limit, project);
+            sendJson({ ok: true, name, project: project || 'bf-nakama-ts', count: results.length, callees: results });
             return;
         }
         
@@ -674,28 +1360,30 @@ async function handleRequest(req: IncomingMessage, res: ServerResponse) {
             const from = url.searchParams.get('from');
             const to = url.searchParams.get('to');
             const maxDepth = parseInt(url.searchParams.get('depth') || '5');
+            const project = url.searchParams.get('project') || undefined;
             
             if (!from || !to) {
                 sendJson({ ok: false, error: '缺少参数 from 或 to' }, 400);
                 return;
             }
             
-            const results = graphPath(from, to, maxDepth);
-            sendJson({ ok: true, from, to, count: results.length, paths: results });
+            const results = graphPath(from, to, maxDepth, project);
+            sendJson({ ok: true, from, to, project: project || 'bf-nakama-ts', count: results.length, paths: results });
             return;
         }
         
         // 图查询: 函数信息
         if (path === '/graph/info') {
             const name = url.searchParams.get('name');
+            const project = url.searchParams.get('project') || undefined;
             
             if (!name) {
                 sendJson({ ok: false, error: '缺少参数 name' }, 400);
                 return;
             }
             
-            const info = graphInfo(name);
-            sendJson({ ok: true, name, ...info });
+            const info = graphInfo(name, project);
+            sendJson({ ok: true, name, project: project || 'bf-nakama-ts', ...info });
             return;
         }
         
@@ -704,19 +1392,45 @@ async function handleRequest(req: IncomingMessage, res: ServerResponse) {
             const name = url.searchParams.get('name');
             const depth = parseInt(url.searchParams.get('depth') || '3');
             const limit = parseInt(url.searchParams.get('limit') || '100');
+            const project = url.searchParams.get('project') || undefined;
             
             if (!name) {
                 sendJson({ ok: false, error: '缺少参数 name' }, 400);
                 return;
             }
             
-            const result = graphImpact(name, depth, limit);
+            const result = graphImpact(name, depth, limit, project);
             sendJson({ 
                 ok: true, 
                 name, 
+                project: project || 'bf-nakama-ts',
                 depth,
                 totalAffected: result.total,
                 layers: result.layers 
+            });
+            return;
+        }
+        
+        // 图查询: 递归向上追踪调用链
+        if (path === '/graph/callers-chain') {
+            const name = url.searchParams.get('name');
+            const depth = parseInt(url.searchParams.get('depth') || '5');
+            const maxChains = parseInt(url.searchParams.get('max') || '10');
+            const project = url.searchParams.get('project') || undefined;
+            
+            if (!name) {
+                sendJson({ ok: false, error: '缺少参数 name' }, 400);
+                return;
+            }
+            
+            const result = graphCallersChain(name, depth, maxChains, project);
+            sendJson({ 
+                ok: true, 
+                description: `从 ${name} 向上追踪的调用链`,
+                name,
+                project: project || 'bf-nakama-ts',
+                depth,
+                ...result
             });
             return;
         }
@@ -782,6 +1496,201 @@ async function handleRequest(req: IncomingMessage, res: ServerResponse) {
             return;
         }
         
+        // 模块列表（按目录聚合）
+        if (path === '/graph/modules') {
+            const depth = parseInt(url.searchParams.get('depth') || '3');
+            const limit = parseInt(url.searchParams.get('limit') || '50');
+            const result = graphModules(depth, limit);
+            sendJson({ 
+                ok: true, 
+                description: '模块列表（按目录聚合）',
+                depth,
+                ...result
+            });
+            return;
+        }
+        
+        // 模块依赖分析（某模块依赖哪些模块）
+        if (path === '/graph/module-deps') {
+            const moduleName = url.searchParams.get('module');
+            const depth = parseInt(url.searchParams.get('depth') || '3');
+            const limit = parseInt(url.searchParams.get('limit') || '30');
+            
+            if (!moduleName) {
+                sendJson({ ok: false, error: '缺少参数 module' }, 400);
+                return;
+            }
+            
+            const result = graphModuleDeps(moduleName, depth, limit);
+            sendJson({ 
+                ok: true, 
+                description: `模块 ${moduleName} 的依赖（它调用了哪些模块）`,
+                ...result
+            });
+            return;
+        }
+        
+        // 模块被依赖分析（哪些模块依赖这个模块）
+        if (path === '/graph/module-dependents') {
+            const moduleName = url.searchParams.get('module');
+            const depth = parseInt(url.searchParams.get('depth') || '3');
+            const limit = parseInt(url.searchParams.get('limit') || '30');
+            
+            if (!moduleName) {
+                sendJson({ ok: false, error: '缺少参数 module' }, 400);
+                return;
+            }
+            
+            const result = graphModuleDependents(moduleName, depth, limit);
+            sendJson({ 
+                ok: true, 
+                description: `哪些模块依赖 ${moduleName}`,
+                ...result
+            });
+            return;
+        }
+        
+        // 模块依赖矩阵
+        if (path === '/graph/module-matrix') {
+            const depth = parseInt(url.searchParams.get('depth') || '3');
+            const limit = parseInt(url.searchParams.get('limit') || '20');
+            const result = graphModuleMatrix(depth, limit);
+            sendJson({ 
+                ok: true, 
+                description: '模块间依赖矩阵（跨模块调用统计）',
+                depth,
+                ...result
+            });
+            return;
+        }
+        
+        // 继承图: 查找子类/实现类
+        if (path === '/graph/children') {
+            const name = url.searchParams.get('name');
+            const limit = parseInt(url.searchParams.get('limit') || '50');
+            
+            if (!name) {
+                sendJson({ ok: false, error: '缺少参数 name' }, 400);
+                return;
+            }
+            
+            const result = graphChildren(name, limit);
+            sendJson({ 
+                ok: true, 
+                description: `${name} 的子类/实现类`,
+                name,
+                ...result
+            });
+            return;
+        }
+        
+        // 继承图: 查找父类/接口
+        if (path === '/graph/parents') {
+            const name = url.searchParams.get('name');
+            const limit = parseInt(url.searchParams.get('limit') || '50');
+            
+            if (!name) {
+                sendJson({ ok: false, error: '缺少参数 name' }, 400);
+                return;
+            }
+            
+            const result = graphParents(name, limit);
+            sendJson({ 
+                ok: true, 
+                description: `${name} 的父类/实现的接口`,
+                name,
+                ...result
+            });
+            return;
+        }
+        
+        // 继承图: 继承树
+        if (path === '/graph/inheritance-tree') {
+            const name = url.searchParams.get('name');
+            const direction = (url.searchParams.get('direction') || 'down') as 'up' | 'down';
+            const maxDepth = parseInt(url.searchParams.get('depth') || '5');
+            
+            if (!name) {
+                sendJson({ ok: false, error: '缺少参数 name' }, 400);
+                return;
+            }
+            
+            const result = graphInheritanceTree(name, direction, maxDepth);
+            sendJson({ 
+                ok: true, 
+                description: direction === 'down' ? `${name} 的继承树（向下）` : `${name} 的继承链（向上）`,
+                direction,
+                ...result
+            });
+            return;
+        }
+        
+        // 继承图: 统计信息
+        if (path === '/graph/inheritance-stats') {
+            const stats = graphInheritanceStats();
+            if (stats) {
+                sendJson({ ok: true, description: '类型继承统计', ...stats });
+            } else {
+                sendJson({ ok: false, error: '继承表未加载' }, 500);
+            }
+            return;
+        }
+        
+        // 装饰器: 查找使用某装饰器的目标
+        if (path === '/graph/decorator-targets') {
+            const name = url.searchParams.get('name');
+            const limit = parseInt(url.searchParams.get('limit') || '100');
+            
+            if (!name) {
+                sendJson({ ok: false, error: '缺少参数 name' }, 400);
+                return;
+            }
+            
+            const result = graphDecoratorTargets(name, limit);
+            sendJson({ 
+                ok: true, 
+                description: `使用 @${name} 装饰器的目标`,
+                decorator: name,
+                ...result
+            });
+            return;
+        }
+        
+        // 装饰器: 统计
+        if (path === '/graph/decorator-stats') {
+            const stats = graphDecoratorStats();
+            if (stats) {
+                sendJson({ ok: true, description: '装饰器统计', ...stats });
+            } else {
+                sendJson({ ok: false, error: '装饰器表未加载' }, 500);
+            }
+            return;
+        }
+        
+        // 装饰器: RPC 端点列表
+        if (path === '/graph/rpc-endpoints') {
+            const limit = parseInt(url.searchParams.get('limit') || '200');
+            const result = graphRpcEndpoints(limit);
+            sendJson({ 
+                ok: true, 
+                description: '所有 RPC 端点（@Rpc 装饰器）',
+                ...result
+            });
+            return;
+        }
+        
+        // 装饰器: Controller 列表
+        if (path === '/graph/controllers') {
+            const limit = parseInt(url.searchParams.get('limit') || '100');
+            const result = graphControllers(limit);
+            sendJson({ 
+                ok: true, 
+                description: '所有 Controller（@Controller 装饰器）',
+                ...result
+            });
+            return;
+        }
+        
         // 删除项目
         if (path === '/delete' && req.method === 'POST') {
             let body = '';
@@ -800,6 +1709,95 @@ async function handleRequest(req: IncomingMessage, res: ServerResponse) {
                     sendJson({ ok: false, error: e.message }, 500);
                 }
             });
+            return;
+        }
+        
+        // ============ 增量索引 API ============
+        
+        // 增量索引: 触发索引
+        if (path === '/incremental/index' && req.method === 'POST') {
+            let body = '';
+            req.on('data', chunk => body += chunk);
+            req.on('end', async () => {
+                try {
+                    const { projectRoot, dbPath } = JSON.parse(body);
+                    
+                    if (!projectRoot) {
+                        sendJson({ ok: false, error: '缺少 projectRoot' }, 400);
+                        return;
+                    }
+                    
+                    // 动态导入增量索引器
+                    const { IncrementalIndexer } = await import('./incremental-indexer.js');
+                    
+                    const indexer = new IncrementalIndexer({
+                        projectRoot,
+                        dbPath: dbPath || join(projectRoot, '.code-index.db'),
+                        patterns: ['**/*.ts'],
+                        ignorePatterns: ['**/node_modules/**', '**/*.spec.ts', '**/*.test.ts', '**/*.d.ts'],
+                    });
+                    
+                    const result = await indexer.index();
+                    const stats = indexer.getStats();
+                    indexer.close();
+                    
+                    sendJson({
+                        ok: true,
+                        description: '增量索引完成',
+                        result: {
+                            added: result.added,
+                            updated: result.updated,
+                            removed: result.removed,
+                            unchanged: result.unchanged,
+                            timeMs: Math.round(result.totalTime),
+                        },
+                        stats: {
+                            nodes: stats.nodes,
+                            edges: stats.edges,
+                            files: stats.files,
+                        }
+                    });
+                } catch (e: any) {
+                    sendJson({ ok: false, error: e.message }, 500);
+                }
+            });
+            return;
+        }
+        
+        // 增量索引: 查询索引状态
+        if (path === '/incremental/status') {
+            const projectRoot = url.searchParams.get('projectRoot');
+            
+            if (!projectRoot) {
+                sendJson({ ok: false, error: '缺少 projectRoot' }, 400);
+                return;
+            }
+            
+            const dbPath = join(projectRoot, '.code-index.db');
+            
+            if (!existsSync(dbPath)) {
+                sendJson({ ok: true, indexed: false, message: '尚未索引' });
+                return;
+            }
+            
+            try {
+                const db = new Database(dbPath, { readonly: true });
+                const nodes = (db.prepare('SELECT COUNT(*) as cnt FROM nodes').get() as any).cnt;
+                const edges = (db.prepare('SELECT COUNT(*) as cnt FROM edges').get() as any).cnt;
+                const files = (db.prepare('SELECT COUNT(*) as cnt FROM file_hashes').get() as any).cnt;
+                const lastIndexed = (db.prepare('SELECT MAX(indexed_at) as t FROM file_hashes').get() as any).t;
+                db.close();
+                
+                sendJson({
+                    ok: true,
+                    indexed: true,
+                    stats: { nodes, edges, files },
+                    lastIndexed,
+                    dbPath,
+                });
+            } catch (e: any) {
+                sendJson({ ok: false, error: e.message }, 500);
+            }
             return;
         }
         
