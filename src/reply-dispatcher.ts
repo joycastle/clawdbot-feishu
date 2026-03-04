@@ -61,30 +61,31 @@ export function createFeishuReplyDispatcher(params: CreateFeishuReplyDispatcherP
   // Or use status card mode for more control.
   let typingState: TypingIndicatorState | null = null;
   let statusCardState: StatusCardState | null = null;
-  let statusCardCleanupTimer: ReturnType<typeof setTimeout> | null = null;
 
   const typingCallbacks = createTypingCallbacks({
     start: async () => {
       if (!replyToMessageId) return;
       
       if (useStatusCard) {
-        // Cancel any pending cleanup timer
-        if (statusCardCleanupTimer) {
-          clearTimeout(statusCardCleanupTimer);
-          statusCardCleanupTimer = null;
-        }
-        
         // Status card mode: send a card showing "processing"
         if (statusCardState) {
-          // Already have a card - update it back to "running" if needed
-          params.runtime.log?.(`feishu: status card exists, updating to running`);
-          await updateStatusCard({
-            cfg,
-            triggerMessageId: statusCardState.triggerMessageId,
-            status: "running",
-          });
-          return;
+          // Check if this is the same turn (same trigger message)
+          if (statusCardState.triggerMessageId === replyToMessageId) {
+            // Same turn - update existing card back to "running" if needed
+            params.runtime.log?.(`feishu: status card exists for same turn, updating to running`);
+            await updateStatusCard({
+              cfg,
+              triggerMessageId: statusCardState.triggerMessageId,
+              status: "running",
+            });
+            return;
+          } else {
+            // New turn (different trigger message) - clear old state
+            params.runtime.log?.(`feishu: new turn detected, clearing old status card state`);
+            statusCardState = null;
+          }
         }
+        // Send new status card
         statusCardState = await sendStatusCard({
           cfg,
           chatId,
@@ -111,16 +112,9 @@ export function createFeishuReplyDispatcher(params: CreateFeishuReplyDispatcherP
           // Don't delete the card - keep it as "completed" status
           // Deleting shows "撤回了一条消息" which looks weird
           params.runtime.log?.(`feishu: updated status card (completed)`);
-          
-          // Schedule cleanup after 5 seconds of inactivity
-          // If new activity starts, the timer will be cancelled
-          statusCardCleanupTimer = setTimeout(() => {
-            params.runtime.log?.(`feishu: status card cleanup after inactivity`);
-            statusCardState = null;
-            statusCardCleanupTimer = null;
-          }, 5000);
         }
-        // Don't clear statusCardState here - keep it for potential continuation
+        // Don't clear statusCardState here - keep it for potential continuation within same turn
+        // State will be cleared when new turn starts (different replyToMessageId)
       } else {
         // Default: remove typing indicator
         if (!typingState) return;
