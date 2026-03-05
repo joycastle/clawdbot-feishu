@@ -28,6 +28,7 @@ _embedding_model = None
 _chroma_client = None
 _collection = None
 _summaries_collection = None
+_reranker_model = None
 
 def get_embedding_model():
     """懒加载 embedding 模型"""
@@ -40,6 +41,46 @@ def get_embedding_model():
             print(f"[RAG] Warning: Failed to load embedding model: {e}")
             return None
     return _embedding_model
+
+def get_reranker_model():
+    """懒加载 reranker 模型"""
+    global _reranker_model
+    if _reranker_model is None:
+        try:
+            from sentence_transformers import CrossEncoder
+            _reranker_model = CrossEncoder("BAAI/bge-reranker-base")
+            print("[RAG] Reranker model loaded: BAAI/bge-reranker-base")
+        except Exception as e:
+            print(f"[RAG] Warning: Failed to load reranker model: {e}")
+            return None
+    return _reranker_model
+
+def rerank_results(query: str, results: list, top_k: int = 5) -> list:
+    """用 cross-encoder 重排序结果"""
+    if not results:
+        return results
+    
+    try:
+        model = get_reranker_model()
+        if model is None:
+            return results
+        
+        # 准备 query-doc pairs
+        pairs = [[query, r["content"]] for r in results]
+        
+        # 打分
+        scores = model.predict(pairs)
+        
+        # 添加 rerank_score 并排序
+        for i, r in enumerate(results):
+            r["rerank_score"] = float(scores[i])
+        
+        results.sort(key=lambda x: x.get("rerank_score", 0), reverse=True)
+        return results[:top_k]
+        
+    except Exception as e:
+        print(f"[RAG] Rerank failed: {e}")
+        return results[:top_k]
 
 def get_collection(name="feishu_docs"):
     """懒加载 ChromaDB collection"""
@@ -118,7 +159,7 @@ def rrf_fusion(vector_results: list, bm25_results: list, k: int = 60) -> list:
     
     return results
 
-def safe_search(query: str, top_k: int = 5, mode: str = "normal") -> dict:
+def safe_search(query: str, top_k: int = 5, mode: str = "normal", rerank: bool = False) -> dict:
     """
     安全的搜索函数，保证不会抛异常
     
@@ -126,6 +167,8 @@ def safe_search(query: str, top_k: int = 5, mode: str = "normal") -> dict:
       - normal: 只搜详情库（向量）
       - advanced: 先搜摘要库，再搜详情库
       - hybrid: 向量 + BM25 混合检索（RRF 融合）
+    
+    rerank: 是否用 cross-encoder 重排序（可与任意 mode 组合）
     """
     try:
         model = get_embedding_model()
@@ -194,14 +237,21 @@ def safe_search(query: str, top_k: int = 5, mode: str = "normal") -> dict:
             # RRF 融合
             results = rrf_fusion(vector_results, bm25_results)
         
-        # 按相似度/RRF 分数排序，取 top_k
+        # 按相似度/RRF 分数排序
         if mode == "hybrid":
             results.sort(key=lambda x: x.get("rrf_score", 0), reverse=True)
         else:
             results.sort(key=lambda x: x["score"], reverse=True)
-        results = results[:top_k]
         
-        return {"ok": True, "results": results, "total": len(results), "mode": mode}
+        # Rerank：用 cross-encoder 精排
+        if rerank and results:
+            # 先取多一些候选，再精排
+            candidates = results[:top_k * 2]
+            results = rerank_results(query, candidates, top_k)
+        else:
+            results = results[:top_k]
+        
+        return {"ok": True, "results": results, "total": len(results), "mode": mode, "rerank": rerank}
     
     except Exception as e:
         # ⚠️ 关键：捕获所有异常，返回友好消息，不要让 LLM 看到堆栈
@@ -273,8 +323,9 @@ class RAGHandler(BaseHTTPRequestHandler):
                 top_k = min(top_k, MAX_RESULTS)  # 限制最大返回数
                 
                 mode = params.get("mode", ["normal"])[0]
+                rerank = params.get("rerank", ["0"])[0] in ["1", "true", "yes"]
                 
-                result = safe_search(query, top_k, mode)
+                result = safe_search(query, top_k, mode, rerank)
                 self.send_json(result)
                 return
             
