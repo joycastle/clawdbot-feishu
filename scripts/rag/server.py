@@ -346,6 +346,53 @@ class RAGHandler(BaseHTTPRequestHandler):
         except Exception as e:
             # ⚠️ 捕获所有异常
             self.send_json({"ok": False, "error": f"服务器错误: {str(e)[:100]}"}, 500)
+    
+    def do_POST(self):
+        """处理 POST 请求"""
+        try:
+            parsed = urlparse(self.path)
+            path = parsed.path
+            
+            # 读取请求体
+            content_length = int(self.headers.get("Content-Length", 0))
+            body = self.rfile.read(content_length).decode("utf-8") if content_length > 0 else "{}"
+            data = json.loads(body)
+            
+            # Rerank 端点
+            if path == "/rerank":
+                query = data.get("query", "")
+                documents = data.get("documents", [])
+                
+                if not query or not documents:
+                    self.send_json({"ok": False, "error": "缺少 query 或 documents"}, 400)
+                    return
+                
+                # 转换格式并调用 rerank
+                results = [{
+                    "type": "detail",
+                    "content": doc.get("content", "")[:MAX_CONTENT_LENGTH],
+                    "metadata": doc.get("metadata", {}),
+                    "score": 0,
+                    "id": doc.get("id", "")
+                } for doc in documents]
+                
+                reranked = rerank_results(query, results, len(results))
+                
+                # 返回带 rerank_score 的结果
+                self.send_json({
+                    "ok": True,
+                    "results": [{
+                        "id": r.get("id") or r.get("metadata", {}).get("path", ""),
+                        "rerank_score": r.get("rerank_score", 0)
+                    } for r in reranked]
+                })
+                return
+            
+            # 404
+            self.send_json({"ok": False, "error": "Not found"}, 404)
+            
+        except Exception as e:
+            self.send_json({"ok": False, "error": f"服务器错误: {str(e)[:100]}"}, 500)
 
 def main():
     """启动服务"""
