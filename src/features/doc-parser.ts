@@ -3,6 +3,7 @@
  * Detects Feishu document URLs in message text and fetches their content via API.
  */
 import { createFeishuClient } from "../client.js";
+import { resolveFeishuCredentials } from "../accounts.js";
 import type { FeishuConfig } from "../types.js";
 
 /** Regex to match Feishu/Lark document URLs */
@@ -13,6 +14,150 @@ export interface ParsedDocUrl {
   url: string;
   type: "wiki" | "docx" | "docs";
   token: string;
+}
+
+type DocsContentResponse =
+  | { code: number; msg: string; data?: unknown }
+  | { code?: number; msg?: string; data?: unknown };
+
+const tokenCache = new Map<string, { token: string; expiresAtMs: number }>();
+
+function resolveOpenApiBase(domain: "feishu" | "lark"): string {
+  return domain === "lark" ? "https://open.larksuite.com/open-apis" : "https://open.feishu.cn/open-apis";
+}
+
+async function getTenantAccessToken(cfg: FeishuConfig): Promise<string> {
+  const creds = resolveFeishuCredentials(cfg);
+  if (!creds) {
+    throw new Error("Feishu credentials missing (appId/appSecret required)");
+  }
+
+  const cacheKey = `${creds.domain}|${creds.appId}|${creds.appSecret}`;
+  const cached = tokenCache.get(cacheKey);
+  if (cached && cached.expiresAtMs > Date.now() + 60_000) {
+    return cached.token;
+  }
+
+  const res = await fetch(`${resolveOpenApiBase(creds.domain)}/auth/v3/tenant_access_token/internal`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json; charset=utf-8" },
+    body: JSON.stringify({ app_id: creds.appId, app_secret: creds.appSecret }),
+  });
+  const data = (await res.json().catch(() => ({}))) as {
+    code?: number;
+    msg?: string;
+    tenant_access_token?: string;
+    expire?: number;
+  };
+  if (!res.ok || data.code !== 0 || !data.tenant_access_token) {
+    throw new Error(`Failed to get tenant_access_token: ${data.msg ?? `HTTP ${res.status}`}`);
+  }
+  tokenCache.set(cacheKey, {
+    token: data.tenant_access_token,
+    expiresAtMs: Date.now() + (data.expire ?? 7200) * 1000,
+  });
+  return data.tenant_access_token;
+}
+
+function extractDocsMarkdownFromResponse(payload: DocsContentResponse): string {
+  const code = typeof payload.code === "number" ? payload.code : 0;
+  if (code !== 0) {
+    throw new Error(`docs/v1/content failed: ${payload.msg ?? `code ${code}`}`);
+  }
+  const data = (payload as { data?: unknown }).data;
+  if (typeof data === "string") {
+    return data;
+  }
+  if (data && typeof data === "object") {
+    const rec = data as Record<string, unknown>;
+    if (typeof rec.content === "string") return rec.content;
+    if (typeof rec.markdown === "string") return rec.markdown;
+    if (rec.data && typeof rec.data === "object") {
+      const nested = rec.data as Record<string, unknown>;
+      if (typeof nested.content === "string") return nested.content;
+      if (typeof nested.markdown === "string") return nested.markdown;
+    }
+  }
+  throw new Error("docs/v1/content returned unexpected payload shape (missing markdown content)");
+}
+
+function isPrivateIpV4(hostname: string): boolean {
+  const m = /^(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})$/.exec(hostname);
+  if (!m) return false;
+  const octets = m.slice(1).map((n) => Number(n));
+  if (octets.some((n) => !Number.isInteger(n) || n < 0 || n > 255)) return true;
+  const [a, b] = octets;
+  if (a === 10) return true;
+  if (a === 127) return true;
+  if (a === 0) return true;
+  if (a === 169 && b === 254) return true;
+  if (a === 172 && b >= 16 && b <= 31) return true;
+  if (a === 192 && b === 168) return true;
+  return false;
+}
+
+function assertSafeHttpUrl(raw: string): URL {
+  let url: URL;
+  try {
+    url = new URL(raw);
+  } catch {
+    throw new Error(`Invalid URL: ${raw}`);
+  }
+  if (url.protocol !== "https:" && url.protocol !== "http:") {
+    throw new Error(`Unsupported URL protocol for media download: ${url.protocol}`);
+  }
+  const hostname = url.hostname.toLowerCase();
+  if (!hostname || hostname === "localhost" || hostname.endsWith(".local") || isPrivateIpV4(hostname)) {
+    throw new Error(`Refusing to fetch from private/localhost hostname: ${hostname}`);
+  }
+  return url;
+}
+
+export async function downloadFeishuDocMediaByUrl(params: {
+  cfg: FeishuConfig;
+  url: string;
+  maxBytes: number;
+}): Promise<{ buffer: Buffer; contentType?: string }> {
+  const { cfg, url, maxBytes } = params;
+  const safeUrl = assertSafeHttpUrl(url);
+
+  const tryFetch = async (withAuth: boolean) => {
+    const headers: Record<string, string> = {};
+    if (withAuth) {
+      headers.Authorization = `Bearer ${await getTenantAccessToken(cfg)}`;
+    }
+    const res = await fetch(safeUrl.toString(), { headers });
+    return res;
+  };
+
+  let res = await tryFetch(false);
+  if (
+    (res.status === 401 || res.status === 403) &&
+    (safeUrl.hostname.endsWith("feishu.cn") || safeUrl.hostname.endsWith("larksuite.com"))
+  ) {
+    res = await tryFetch(true);
+  }
+  if (!res.ok) {
+    throw new Error(`Media download failed: HTTP ${res.status}`);
+  }
+
+  const contentLengthHeader = res.headers.get("content-length");
+  if (contentLengthHeader) {
+    const n = Number(contentLengthHeader);
+    if (Number.isFinite(n) && n > maxBytes) {
+      throw new Error(`Media exceeds size limit: ${n} bytes > ${maxBytes} bytes`);
+    }
+  }
+
+  const ab = await res.arrayBuffer();
+  if (ab.byteLength > maxBytes) {
+    throw new Error(`Media exceeds size limit: ${ab.byteLength} bytes > ${maxBytes} bytes`);
+  }
+
+  return {
+    buffer: Buffer.from(ab),
+    contentType: res.headers.get("content-type") ?? undefined,
+  };
 }
 
 /** Extract all Feishu doc URLs from a text string. */
@@ -170,7 +315,7 @@ export async function fetchFeishuDocContent(
   cfg: FeishuConfig,
   parsed: ParsedDocUrl,
   log?: (msg: string) => void,
-): Promise<{ title: string; content: string } | null> {
+): Promise<{ title: string; content: string; docImageUrls: string[] } | null> {
   try {
     const client = createFeishuClient(cfg);
 
@@ -206,7 +351,48 @@ export async function fetchFeishuDocContent(
     });
     const title = docResp?.data?.document?.title ?? "未知标题";
 
-    // Fetch all blocks
+    const docImageUrls: string[] = [];
+    const creds = resolveFeishuCredentials(cfg);
+    const wantsMarkdown = Boolean(creds?.appId && creds.appSecret);
+
+    if (wantsMarkdown) {
+      try {
+        const token = await getTenantAccessToken(cfg);
+        const base = resolveOpenApiBase(creds!.domain);
+        const url = new URL(`${base}/docs/v1/content`);
+        url.searchParams.set("doc_token", docId);
+        url.searchParams.set("doc_type", "docx");
+        url.searchParams.set("content_type", "markdown");
+        url.searchParams.set("lang", "zh");
+        const contentRes = await fetch(url.toString(), {
+          method: "GET",
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json; charset=utf-8",
+          },
+        });
+        const payload = (await contentRes.json().catch(() => ({}))) as DocsContentResponse;
+        const markdown = extractDocsMarkdownFromResponse(payload);
+
+        const imageRe = /!\[[^\]]*?\]\(([^)\s]+)(?:\s+\"[^\"]*\")?\)/g;
+        let safeMarkdown = markdown;
+        let match: RegExpExecArray | null;
+        while ((match = imageRe.exec(markdown)) !== null) {
+          const urlRaw = match[1];
+          if (typeof urlRaw === "string" && urlRaw.startsWith("http")) {
+            docImageUrls.push(urlRaw);
+          }
+        }
+        safeMarkdown = safeMarkdown.replace(imageRe, "<media:image>");
+
+        log?.(`feishu-doc: fetched markdown content (${safeMarkdown.length} chars)`);
+        return { title, content: safeMarkdown, docImageUrls };
+      } catch (err) {
+        log?.(`feishu-doc: markdown fetch failed, falling back to blocks: ${String(err)}`);
+      }
+    }
+
+    // Fallback: Fetch blocks and render as plain text
     log?.(`feishu-doc: fetching blocks for ${docId}`);
     const blocksResp = await (client as any).docx.v1.documentBlock.list({
       path: { document_id: docId },
@@ -216,12 +402,12 @@ export async function fetchFeishuDocContent(
     const items: DocBlock[] = blocksResp?.data?.items ?? [];
     if (items.length === 0) {
       log?.(`feishu-doc: no blocks found`);
-      return { title, content: "(文档内容为空)" };
+      return { title, content: "(文档内容为空)", docImageUrls };
     }
 
     const content = blocksToText(items);
     log?.(`feishu-doc: parsed ${items.length} blocks, ${content.length} chars`);
-    return { title, content };
+    return { title, content, docImageUrls };
   } catch (err) {
     log?.(`feishu-doc: error fetching document: ${String(err)}`);
     return null;
@@ -236,20 +422,22 @@ export async function enrichMessageWithDocs(
   cfg: FeishuConfig,
   text: string,
   log?: (msg: string) => void,
-): Promise<string> {
+): Promise<{ text: string; docImageUrls: string[] }> {
   const urls = extractFeishuDocUrls(text);
-  if (urls.length === 0) return text;
+  if (urls.length === 0) return { text, docImageUrls: [] };
 
   log?.(`feishu-doc: found ${urls.length} document URL(s) in message`);
 
   const parts: string[] = [text];
+  const docImageUrls: string[] = [];
 
   for (const parsed of urls) {
     const doc = await fetchFeishuDocContent(cfg, parsed, log);
     if (doc) {
+      docImageUrls.push(...doc.docImageUrls);
       parts.push(`\n\n--- 飞书文档: ${doc.title} ---\n${doc.content}\n--- 文档结束 ---`);
     }
   }
 
-  return parts.join("");
+  return { text: parts.join(""), docImageUrls };
 }

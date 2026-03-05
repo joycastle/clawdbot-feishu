@@ -9,7 +9,7 @@ import {
 import type { FeishuConfig, FeishuMessageContext, FeishuMediaInfo, MentionTarget } from "./types.js";
 import { createFeishuClient } from "./client.js";
 import { getFeishuRuntime } from "./runtime.js";
-import { enrichMessageWithDocs } from "./features/doc-parser.js";
+import { downloadFeishuDocMediaByUrl, enrichMessageWithDocs } from "./features/doc-parser.js";
 import { resolveFeishuGroupConfig, resolveFeishuReplyPolicy, resolveFeishuAllowlistMatch, isFeishuGroupAllowed } from "./policy.js";
 import { createFeishuReplyDispatcher } from "./reply-dispatcher.js";
 import { getMessageFeishu, sendMarkdownCardFeishu, sendMessageFeishu } from "./api/send.js";
@@ -1210,25 +1210,68 @@ export async function handleFeishuMessage(params: {
       }
     }
 
-    // Build media payload after all media (including quoted message media) has been collected
-    const mediaPayload = buildFeishuMediaPayload(mediaList);
-
     const envelopeOptions = core.channel.reply.resolveEnvelopeFormatOptions(cfg);
 
     // Enrich message text with Feishu document content (if URLs detected)
     let enrichedContent = ctx.content;
+    const docImageUrls: string[] = [];
+    const feishuCfgForDoc = cfg.channels?.feishu as FeishuConfig | undefined;
     try {
-      const feishuCfgForDoc = cfg.channels?.feishu as FeishuConfig | undefined;
       if (feishuCfgForDoc) {
-        enrichedContent = await enrichMessageWithDocs(feishuCfgForDoc, ctx.content, log);
+        const enriched = await enrichMessageWithDocs(feishuCfgForDoc, ctx.content, log);
+        enrichedContent = enriched.text;
+        docImageUrls.push(...enriched.docImageUrls);
         // Also enrich quoted content if it contains doc URLs
         if (quotedContent) {
-          quotedContent = await enrichMessageWithDocs(feishuCfgForDoc, quotedContent, log);
+          const enrichedQuoted = await enrichMessageWithDocs(feishuCfgForDoc, quotedContent, log);
+          quotedContent = enrichedQuoted.text;
+          docImageUrls.push(...enrichedQuoted.docImageUrls);
         }
       }
     } catch (err) {
       log(`feishu: doc enrichment failed (non-fatal): ${String(err)}`);
     }
+
+    if (docImageUrls.length > 0) {
+      if (!feishuCfgForDoc) {
+        log("feishu: doc image download skipped (Feishu channel config missing)");
+      } else {
+      const uniqueDocImages = [...new Set(docImageUrls)].slice(0, 8);
+      log(`feishu: downloading ${uniqueDocImages.length} doc image(s) from doc enrichment`);
+      for (const url of uniqueDocImages) {
+        try {
+          const result = await downloadFeishuDocMediaByUrl({
+            cfg: feishuCfgForDoc,
+            url,
+            maxBytes: mediaMaxBytes,
+          });
+          let contentType = result.contentType;
+          if (!contentType) {
+            contentType = await core.media.detectMime({ buffer: result.buffer });
+          }
+          if (!contentType || contentType === "application/octet-stream") {
+            contentType = "image/png";
+          }
+          const saved = await core.channel.media.saveMediaBuffer(
+            result.buffer,
+            contentType,
+            "inbound",
+            mediaMaxBytes,
+          );
+          mediaList.push({
+            path: saved.path,
+            contentType: saved.contentType,
+            placeholder: "<media:image>",
+          });
+        } catch (err) {
+          log(`feishu: failed to download doc image ${url}: ${String(err)}`);
+        }
+      }
+      }
+    }
+
+    // Build media payload after all media (including doc + quoted media) has been collected
+    const mediaPayload = buildFeishuMediaPayload(mediaList);
 
     // NOTE: Bitable video commands (e.g., "帮我分析最新的视频") are no longer
     // intercepted here via regex. Instead, messages flow through to the LLM agent,
