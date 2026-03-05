@@ -14,14 +14,15 @@ import json
 import os
 import sys
 import urllib.request
-from http.server import HTTPServer, BaseHTTPRequestHandler
+from http.server import HTTPServer, BaseHTTPRequestHandler, ThreadingHTTPServer
 from urllib.parse import urlparse, parse_qs
 from pathlib import Path
 
 # 配置
 PORT = 18800
-OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY", "")
-EXPANSION_MODEL = "gpt-4o-mini"  # 便宜快速
+VERTEX_PROJECT = os.environ.get("VERTEX_PROJECT", "larkbot-485707")
+VERTEX_LOCATION = os.environ.get("VERTEX_LOCATION", "us-central1")
+EXPANSION_MODEL = "gemini-2.0-flash-001"  # 便宜快速
 DATA_DIR = Path(__file__).parent / "data"
 MAX_RESULTS = 10  # 最多返回条数
 MAX_CONTENT_LENGTH = 8000  # 单条内容最大字符数
@@ -58,46 +59,73 @@ def get_reranker_model():
             return None
     return _reranker_model
 
+_vertex_token = None
+_vertex_token_expiry = 0
+
+def get_vertex_token():
+    """获取 Vertex AI 访问令牌"""
+    global _vertex_token, _vertex_token_expiry
+    import time
+    
+    # 检查缓存的令牌是否还有效（留 60 秒余量）
+    if _vertex_token and time.time() < _vertex_token_expiry - 60:
+        return _vertex_token
+    
+    try:
+        import google.auth
+        from google.auth.transport.requests import Request
+        
+        credentials, _ = google.auth.default(scopes=["https://www.googleapis.com/auth/cloud-platform"])
+        credentials.refresh(Request())
+        
+        _vertex_token = credentials.token
+        _vertex_token_expiry = credentials.expiry.timestamp() if credentials.expiry else time.time() + 3600
+        
+        return _vertex_token
+    except Exception as e:
+        print(f"[RAG] Failed to get Vertex token: {e}")
+        return None
+
 def expand_query(query: str, num_variants: int = 2) -> list:
     """
-    用 OpenAI 扩展查询为多个变体
+    用 Vertex AI (Gemini) 扩展查询为多个变体 (REST API)
     
     返回: [原始查询, 变体1, 变体2, ...]
     """
-    if not OPENAI_API_KEY:
-        return [query]  # 无 API key，直接返回原始查询
-    
     try:
+        token = get_vertex_token()
+        if not token:
+            return [query]
+        
         prompt = f"""将以下搜索查询改写成 {num_variants} 个不同的变体，用于知识库检索。
-保持语义相同，但用不同的表达方式、同义词或角度。
+保持语义相同，但用不同的表达方式、同义词或角度。注意保留专有名词（如"卡库"、"bingo"等游戏术语）。
 
 原始查询: {query}
 
 只输出变体，每行一个，不要编号或其他内容。"""
         
-        url = "https://api.openai.com/v1/chat/completions"
+        url = f"https://{VERTEX_LOCATION}-aiplatform.googleapis.com/v1/projects/{VERTEX_PROJECT}/locations/{VERTEX_LOCATION}/publishers/google/models/{EXPANSION_MODEL}:generateContent"
         data = json.dumps({
-            "model": EXPANSION_MODEL,
-            "messages": [{"role": "user", "content": prompt}],
-            "temperature": 0.7,
-            "max_tokens": 150
+            "contents": [{"role": "user", "parts": [{"text": prompt}]}],
+            "generationConfig": {"temperature": 0.7, "maxOutputTokens": 150}
         }).encode("utf-8")
         
         req = urllib.request.Request(url, data=data, headers={
             "Content-Type": "application/json",
-            "Authorization": f"Bearer {OPENAI_API_KEY}"
+            "Authorization": f"Bearer {token}"
         })
-        with urllib.request.urlopen(req, timeout=10) as resp:
+        
+        with urllib.request.urlopen(req, timeout=15) as resp:
             result = json.loads(resp.read().decode("utf-8"))
-            text = result.get("choices", [{}])[0].get("message", {}).get("content", "")
-            
-            # 解析变体
-            variants = [v.strip() for v in text.strip().split("\n") if v.strip()]
-            
-            print(f"[RAG] Query expanded: {query} -> {variants}")
-            
-            # 返回原始查询 + 变体
-            return [query] + variants[:num_variants]
+            text = result.get("candidates", [{}])[0].get("content", {}).get("parts", [{}])[0].get("text", "")
+        
+        # 解析变体
+        variants = [v.strip() for v in text.strip().split("\n") if v.strip()]
+        
+        print(f"[RAG] Query expanded: {query} -> {variants}")
+        
+        # 返回原始查询 + 变体
+        return [query] + variants[:num_variants]
     
     except Exception as e:
         print(f"[RAG] Query expansion failed: {e}")
@@ -493,7 +521,7 @@ def main():
         print("[RAG] Warning: Embedding model not loaded, will retry on first request")
     
     # 启动 HTTP 服务
-    server = HTTPServer(("127.0.0.1", PORT), RAGHandler)
+    server = ThreadingHTTPServer(("127.0.0.1", PORT), RAGHandler)
     print(f"[RAG] Server running at http://127.0.0.1:{PORT}")
     print("[RAG] Endpoints:")
     print("  GET /health - 健康检查")
