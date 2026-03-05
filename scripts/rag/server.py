@@ -13,12 +13,15 @@ RAG 知识库检索服务
 import json
 import os
 import sys
+import urllib.request
 from http.server import HTTPServer, BaseHTTPRequestHandler
 from urllib.parse import urlparse, parse_qs
 from pathlib import Path
 
 # 配置
 PORT = 18800
+OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY", "")
+EXPANSION_MODEL = "gpt-4o-mini"  # 便宜快速
 DATA_DIR = Path(__file__).parent / "data"
 MAX_RESULTS = 10  # 最多返回条数
 MAX_CONTENT_LENGTH = 8000  # 单条内容最大字符数
@@ -54,6 +57,51 @@ def get_reranker_model():
             print(f"[RAG] Warning: Failed to load reranker model: {e}")
             return None
     return _reranker_model
+
+def expand_query(query: str, num_variants: int = 2) -> list:
+    """
+    用 OpenAI 扩展查询为多个变体
+    
+    返回: [原始查询, 变体1, 变体2, ...]
+    """
+    if not OPENAI_API_KEY:
+        return [query]  # 无 API key，直接返回原始查询
+    
+    try:
+        prompt = f"""将以下搜索查询改写成 {num_variants} 个不同的变体，用于知识库检索。
+保持语义相同，但用不同的表达方式、同义词或角度。
+
+原始查询: {query}
+
+只输出变体，每行一个，不要编号或其他内容。"""
+        
+        url = "https://api.openai.com/v1/chat/completions"
+        data = json.dumps({
+            "model": EXPANSION_MODEL,
+            "messages": [{"role": "user", "content": prompt}],
+            "temperature": 0.7,
+            "max_tokens": 150
+        }).encode("utf-8")
+        
+        req = urllib.request.Request(url, data=data, headers={
+            "Content-Type": "application/json",
+            "Authorization": f"Bearer {OPENAI_API_KEY}"
+        })
+        with urllib.request.urlopen(req, timeout=10) as resp:
+            result = json.loads(resp.read().decode("utf-8"))
+            text = result.get("choices", [{}])[0].get("message", {}).get("content", "")
+            
+            # 解析变体
+            variants = [v.strip() for v in text.strip().split("\n") if v.strip()]
+            
+            print(f"[RAG] Query expanded: {query} -> {variants}")
+            
+            # 返回原始查询 + 变体
+            return [query] + variants[:num_variants]
+    
+    except Exception as e:
+        print(f"[RAG] Query expansion failed: {e}")
+        return [query]
 
 def rerank_results(query: str, results: list, top_k: int = 5) -> list:
     """用 cross-encoder 重排序结果"""
@@ -159,7 +207,7 @@ def rrf_fusion(vector_results: list, bm25_results: list, k: int = 60) -> list:
     
     return results
 
-def safe_search(query: str, top_k: int = 5, mode: str = "normal", rerank: bool = False) -> dict:
+def safe_search(query: str, top_k: int = 5, mode: str = "normal", rerank: bool = False, expand: bool = False) -> dict:
     """
     安全的搜索函数，保证不会抛异常
     
@@ -169,7 +217,45 @@ def safe_search(query: str, top_k: int = 5, mode: str = "normal", rerank: bool =
       - hybrid: 向量 + BM25 混合检索（RRF 融合）
     
     rerank: 是否用 cross-encoder 重排序（可与任意 mode 组合）
+    expand: 是否用 LLM 扩展查询为多个变体，多路召回合并
     """
+    # Query Expansion: 多路召回
+    if expand:
+        queries = expand_query(query, num_variants=2)
+        all_results = []
+        seen_ids = set()
+        
+        for q in queries:
+            # 递归调用，但不再 expand
+            sub_result = safe_search(q, top_k=top_k, mode=mode, rerank=False, expand=False)
+            if sub_result.get("ok") and sub_result.get("results"):
+                for r in sub_result["results"]:
+                    # 去重（按 content hash）
+                    content_id = hash(r.get("content", "")[:200])
+                    if content_id not in seen_ids:
+                        seen_ids.add(content_id)
+                        r["expanded_query"] = q  # 记录来源查询
+                        all_results.append(r)
+        
+        # 按分数排序
+        all_results.sort(key=lambda x: x.get("score", 0), reverse=True)
+        results = all_results[:top_k * 2]  # 多取一些给 rerank
+        
+        # Rerank
+        if rerank and results:
+            results = rerank_results(query, results, top_k)
+        else:
+            results = results[:top_k]
+        
+        return {
+            "ok": True,
+            "results": results,
+            "total": len(results),
+            "mode": mode,
+            "rerank": rerank,
+            "expand": True,
+            "queries": queries
+        }
     try:
         model = get_embedding_model()
         if model is None:
@@ -324,8 +410,9 @@ class RAGHandler(BaseHTTPRequestHandler):
                 
                 mode = params.get("mode", ["normal"])[0]
                 rerank = params.get("rerank", ["0"])[0] in ["1", "true", "yes"]
+                expand = params.get("expand", ["0"])[0] in ["1", "true", "yes"]
                 
-                result = safe_search(query, top_k, mode, rerank)
+                result = safe_search(query, top_k, mode, rerank, expand)
                 self.send_json(result)
                 return
             
