@@ -94,7 +94,7 @@ export async function getAnnouncementFeishu(params: {
 async function getDocxAnnouncement(
   client: ReturnType<typeof createFeishuClient>,
   chatId: string,
-  userIdType: string
+  userIdType: "open_id" | "union_id" | "user_id",
 ): Promise<AnnouncementInfo | null> {
   // Get chat info which includes announcement document info
   const chatResponse = (await client.im.chat.get({
@@ -124,9 +124,8 @@ async function getDocxAnnouncement(
   const docToken = announcementInfo.doc_token;
 
   // Get document raw content
-  const docResponse = (await client.docx.documentRawContent({
+  const docResponse = (await client.docx.document.rawContent({
     path: { document_id: docToken },
-    params: { lang: 0 },
   })) as {
     code?: number;
     msg?: string;
@@ -170,7 +169,7 @@ export async function updateAnnouncementFeishu(params: {
 
   const client = createFeishuClient(feishuCfg);
 
-  const response = (await client.im.chatAnnouncement.patch({
+  const response = (await (client.im.chatAnnouncement.patch as unknown as (args: unknown) => Promise<unknown>)({
     path: { chat_id: chatId },
     data: {
       revision,

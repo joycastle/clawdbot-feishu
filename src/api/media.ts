@@ -348,6 +348,8 @@ export async function sendFileFeishu(params: {
   cfg: ClawdbotConfig;
   to: string;
   fileKey: string;
+  /** "audio" for opus voice, "media" for mp4 video, "file" for documents (default) */
+  msgType?: "file" | "audio" | "media";
   replyToMessageId?: string;
 }): Promise<SendMediaResult> {
   const { cfg, to, fileKey, replyToMessageId } = params;
@@ -364,13 +366,14 @@ export async function sendFileFeishu(params: {
 
   const receiveIdType = resolveReceiveIdType(receiveId);
   const content = JSON.stringify({ file_key: fileKey });
+  const msgType = params.msgType ?? "file";
 
   if (replyToMessageId) {
     const response = await client.im.message.reply({
       path: { message_id: replyToMessageId },
       data: {
         content,
-        msg_type: "file",
+        msg_type: msgType,
       },
     });
 
@@ -389,7 +392,7 @@ export async function sendFileFeishu(params: {
     data: {
       receive_id: receiveId,
       content,
-      msg_type: "file",
+      msg_type: msgType,
     },
   });
 
@@ -510,6 +513,7 @@ export async function sendMediaFeishu(params: {
       fileName: name,
       fileType,
     });
-    return sendFileFeishu({ cfg, to, fileKey, replyToMessageId });
+    const msgType = fileType === "opus" ? "audio" : fileType === "mp4" ? "media" : "file";
+    return sendFileFeishu({ cfg, to, fileKey, msgType, replyToMessageId });
   }
 }
