@@ -131,6 +131,49 @@ def expand_query(query: str, num_variants: int = 2) -> list:
         print(f"[RAG] Query expansion failed: {e}")
         return [query]
 
+def generate_hypothetical_answer(query: str) -> str:
+    """
+    HyDE: 生成假设答案用于检索
+    
+    让 LLM 假设知识库里有答案，生成一个假设的文档片段
+    """
+    try:
+        token = get_vertex_token()
+        if not token:
+            return query
+        
+        prompt = f"""你是一个知识库文档生成器。根据以下问题，写一段假设的答案文本（仿佛这个答案存在于知识库中）。
+这段文本将用于检索，所以要包含相关的关键词和概念。
+
+问题: {query}
+
+写一段 100-200 字的假设答案，直接输出内容，不要加前缀："""
+        
+        url = f"https://{VERTEX_LOCATION}-aiplatform.googleapis.com/v1/projects/{VERTEX_PROJECT}/locations/{VERTEX_LOCATION}/publishers/google/models/{EXPANSION_MODEL}:generateContent"
+        data = json.dumps({
+            "contents": [{"role": "user", "parts": [{"text": prompt}]}],
+            "generationConfig": {"temperature": 0.5, "maxOutputTokens": 300}
+        }).encode("utf-8")
+        
+        req = urllib.request.Request(url, data=data, headers={
+            "Content-Type": "application/json",
+            "Authorization": f"Bearer {token}"
+        })
+        
+        with urllib.request.urlopen(req, timeout=15) as resp:
+            result = json.loads(resp.read().decode("utf-8"))
+            text = result.get("candidates", [{}])[0].get("content", {}).get("parts", [{}])[0].get("text", "")
+        
+        if text:
+            print(f"[RAG] HyDE generated: {text[:100]}...")
+            return text.strip()
+        
+        return query
+    
+    except Exception as e:
+        print(f"[RAG] HyDE generation failed: {e}")
+        return query
+
 def expand_context(results: list, window: int = 1) -> list:
     """
     Parent-Child Chunking: 扩展每个结果的上下文窗口
@@ -294,7 +337,7 @@ def rrf_fusion(vector_results: list, bm25_results: list, k: int = 60) -> list:
     
     return results
 
-def safe_search(query: str, top_k: int = 5, mode: str = "normal", rerank: bool = False, expand: bool = False, parent_child: int = 0) -> dict:
+def safe_search(query: str, top_k: int = 5, mode: str = "normal", rerank: bool = False, expand: bool = False, parent_child: int = 0, hyde: bool = False) -> dict:
     """
     安全的搜索函数，保证不会抛异常
     
@@ -305,7 +348,17 @@ def safe_search(query: str, top_k: int = 5, mode: str = "normal", rerank: bool =
     
     rerank: 是否用 cross-encoder 重排序（可与任意 mode 组合）
     expand: 是否用 LLM 扩展查询为多个变体，多路召回合并
+    hyde: 是否用 HyDE（生成假设答案用于检索）
     """
+    original_query = query
+    hyde_answer = None
+    
+    # HyDE: 用假设答案替代原始查询进行检索
+    if hyde:
+        hyde_answer = generate_hypothetical_answer(query)
+        if hyde_answer != query:
+            query = hyde_answer  # 用假设答案检索
+    
     # Query Expansion: 多路召回
     if expand:
         queries = expand_query(query, num_variants=2)
@@ -314,7 +367,7 @@ def safe_search(query: str, top_k: int = 5, mode: str = "normal", rerank: bool =
         
         for q in queries:
             # 递归调用，但不再 expand
-            sub_result = safe_search(q, top_k=top_k, mode=mode, rerank=False, expand=False, parent_child=0)
+            sub_result = safe_search(q, top_k=top_k, mode=mode, rerank=False, expand=False, parent_child=0, hyde=False)
             if sub_result.get("ok") and sub_result.get("results"):
                 for r in sub_result["results"]:
                     # 去重（按 content hash）
@@ -338,7 +391,7 @@ def safe_search(query: str, top_k: int = 5, mode: str = "normal", rerank: bool =
         if parent_child > 0 and results:
             results = expand_context(results, window=parent_child)
         
-        return {
+        response = {
             "ok": True,
             "results": results,
             "total": len(results),
@@ -348,6 +401,10 @@ def safe_search(query: str, top_k: int = 5, mode: str = "normal", rerank: bool =
             "queries": queries,
             "parent_child": parent_child
         }
+        if hyde and hyde_answer:
+            response["hyde"] = True
+            response["hyde_query"] = hyde_answer[:200]
+        return response
     try:
         model = get_embedding_model()
         if model is None:
@@ -433,7 +490,11 @@ def safe_search(query: str, top_k: int = 5, mode: str = "normal", rerank: bool =
         if parent_child > 0 and results:
             results = expand_context(results, window=parent_child)
         
-        return {"ok": True, "results": results, "total": len(results), "mode": mode, "rerank": rerank, "parent_child": parent_child}
+        response = {"ok": True, "results": results, "total": len(results), "mode": mode, "rerank": rerank, "parent_child": parent_child}
+        if hyde and hyde_answer:
+            response["hyde"] = True
+            response["hyde_query"] = hyde_answer[:200]
+        return response
     
     except Exception as e:
         # ⚠️ 关键：捕获所有异常，返回友好消息，不要让 LLM 看到堆栈
@@ -509,8 +570,9 @@ class RAGHandler(BaseHTTPRequestHandler):
                 expand = params.get("expand", ["0"])[0] in ["1", "true", "yes"]
                 parent_child = int(params.get("parent_child", ["0"])[0])
                 parent_child = min(max(parent_child, 0), 3)  # 限制 0-3
+                hyde = params.get("hyde", ["0"])[0] in ["1", "true", "yes"]
                 
-                result = safe_search(query, top_k, mode, rerank, expand, parent_child)
+                result = safe_search(query, top_k, mode, rerank, expand, parent_child, hyde)
                 self.send_json(result)
                 return
             
