@@ -69,13 +69,63 @@ def get_collection(name="feishu_docs"):
         return None
     return None
 
+def rrf_fusion(vector_results: list, bm25_results: list, k: int = 60) -> list:
+    """
+    Reciprocal Rank Fusion (RRF) 融合两路检索结果
+    
+    RRF 公式: score = sum(1 / (k + rank_i))
+    k 默认 60，平滑因子
+    """
+    scores = {}  # id -> rrf_score
+    items = {}   # id -> item
+    
+    # 处理向量检索结果
+    for rank, item in enumerate(vector_results):
+        doc_id = item.get("metadata", {}).get("url", "") + "_" + str(item.get("metadata", {}).get("chunk_index", 0))
+        if not doc_id:
+            doc_id = f"vec_{rank}"
+        
+        rrf_score = 1.0 / (k + rank + 1)
+        scores[doc_id] = scores.get(doc_id, 0) + rrf_score
+        if doc_id not in items:
+            items[doc_id] = item
+    
+    # 处理 BM25 结果
+    for rank, item in enumerate(bm25_results):
+        doc_id = item.get("metadata", {}).get("url", "") + "_" + str(item.get("metadata", {}).get("chunk_index", 0))
+        if not doc_id:
+            doc_id = f"bm25_{rank}"
+        
+        rrf_score = 1.0 / (k + rank + 1)
+        scores[doc_id] = scores.get(doc_id, 0) + rrf_score
+        if doc_id not in items:
+            # 转换 BM25 结果格式
+            items[doc_id] = {
+                "type": "detail",
+                "content": item.get("content", "")[:MAX_CONTENT_LENGTH],
+                "metadata": item.get("metadata", {}),
+                "score": item.get("score", 0)
+            }
+    
+    # 按 RRF 分数排序
+    sorted_ids = sorted(scores.keys(), key=lambda x: scores[x], reverse=True)
+    
+    results = []
+    for doc_id in sorted_ids:
+        item = items[doc_id].copy()
+        item["rrf_score"] = scores[doc_id]
+        results.append(item)
+    
+    return results
+
 def safe_search(query: str, top_k: int = 5, mode: str = "normal") -> dict:
     """
     安全的搜索函数，保证不会抛异常
     
     mode:
-      - normal: 只搜详情库
+      - normal: 只搜详情库（向量）
       - advanced: 先搜摘要库，再搜详情库
+      - hybrid: 向量 + BM25 混合检索（RRF 融合）
     """
     try:
         model = get_embedding_model()
@@ -86,6 +136,8 @@ def safe_search(query: str, top_k: int = 5, mode: str = "normal") -> dict:
         query_embedding = list(model.embed([query]))[0].tolist()
         
         results = []
+        vector_results = []
+        bm25_results = []
         
         # Advanced 模式：先搜摘要
         if mode == "advanced":
@@ -106,29 +158,50 @@ def safe_search(query: str, top_k: int = 5, mode: str = "normal") -> dict:
                             "score": 1 - distance  # 转换为相似度
                         })
         
-        # 搜详情库
+        # 搜详情库（向量）
         docs = get_collection("feishu_docs")
         if docs and docs.count() > 0:
+            # 多取一些用于融合
+            fetch_k = top_k * 2 if mode == "hybrid" else top_k
             doc_results = docs.query(
                 query_embeddings=[query_embedding],
-                n_results=min(top_k, MAX_RESULTS)
+                n_results=min(fetch_k, MAX_RESULTS * 2)
             )
             if doc_results and doc_results.get("documents"):
                 for i, doc in enumerate(doc_results["documents"][0]):
                     meta = doc_results["metadatas"][0][i] if doc_results.get("metadatas") else {}
                     distance = doc_results["distances"][0][i] if doc_results.get("distances") else 0
-                    results.append({
+                    item = {
                         "type": "detail",
                         "content": doc[:MAX_CONTENT_LENGTH],
                         "metadata": meta,
                         "score": 1 - distance
-                    })
+                    }
+                    if mode == "hybrid":
+                        vector_results.append(item)
+                    else:
+                        results.append(item)
         
-        # 按相似度排序，取 top_k
-        results.sort(key=lambda x: x["score"], reverse=True)
+        # Hybrid 模式：加入 BM25 搜索
+        if mode == "hybrid":
+            try:
+                import bm25_index
+                bm25_results = bm25_index.search(query, top_k=top_k * 2)
+            except Exception as e:
+                print(f"[RAG] BM25 search failed: {e}")
+                bm25_results = []
+            
+            # RRF 融合
+            results = rrf_fusion(vector_results, bm25_results)
+        
+        # 按相似度/RRF 分数排序，取 top_k
+        if mode == "hybrid":
+            results.sort(key=lambda x: x.get("rrf_score", 0), reverse=True)
+        else:
+            results.sort(key=lambda x: x["score"], reverse=True)
         results = results[:top_k]
         
-        return {"ok": True, "results": results, "total": len(results)}
+        return {"ok": True, "results": results, "total": len(results), "mode": mode}
     
     except Exception as e:
         # ⚠️ 关键：捕获所有异常，返回友好消息，不要让 LLM 看到堆栈
@@ -140,10 +213,19 @@ def safe_stats() -> dict:
         docs = get_collection("feishu_docs")
         summaries = get_collection("feishu_summaries")
         
+        # BM25 统计
+        bm25_stats = {}
+        try:
+            import bm25_index
+            bm25_stats = bm25_index.get_stats()
+        except Exception as e:
+            bm25_stats = {"error": str(e)[:50]}
+        
         return {
             "ok": True,
             "docs_count": docs.count() if docs else 0,
             "summaries_count": summaries.count() if summaries else 0,
+            "bm25": bm25_stats,
             "data_dir": str(DATA_DIR)
         }
     except Exception as e:

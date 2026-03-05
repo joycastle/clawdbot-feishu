@@ -99,13 +99,35 @@ curl http://127.0.0.1:18800/stats
 - `q` (必需): 查询文本
 - `top_k` (可选, 默认 5): 返回条数，最大 10
 - `mode` (可选): 
-  - `normal`: 只搜详情库
+  - `normal`: 只搜详情库（纯向量）
   - `advanced`: 先搜摘要库，再搜详情库
+  - `hybrid`: **推荐** 向量 + BM25 关键词混合检索，RRF 融合
+
+## Hybrid Search
+
+Hybrid 模式使用 **向量 + BM25** 双路检索，通过 RRF (Reciprocal Rank Fusion) 融合结果。
+
+**优势**：
+- 向量检索擅长语义理解（"怎么控制概率" → "卡库"）
+- BM25 擅长精确匹配（函数名、配置项如 `predict_end_bingo`）
+- 两者融合互补，召回更全面
+
+**BM25 索引管理**：
+```bash
+# 查看 BM25 统计
+python bm25_index.py stats
+
+# 测试 BM25 搜索
+python bm25_index.py search 卡库
+
+# 从 ChromaDB 重建 BM25 索引
+python bm25_index.py rebuild
+```
 
 ## 依赖
 
 ```bash
-pip install fastembed chromadb
+pip install fastembed chromadb jieba rank_bm25
 ```
 
 ## 文件结构

@@ -165,6 +165,18 @@ def index_document(url: str, force: bool = False) -> bool:
             metadatas=metadatas
         )
         
+        # 同步更新 BM25 索引
+        try:
+            import bm25_index
+            bm25_docs = [{
+                "id": ids[i],
+                "content": chunks[i],
+                "metadata": metadatas[i]
+            } for i in range(len(chunks))]
+            bm25_index.add_documents(bm25_docs)
+        except Exception as e:
+            print(f"[Index] Warning: BM25 index update failed: {e}")
+        
         print(f"[Index] ✅ Indexed: {title} ({len(chunks)} chunks)")
         return True
         

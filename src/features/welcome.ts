@@ -157,13 +157,15 @@ async function getUserInfo(
 /** 构建欢迎消息 */
 function buildWelcomeMessage(params: {
   userName: string;
+  userOpenId: string;
   isNew: boolean;
   persona: Persona;
   docs: { name: string; url: string }[];
 }): string {
-  const { userName, isNew, persona, docs } = params;
+  const { userName, userOpenId, isNew, persona, docs } = params;
 
-  let message = `@${userName} `;
+  // 飞书 @ 格式：<at user_id="open_id">名字</at>
+  let message = `<at user_id="${userOpenId}">${userName}</at> `;
   message += isNew ? persona.newHireGreeting : persona.oldEmployeeGreeting;
 
   if (isNew && docs.length > 0) {
@@ -238,6 +240,7 @@ export async function handleMemberAdded(params: {
     // 6. 构建欢迎消息
     const message = buildWelcomeMessage({
       userName: userInfo.name,
+      userOpenId: openId,
       isNew,
       persona,
       docs: groupConfig.docs,

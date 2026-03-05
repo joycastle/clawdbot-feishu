@@ -4,5 +4,17 @@
     "path": "/home/ubuntu/work/bf/nakama-ts/src",
     "indexedAt": "2026-03-01T14:45:00.706Z",
     "count": 3849
+  },
+  {
+    "name": "clawdbot",
+    "path": "/home/ubuntu/work/clawdbot/src",
+    "indexedAt": "2026-03-02T18:26:10.118Z",
+    "count": 11603
+  },
+  {
+    "name": "bf-nakama-lua",
+    "path": "/home/ubuntu/work/bf/nakama-lua/src",
+    "indexedAt": "2026-03-03T09:29:16.545Z",
+    "count": 3849
   }
 ]

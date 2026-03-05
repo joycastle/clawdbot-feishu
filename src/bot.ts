@@ -706,26 +706,30 @@ const HELPER_TOPICS: Record<string, string> = {
   // 分析能力
   "analyze": "analyze.md",
   "7": "analyze.md",
+  // 代码分析
+  "code-analysis": "code-analysis.md",
+  "code": "code-analysis.md",
+  "8": "code-analysis.md",
   // 飞书基础
   "feishu-basic": "feishu-basic.md",
   "feishu": "feishu-basic.md",
-  "8": "feishu-basic.md",
+  "9": "feishu-basic.md",
   // 飞书项目
   "feishu-project": "feishu-project.md",
   "project": "feishu-project.md",
-  "9": "feishu-project.md",
+  "10": "feishu-project.md",
   // 飞书任务
   "feishu-task": "feishu-task.md",
   "task": "feishu-task.md",
-  "10": "feishu-task.md",
+  "11": "feishu-task.md",
   // 多维表格
   "feishu-bitable": "feishu-bitable.md",
   "bitable": "feishu-bitable.md",
-  "11": "feishu-bitable.md",
+  "12": "feishu-bitable.md",
   // 电子表格
   "feishu-sheets": "feishu-sheets.md",
   "sheets": "feishu-sheets.md",
-  "12": "feishu-sheets.md",
+  "13": "feishu-sheets.md",
 };
 
 function tryHandleHelperCommand(text: string): string | null {
