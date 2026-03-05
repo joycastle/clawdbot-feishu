@@ -131,6 +131,65 @@ def expand_query(query: str, num_variants: int = 2) -> list:
         print(f"[RAG] Query expansion failed: {e}")
         return [query]
 
+def expand_context(results: list, window: int = 1) -> list:
+    """
+    Parent-Child Chunking: 扩展每个结果的上下文窗口
+    
+    通过合并相邻 chunk 来提供更完整的上下文
+    window: 向前后各扩展几个 chunk
+    """
+    if not results or window <= 0:
+        return results
+    
+    try:
+        docs = get_collection("feishu_docs")
+        if not docs:
+            return results
+        
+        expanded = []
+        for r in results:
+            meta = r.get("metadata", {})
+            url = meta.get("url", "")
+            chunk_idx = meta.get("chunk_index", 0)
+            total_chunks = meta.get("total_chunks", 1)
+            
+            if not url or total_chunks <= 1:
+                expanded.append(r)
+                continue
+            
+            # 计算要获取的 chunk 范围
+            start_idx = max(0, chunk_idx - window)
+            end_idx = min(total_chunks - 1, chunk_idx + window)
+            
+            # 获取相邻 chunks
+            context_parts = []
+            for idx in range(start_idx, end_idx + 1):
+                # 查询相邻 chunk
+                try:
+                    nearby = docs.get(
+                        where={"$and": [{"url": url}, {"chunk_index": idx}]},
+                        include=["documents"]
+                    )
+                    if nearby and nearby.get("documents"):
+                        context_parts.append(nearby["documents"][0])
+                except:
+                    pass
+            
+            if context_parts:
+                # 合并上下文
+                merged_content = "\n...\n".join(context_parts)
+                r = r.copy()
+                r["content"] = merged_content[:MAX_CONTENT_LENGTH]
+                r["metadata"] = {**meta, "expanded_from": chunk_idx, "expanded_range": [start_idx, end_idx]}
+            
+            expanded.append(r)
+        
+        return expanded
+    
+    except Exception as e:
+        print(f"[RAG] Context expansion failed: {e}")
+        return results
+
 def rerank_results(query: str, results: list, top_k: int = 5) -> list:
     """用 cross-encoder 重排序结果"""
     if not results:
@@ -235,7 +294,7 @@ def rrf_fusion(vector_results: list, bm25_results: list, k: int = 60) -> list:
     
     return results
 
-def safe_search(query: str, top_k: int = 5, mode: str = "normal", rerank: bool = False, expand: bool = False) -> dict:
+def safe_search(query: str, top_k: int = 5, mode: str = "normal", rerank: bool = False, expand: bool = False, parent_child: int = 0) -> dict:
     """
     安全的搜索函数，保证不会抛异常
     
@@ -255,7 +314,7 @@ def safe_search(query: str, top_k: int = 5, mode: str = "normal", rerank: bool =
         
         for q in queries:
             # 递归调用，但不再 expand
-            sub_result = safe_search(q, top_k=top_k, mode=mode, rerank=False, expand=False)
+            sub_result = safe_search(q, top_k=top_k, mode=mode, rerank=False, expand=False, parent_child=0)
             if sub_result.get("ok") and sub_result.get("results"):
                 for r in sub_result["results"]:
                     # 去重（按 content hash）
@@ -275,6 +334,10 @@ def safe_search(query: str, top_k: int = 5, mode: str = "normal", rerank: bool =
         else:
             results = results[:top_k]
         
+        # Parent-Child: 扩展上下文窗口
+        if parent_child > 0 and results:
+            results = expand_context(results, window=parent_child)
+        
         return {
             "ok": True,
             "results": results,
@@ -282,7 +345,8 @@ def safe_search(query: str, top_k: int = 5, mode: str = "normal", rerank: bool =
             "mode": mode,
             "rerank": rerank,
             "expand": True,
-            "queries": queries
+            "queries": queries,
+            "parent_child": parent_child
         }
     try:
         model = get_embedding_model()
@@ -365,7 +429,11 @@ def safe_search(query: str, top_k: int = 5, mode: str = "normal", rerank: bool =
         else:
             results = results[:top_k]
         
-        return {"ok": True, "results": results, "total": len(results), "mode": mode, "rerank": rerank}
+        # Parent-Child: 扩展上下文窗口
+        if parent_child > 0 and results:
+            results = expand_context(results, window=parent_child)
+        
+        return {"ok": True, "results": results, "total": len(results), "mode": mode, "rerank": rerank, "parent_child": parent_child}
     
     except Exception as e:
         # ⚠️ 关键：捕获所有异常，返回友好消息，不要让 LLM 看到堆栈
@@ -439,8 +507,10 @@ class RAGHandler(BaseHTTPRequestHandler):
                 mode = params.get("mode", ["normal"])[0]
                 rerank = params.get("rerank", ["0"])[0] in ["1", "true", "yes"]
                 expand = params.get("expand", ["0"])[0] in ["1", "true", "yes"]
+                parent_child = int(params.get("parent_child", ["0"])[0])
+                parent_child = min(max(parent_child, 0), 3)  # 限制 0-3
                 
-                result = safe_search(query, top_k, mode, rerank, expand)
+                result = safe_search(query, top_k, mode, rerank, expand, parent_child)
                 self.send_json(result)
                 return
             
