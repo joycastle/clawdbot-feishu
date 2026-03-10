@@ -99,13 +99,49 @@ The Feishu plugin exposes several HTTP APIs on localhost for the AI Agent to per
 
 | Service | Port | Description |
 |---------|------|-------------|
-| **Docs API** | `18798` | **Unified document reader** - read any Feishu doc with one endpoint. |
+| **Code Index** | `18801` | ⭐ Code search, call graph, inheritance, cross-project analysis. |
+| **RAG API** | `18800` | Vector search over indexed Feishu documents. |
+| **Docs API** | `18798` | Unified document reader - read any Feishu doc. |
+| **Cron API** | `18797` | Schedule tasks (delayed, absolute time, periodic). |
 | **Sheets API** | `18796` | Read/write Feishu Spreadsheets. |
 | **Bitable API**| `18795` | Read/write Feishu Bitables (multi-dimensional tables). |
-| **Project API**| `18793` | Manage Feishu Projects (work items, issues). |
 | **Task API**   | `18794` | Manage Feishu Tasks. |
-| **Cron API** | `18797` | Schedule tasks (delayed, absolute time, periodic). |
-| **RAG API** | `18800` | Vector search over indexed Feishu documents. |
+| **Project API**| `18793` | Manage Feishu Projects (work items, issues). |
+
+### Code Index API (18801)
+
+Powerful code analysis service supporting **TypeScript and Go** projects.
+
+**Features:**
+- Code search across 75,000+ indexed functions
+- Call graph analysis (callers, callees, path finding)
+- Impact analysis (what's affected by a change)
+- Type inheritance (extends, implements, Go embeds)
+- Decorator/annotation indexing (@Rpc, @Controller, etc.)
+- Cross-language RPC association (Go → TypeScript)
+- Cross-project unified queries
+
+**Quick Start:**
+```bash
+# Start the service
+pm2 start "npx tsx src/services/code-index-api.ts" --name code-index
+
+# Search code
+curl "http://127.0.0.1:18801/search?q=rescue&p=bf-nakama-ts"
+
+# Cross-project stats
+curl "http://127.0.0.1:18801/graph/stats"
+
+# Call graph
+curl "http://127.0.0.1:18801/graph/callers?name=myFunc&project=bf-server-nakama"
+```
+
+**Index a new Go project:**
+```bash
+npx tsx src/services/go-indexer.ts /path/to/project project-name --summaries
+```
+
+See `~/clawd/memory/tools/code-index-api.md` for full documentation.
 
 ### Docs API - Unified Document Reader
 

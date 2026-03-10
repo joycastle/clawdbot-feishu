@@ -118,6 +118,20 @@ function getGraphDb(project?: string): Database.Database | null {
     }
 }
 
+
+// 获取所有图数据库（用于跨项目查询）
+function getAllGraphDbs(): { name: string; db: Database.Database }[] {
+    refreshGraphDbs();
+    const result: { name: string; db: Database.Database }[] = [];
+    for (const projectName of Object.keys(GRAPH_DB_PATHS)) {
+        const db = getGraphDb(projectName);
+        if (db) {
+            result.push({ name: projectName, db });
+        }
+    }
+    return result;
+}
+
 // 图查询函数
 function graphCallers(name: string, limit = 50, project?: string): any[] {
     try {
@@ -362,8 +376,8 @@ function graphCallersChain(name: string, maxDepth = 5, maxChains = 10, project?:
 /**
  * 热点分析 - 找出被调用最多的函数（核心代码）
  */
-function graphHotspots(limit = 20): { name: string; file: string; callerCount: number }[] {
-    const db = getGraphDb();
+function graphHotspots(limit = 20, project?: string): { name: string; file: string; callerCount: number }[] {
+    const db = getGraphDb(project);
     if (!db) return [];
     
     try {
@@ -389,8 +403,8 @@ function graphHotspots(limit = 20): { name: string; file: string; callerCount: n
 /**
  * 孤立函数检测 - 找出没有调用者的函数（入口点或死代码）
  */
-function graphOrphans(limit = 50, type?: string): { name: string; file: string; type: string; calleeCount: number }[] {
-    const db = getGraphDb();
+function graphOrphans(limit = 50, type?: string, project?: string): { name: string; file: string; type: string; calleeCount: number }[] {
+    const db = getGraphDb(project);
     if (!db) return [];
     
     try {
@@ -424,7 +438,60 @@ function graphOrphans(limit = 50, type?: string): { name: string; file: string; 
 /**
  * 图统计信息
  */
-function graphStats(): { 
+function graphStats(project?: string): { 
+    nodeCount: number; 
+    edgeCount: number; 
+    avgCallersPerNode: number;
+    avgCalleesPerNode: number;
+    maxCallers: { name: string; count: number };
+    maxCallees: { name: string; count: number };
+    projects?: { name: string; nodeCount: number; edgeCount: number }[];
+} | null {
+    // 如果指定项目，只查该项目
+    if (project) {
+        const db = getGraphDb(project);
+        if (!db) return null;
+        return querySingleDbStats(db);
+    }
+    
+    // 否则合并所有项目
+    const allDbs = getAllGraphDbs();
+    if (allDbs.length === 0) return null;
+    
+    let totalNodes = 0, totalEdges = 0;
+    const projects: { name: string; nodeCount: number; edgeCount: number }[] = [];
+    let maxCallers = { name: '', count: 0 };
+    let maxCallees = { name: '', count: 0 };
+    
+    for (const { name, db } of allDbs) {
+        try {
+            const stats = querySingleDbStats(db);
+            if (stats) {
+                totalNodes += stats.nodeCount;
+                totalEdges += stats.edgeCount;
+                projects.push({ name, nodeCount: stats.nodeCount, edgeCount: stats.edgeCount });
+                if (stats.maxCallers.count > maxCallers.count) {
+                    maxCallers = { name: `${name}:${stats.maxCallers.name}`, count: stats.maxCallers.count };
+                }
+                if (stats.maxCallees.count > maxCallees.count) {
+                    maxCallees = { name: `${name}:${stats.maxCallees.name}`, count: stats.maxCallees.count };
+                }
+            }
+        } catch (e) {}
+    }
+    
+    return {
+        nodeCount: totalNodes,
+        edgeCount: totalEdges,
+        avgCallersPerNode: totalNodes > 0 ? Math.round(totalEdges / totalNodes * 100) / 100 : 0,
+        avgCalleesPerNode: totalNodes > 0 ? Math.round(totalEdges / totalNodes * 100) / 100 : 0,
+        maxCallers,
+        maxCallees,
+        projects
+    };
+}
+
+function querySingleDbStats(db: Database.Database): { 
     nodeCount: number; 
     edgeCount: number; 
     avgCallersPerNode: number;
@@ -432,7 +499,6 @@ function graphStats(): {
     maxCallers: { name: string; count: number };
     maxCallees: { name: string; count: number };
 } | null {
-    const db = getGraphDb();
     if (!db) return null;
     
     try {
@@ -476,13 +542,13 @@ function graphStats(): {
  * 循环依赖检测 - 找出互相调用的函数对（A 调 B，B 也调 A）
  * 更实用的方式，避免 Tarjan 在大图上的性能问题
  */
-function graphCycles(limit = 20, _minSize = 2): { 
+function graphCycles(limit = 20, _minSize = 2, project?: string): { 
     cycles: { functions: { name: string; file: string }[]; callsAtoB: number; callsBtoA: number }[];
     selfLoops: { name: string; file: string; count: number }[];
     totalMutualPairs: number;
     totalSelfLoops: number;
 } {
-    const db = getGraphDb();
+    const db = getGraphDb(project);
     if (!db) return { cycles: [], selfLoops: [], totalMutualPairs: 0, totalSelfLoops: 0 };
     
     try {
@@ -569,11 +635,11 @@ function extractModule(filePath: string, depth = 3): string {
 /**
  * 模块列表 - 按目录聚合，统计每个模块的函数数量
  */
-function graphModules(depth = 3, limit = 50): { 
+function graphModules(depth = 3, limit = 50, project?: string): { 
     modules: { name: string; nodeCount: number; edgeCount: number }[];
     totalModules: number;
 } {
-    const db = getGraphDb();
+    const db = getGraphDb(project);
     if (!db) return { modules: [], totalModules: 0 };
     
     try {
@@ -612,12 +678,12 @@ function graphModules(depth = 3, limit = 50): {
 /**
  * 模块依赖分析 - 某模块依赖哪些其他模块（出边）
  */
-function graphModuleDeps(moduleName: string, depth = 3, limit = 30): {
+function graphModuleDeps(moduleName: string, depth = 3, limit = 30, project?: string): {
     module: string;
     dependencies: { name: string; callCount: number; functions: string[] }[];
     totalDeps: number;
 } {
-    const db = getGraphDb();
+    const db = getGraphDb(project);
     if (!db) return { module: moduleName, dependencies: [], totalDeps: 0 };
     
     try {
@@ -666,12 +732,12 @@ function graphModuleDeps(moduleName: string, depth = 3, limit = 30): {
 /**
  * 模块被依赖分析 - 哪些模块依赖这个模块（入边）
  */
-function graphModuleDependents(moduleName: string, depth = 3, limit = 30): {
+function graphModuleDependents(moduleName: string, depth = 3, limit = 30, project?: string): {
     module: string;
     dependents: { name: string; callCount: number; functions: string[] }[];
     totalDependents: number;
 } {
-    const db = getGraphDb();
+    const db = getGraphDb(project);
     if (!db) return { module: moduleName, dependents: [], totalDependents: 0 };
     
     try {
@@ -719,12 +785,12 @@ function graphModuleDependents(moduleName: string, depth = 3, limit = 30): {
 /**
  * 模块间依赖矩阵 - 所有模块之间的调用统计
  */
-function graphModuleMatrix(depth = 3, limit = 20): {
+function graphModuleMatrix(depth = 3, limit = 20, project?: string): {
     modules: string[];
     matrix: { from: string; to: string; count: number }[];
     totalCrossModuleCalls: number;
 } {
-    const db = getGraphDb();
+    const db = getGraphDb(project);
     if (!db) return { modules: [], matrix: [], totalCrossModuleCalls: 0 };
     
     try {
@@ -790,11 +856,11 @@ function graphModuleMatrix(depth = 3, limit = 20): {
 /**
  * 类型继承图 - 查找某类/接口的子类/实现类
  */
-function graphChildren(name: string, limit = 50): {
+function graphChildren(name: string, limit = 50, project?: string): {
     children: { name: string; file: string; type: string; relation: string }[];
     total: number;
 } {
-    const db = getGraphDb();
+    const db = getGraphDb(project);
     if (!db) return { children: [], total: 0 };
     
     try {
@@ -820,11 +886,11 @@ function graphChildren(name: string, limit = 50): {
 /**
  * 类型继承图 - 查找某类/接口的父类/实现的接口
  */
-function graphParents(name: string, limit = 50): {
+function graphParents(name: string, limit = 50, project?: string): {
     parents: { name: string; type: string; relation: string }[];
     total: number;
 } {
-    const db = getGraphDb();
+    const db = getGraphDb(project);
     if (!db) return { parents: [], total: 0 };
     
     try {
@@ -850,12 +916,12 @@ function graphParents(name: string, limit = 50): {
 /**
  * 继承树 - 递归查找完整的继承链
  */
-function graphInheritanceTree(name: string, direction: 'up' | 'down' = 'down', maxDepth = 5): {
+function graphInheritanceTree(name: string, project?: string, direction: 'up' | 'down' = 'down', maxDepth = 5): {
     root: string;
     tree: { name: string; file?: string; children?: any[] }[];
     totalNodes: number;
 } {
-    const db = getGraphDb();
+    const db = getGraphDb(project);
     if (!db) return { root: name, tree: [], totalNodes: 0 };
     
     try {
@@ -901,11 +967,11 @@ function graphInheritanceTree(name: string, direction: 'up' | 'down' = 'down', m
 /**
  * 装饰器搜索 - 查找使用某装饰器的所有目标
  */
-function graphDecoratorTargets(decoratorName: string, limit = 100): {
+function graphDecoratorTargets(decoratorName: string, limit = 100, project?: string): {
     targets: { name: string; file: string; type: string; args: string; line: number }[];
     total: number;
 } {
-    const db = getGraphDb();
+    const db = getGraphDb(project);
     if (!db) return { targets: [], total: 0 };
     
     try {
@@ -931,12 +997,12 @@ function graphDecoratorTargets(decoratorName: string, limit = 100): {
 /**
  * 装饰器统计
  */
-function graphDecoratorStats(): {
+function graphDecoratorStats(project?: string): {
     total: number;
     byDecorator: { name: string; count: number }[];
     byType: { type: string; count: number }[];
 } | null {
-    const db = getGraphDb();
+    const db = getGraphDb(project);
     if (!db) return null;
     
     try {
@@ -967,11 +1033,11 @@ function graphDecoratorStats(): {
 /**
  * RPC 端点列表 - 专门查询 @Rpc 装饰器
  */
-function graphRpcEndpoints(limit = 200): {
+function graphRpcEndpoints(limit = 200, project?: string): {
     endpoints: { name: string; file: string; rpcName: string; line: number }[];
     total: number;
 } {
-    const db = getGraphDb();
+    const db = getGraphDb(project);
     if (!db) return { endpoints: [], total: 0 };
     
     try {
@@ -1007,11 +1073,11 @@ function graphRpcEndpoints(limit = 200): {
 /**
  * Controller 列表 - 专门查询 @Controller 装饰器
  */
-function graphControllers(limit = 100): {
+function graphControllers(limit = 100, project?: string): {
     controllers: { name: string; file: string; path: string; line: number }[];
     total: number;
 } {
-    const db = getGraphDb();
+    const db = getGraphDb(project);
     if (!db) return { controllers: [], total: 0 };
     
     try {
@@ -1046,14 +1112,14 @@ function graphControllers(limit = 100): {
 /**
  * 继承统计
  */
-function graphInheritanceStats(): {
+function graphInheritanceStats(project?: string): {
     total: number;
     extends: number;
     implements: number;
     topParents: { name: string; childCount: number }[];
     deepestTrees: { name: string; depth: number }[];
 } | null {
-    const db = getGraphDb();
+    const db = getGraphDb(project);
     if (!db) return null;
     
     try {
@@ -1438,7 +1504,8 @@ async function handleRequest(req: IncomingMessage, res: ServerResponse) {
         // 图查询: 热点分析（被调用最多的函数）
         if (path === '/graph/hotspots') {
             const limit = parseInt(url.searchParams.get('limit') || '20');
-            const results = graphHotspots(limit);
+            const project = url.searchParams.get('project') || undefined;
+            const results = graphHotspots(limit, project);
             sendJson({ 
                 ok: true, 
                 description: '被调用最多的函数（核心代码热点）',
@@ -1452,7 +1519,8 @@ async function handleRequest(req: IncomingMessage, res: ServerResponse) {
         if (path === '/graph/orphans') {
             const limit = parseInt(url.searchParams.get('limit') || '50');
             const type = url.searchParams.get('type') || undefined;
-            const results = graphOrphans(limit, type);
+            const project = url.searchParams.get('project') || undefined;
+            const results = graphOrphans(limit, type, project);
             sendJson({ 
                 ok: true, 
                 description: '没有调用者的函数（可能是入口点或死代码）',
@@ -1464,7 +1532,8 @@ async function handleRequest(req: IncomingMessage, res: ServerResponse) {
         
         // 图查询: 统计信息
         if (path === '/graph/stats') {
-            const stats = graphStats();
+            const project = url.searchParams.get('project') || undefined;
+            const stats = graphStats(project);
             if (stats) {
                 sendJson({ ok: true, ...stats });
             } else {
@@ -1476,7 +1545,8 @@ async function handleRequest(req: IncomingMessage, res: ServerResponse) {
         // 图查询: 循环依赖检测
         if (path === '/graph/cycles') {
             const limit = parseInt(url.searchParams.get('limit') || '20');
-            const result = graphCycles(limit);
+            const project = url.searchParams.get('project') || undefined;
+            const result = graphCycles(limit, 2, project);
             sendJson({ 
                 ok: true, 
                 description: '循环依赖检测',
@@ -1500,7 +1570,8 @@ async function handleRequest(req: IncomingMessage, res: ServerResponse) {
         if (path === '/graph/modules') {
             const depth = parseInt(url.searchParams.get('depth') || '3');
             const limit = parseInt(url.searchParams.get('limit') || '50');
-            const result = graphModules(depth, limit);
+            const project = url.searchParams.get('project') || undefined;
+            const result = graphModules(depth, limit, project);
             sendJson({ 
                 ok: true, 
                 description: '模块列表（按目录聚合）',
@@ -1521,7 +1592,8 @@ async function handleRequest(req: IncomingMessage, res: ServerResponse) {
                 return;
             }
             
-            const result = graphModuleDeps(moduleName, depth, limit);
+            const project = url.searchParams.get('project') || undefined;
+            const result = graphModuleDeps(moduleName, depth, limit, project);
             sendJson({ 
                 ok: true, 
                 description: `模块 ${moduleName} 的依赖（它调用了哪些模块）`,
@@ -1541,7 +1613,8 @@ async function handleRequest(req: IncomingMessage, res: ServerResponse) {
                 return;
             }
             
-            const result = graphModuleDependents(moduleName, depth, limit);
+            const project = url.searchParams.get('project') || undefined;
+            const result = graphModuleDependents(moduleName, depth, limit, project);
             sendJson({ 
                 ok: true, 
                 description: `哪些模块依赖 ${moduleName}`,
@@ -1554,7 +1627,8 @@ async function handleRequest(req: IncomingMessage, res: ServerResponse) {
         if (path === '/graph/module-matrix') {
             const depth = parseInt(url.searchParams.get('depth') || '3');
             const limit = parseInt(url.searchParams.get('limit') || '20');
-            const result = graphModuleMatrix(depth, limit);
+            const project = url.searchParams.get('project') || undefined;
+            const result = graphModuleMatrix(depth, limit, project);
             sendJson({ 
                 ok: true, 
                 description: '模块间依赖矩阵（跨模块调用统计）',
@@ -1574,7 +1648,8 @@ async function handleRequest(req: IncomingMessage, res: ServerResponse) {
                 return;
             }
             
-            const result = graphChildren(name, limit);
+            const project = url.searchParams.get('project') || undefined;
+            const result = graphChildren(name, limit, project);
             sendJson({ 
                 ok: true, 
                 description: `${name} 的子类/实现类`,
@@ -1594,7 +1669,8 @@ async function handleRequest(req: IncomingMessage, res: ServerResponse) {
                 return;
             }
             
-            const result = graphParents(name, limit);
+            const project = url.searchParams.get('project') || undefined;
+            const result = graphParents(name, limit, project);
             sendJson({ 
                 ok: true, 
                 description: `${name} 的父类/实现的接口`,
@@ -1615,7 +1691,8 @@ async function handleRequest(req: IncomingMessage, res: ServerResponse) {
                 return;
             }
             
-            const result = graphInheritanceTree(name, direction, maxDepth);
+            const project = url.searchParams.get('project') || undefined;
+            const result = graphInheritanceTree(name, project, direction, maxDepth);
             sendJson({ 
                 ok: true, 
                 description: direction === 'down' ? `${name} 的继承树（向下）` : `${name} 的继承链（向上）`,
@@ -1627,7 +1704,8 @@ async function handleRequest(req: IncomingMessage, res: ServerResponse) {
         
         // 继承图: 统计信息
         if (path === '/graph/inheritance-stats') {
-            const stats = graphInheritanceStats();
+            const project = url.searchParams.get('project') || undefined;
+            const stats = graphInheritanceStats(project);
             if (stats) {
                 sendJson({ ok: true, description: '类型继承统计', ...stats });
             } else {
@@ -1646,7 +1724,8 @@ async function handleRequest(req: IncomingMessage, res: ServerResponse) {
                 return;
             }
             
-            const result = graphDecoratorTargets(name, limit);
+            const project = url.searchParams.get('project') || undefined;
+            const result = graphDecoratorTargets(name, limit, project);
             sendJson({ 
                 ok: true, 
                 description: `使用 @${name} 装饰器的目标`,
@@ -1658,7 +1737,8 @@ async function handleRequest(req: IncomingMessage, res: ServerResponse) {
         
         // 装饰器: 统计
         if (path === '/graph/decorator-stats') {
-            const stats = graphDecoratorStats();
+            const project = url.searchParams.get('project') || undefined;
+            const stats = graphDecoratorStats(project);
             if (stats) {
                 sendJson({ ok: true, description: '装饰器统计', ...stats });
             } else {
@@ -1670,7 +1750,8 @@ async function handleRequest(req: IncomingMessage, res: ServerResponse) {
         // 装饰器: RPC 端点列表
         if (path === '/graph/rpc-endpoints') {
             const limit = parseInt(url.searchParams.get('limit') || '200');
-            const result = graphRpcEndpoints(limit);
+            const project = url.searchParams.get('project') || undefined;
+            const result = graphRpcEndpoints(limit, project);
             sendJson({ 
                 ok: true, 
                 description: '所有 RPC 端点（@Rpc 装饰器）',
@@ -1682,7 +1763,8 @@ async function handleRequest(req: IncomingMessage, res: ServerResponse) {
         // 装饰器: Controller 列表
         if (path === '/graph/controllers') {
             const limit = parseInt(url.searchParams.get('limit') || '100');
-            const result = graphControllers(limit);
+            const project = url.searchParams.get('project') || undefined;
+            const result = graphControllers(limit, project);
             sendJson({ 
                 ok: true, 
                 description: '所有 Controller（@Controller 装饰器）',
@@ -1794,6 +1876,111 @@ async function handleRequest(req: IncomingMessage, res: ServerResponse) {
                     stats: { nodes, edges, files },
                     lastIndexed,
                     dbPath,
+                });
+            } catch (e: any) {
+                sendJson({ ok: false, error: e.message }, 500);
+            }
+            return;
+        }
+        
+        // ============ 跨语言 RPC 关联 API ============
+        
+        // 跨语言 RPC 分析 - 找出 Go 调用的 RPC 与 TS 定义的关联
+        if (path === '/graph/cross-rpc') {
+            try {
+                const results: {
+                    goProject: string;
+                    tsProject: string;
+                    associations: { rpcName: string; goCallers: string[]; tsHandler: string | null }[];
+                }[] = [];
+                
+                // 获取所有 Go 项目的 RPC 调用
+                const goProjects = ['bf-server-nakama', 'bf-server-nakama-game'];
+                const tsProject = 'bf-nakama-ts';
+                
+                // 获取 TS 的 RPC endpoints
+                const tsDb = getGraphDb(tsProject);
+                let tsRpcMap = new Map<string, { name: string; file: string }>();
+                
+                if (tsDb) {
+                    try {
+                        const rpcEndpoints = tsDb.prepare(`
+                            SELECT target_name, file, decorator_args
+                            FROM decorators
+                            WHERE decorator_name = 'Rpc'
+                        `).all() as any[];
+                        
+                        for (const rpc of rpcEndpoints) {
+                            // 解析 RPC 名称
+                            try {
+                                const args = JSON.parse(rpc.decorator_args);
+                                let rpcName = args[0] || '';
+                                // 处理 BingoServer.Rpc.xxx 格式
+                                if (typeof rpcName === 'string') {
+                                    const match = rpcName.match(/\.([^.]+)$/);
+                                    if (match) rpcName = match[1];
+                                    // 转换为 snake_case
+                                    rpcName = rpcName.replace(/([A-Z])/g, '_$1').toLowerCase().replace(/^_/, '');
+                                    tsRpcMap.set(rpcName, { name: rpc.target_name, file: rpc.file });
+                                }
+                            } catch {}
+                        }
+                    } catch {}
+                }
+                
+                // 从 Go edges 中找 ForwardRpc 调用（通过搜索 callee_name）
+                for (const goProject of goProjects) {
+                    const goDb = getGraphDb(goProject);
+                    if (!goDb) continue;
+                    
+                    const associations: { rpcName: string; goCallers: string[]; tsHandler: string | null }[] = [];
+                    
+                    try {
+                        // 搜索调用 ForwardRpc 的边
+                        const forwardRpcCalls = goDb.prepare(`
+                            SELECT DISTINCT caller_name, caller_file
+                            FROM edges
+                            WHERE callee_name = 'ForwardRpc'
+                        `).all() as any[];
+                        
+                        // 如果有 ForwardRpc 调用，尝试匹配
+                        if (associations.length > 0) {
+                            // 搜索代码中的 RPC 名称（通过 search）
+                            const searchResults = search('ForwardRpc', goProject, 100);
+                            for (const result of searchResults) {
+                                for (const item of result.results) {
+                                    // 从 signature 中提取 RPC 名称
+                                    if (item.signature) {
+                                        const match = item.signature.match(/ForwardRpc[^"]*"([^"]+)"/);
+                                        if (match) {
+                                            const rpcName = match[1];
+                                            const tsHandler = tsRpcMap.get(rpcName);
+                                            associations.push({
+                                                rpcName,
+                                                goCallers: [item.name],
+                                                tsHandler: tsHandler ? `${tsHandler.name} (${tsHandler.file})` : null
+                                            });
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    } catch {}
+                    
+                    if (associations.length > 0 || associations.length > 0) {
+                        results.push({
+                            goProject,
+                            tsProject,
+                            associations
+                        });
+                    }
+                }
+                
+                sendJson({
+                    ok: true,
+                    description: '跨语言 RPC 关联分析 (Go → TS)',
+                    tsRpcCount: tsRpcMap.size,
+                    results
                 });
             } catch (e: any) {
                 sendJson({ ok: false, error: e.message }, 500);
