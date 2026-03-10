@@ -110,11 +110,25 @@ export async function getMessageFeishu(params: {
   }
 }
 
+/** Media info extracted from a sub-message */
+export type MergeForwardMediaInfo = {
+  /** The sub-message ID that contains this media */
+  messageId: string;
+  /** image_key for images */
+  imageKey?: string;
+  /** file_key for files/audio/video */
+  fileKey?: string;
+  /** Media type: image, file, audio, video, sticker */
+  mediaType: string;
+  /** Optional file name for files */
+  fileName?: string;
+};
+
 /**
  * Get all sub-messages from a merge_forward message.
  * merge_forward messages contain multiple forwarded messages as children.
  * 
- * @returns Array of sub-messages with their content, sender info, and original chat context
+ * @returns Array of sub-messages with their content, sender info, media keys, and original chat context
  */
 export async function getMergeForwardMessages(params: {
   cfg: ClawdbotConfig;
@@ -128,7 +142,11 @@ export async function getMergeForwardMessages(params: {
     content: string;
     contentType: string;
     createTime?: number;
+    /** Raw content JSON for media extraction */
+    rawContent?: string;
   }>;
+  /** All media items found in sub-messages */
+  mediaItems: MergeForwardMediaInfo[];
   parentMessageId: string;
 } | null> {
   const { cfg, messageId } = params;
@@ -177,20 +195,24 @@ export async function getMergeForwardMessages(params: {
       return null;
     }
 
+    const mediaItems: MergeForwardMediaInfo[] = [];
+
     // Remaining items are sub-messages (they have upper_message_id pointing to parent)
     const subMessages = items
       .filter((item) => item.upper_message_id === messageId)
       .map((item) => {
-        let content = item.body?.content ?? "";
+        const rawContent = item.body?.content ?? "";
+        let content = rawContent;
         const msgType = item.msg_type ?? "text";
+        const subMsgId = item.message_id ?? "";
 
         // Parse content based on message type
         try {
-          const parsed = JSON.parse(content);
+          const parsed = JSON.parse(rawContent);
           if (msgType === "text" && parsed.text) {
             content = parsed.text;
           } else if (msgType === "post") {
-            // Extract text from rich text post
+            // Extract text from rich text post, and collect embedded images
             const title = parsed.title || "";
             const contentBlocks = parsed.content || [];
             let textContent = title ? `${title}\n\n` : "";
@@ -203,10 +225,21 @@ export async function getMergeForwardMessages(params: {
                     textContent += element.text || element.href || "";
                   } else if (element.tag === "at") {
                     textContent += `@${element.user_name || ""}`;
-                  } else if (element.tag === "img") {
+                  } else if (element.tag === "img" && element.image_key) {
                     textContent += "[图片]";
-                  } else if (element.tag === "media") {
+                    mediaItems.push({
+                      messageId: subMsgId,
+                      imageKey: element.image_key,
+                      mediaType: "image",
+                    });
+                  } else if (element.tag === "media" && element.file_key) {
                     textContent += "[媒体]";
+                    mediaItems.push({
+                      messageId: subMsgId,
+                      fileKey: element.file_key,
+                      imageKey: element.image_key, // thumbnail
+                      mediaType: "video",
+                    });
                   }
                 }
                 textContent += "\n";
@@ -215,14 +248,51 @@ export async function getMergeForwardMessages(params: {
             content = textContent.trim() || "[富文本消息]";
           } else if (msgType === "image") {
             content = "[图片]";
+            if (parsed.image_key) {
+              mediaItems.push({
+                messageId: subMsgId,
+                imageKey: parsed.image_key,
+                mediaType: "image",
+              });
+            }
           } else if (msgType === "file") {
             content = `[文件: ${parsed.file_name || "未知"}]`;
+            if (parsed.file_key) {
+              mediaItems.push({
+                messageId: subMsgId,
+                fileKey: parsed.file_key,
+                mediaType: "file",
+                fileName: parsed.file_name,
+              });
+            }
           } else if (msgType === "audio") {
             content = "[语音]";
+            if (parsed.file_key) {
+              mediaItems.push({
+                messageId: subMsgId,
+                fileKey: parsed.file_key,
+                mediaType: "audio",
+              });
+            }
           } else if (msgType === "video" || msgType === "media") {
             content = "[视频]";
+            if (parsed.file_key) {
+              mediaItems.push({
+                messageId: subMsgId,
+                fileKey: parsed.file_key,
+                imageKey: parsed.image_key, // thumbnail
+                mediaType: "video",
+              });
+            }
           } else if (msgType === "sticker") {
             content = "[表情]";
+            if (parsed.file_key) {
+              mediaItems.push({
+                messageId: subMsgId,
+                fileKey: parsed.file_key,
+                mediaType: "sticker",
+              });
+            }
           } else if (msgType === "interactive") {
             content = "[卡片消息]";
           } else if (msgType === "share_chat") {
@@ -238,18 +308,20 @@ export async function getMergeForwardMessages(params: {
         }
 
         return {
-          messageId: item.message_id ?? "",
+          messageId: subMsgId,
           chatId: item.chat_id ?? "",
           senderId: item.sender?.id,
           senderOpenId: item.sender?.id_type === "open_id" ? item.sender?.id : undefined,
           content,
           contentType: msgType,
           createTime: item.create_time ? parseInt(item.create_time, 10) : undefined,
+          rawContent,
         };
       });
 
     return {
       subMessages,
+      mediaItems,
       parentMessageId: messageId,
     };
   } catch {

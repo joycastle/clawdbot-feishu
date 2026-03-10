@@ -879,6 +879,9 @@ export async function handleFeishuMessage(params: {
   }
 
   // Handle merge_forward messages: fetch sub-messages and combine their content
+  // Store media items for later download (after mediaList is initialized)
+  let pendingMergeForwardMedia: Awaited<ReturnType<typeof getMergeForwardMessages>>["mediaItems"] | undefined;
+  
   if (ctx.contentType === "merge_forward") {
     log(`feishu: detected merge_forward message, fetching sub-messages`);
     try {
@@ -898,6 +901,12 @@ export async function handleFeishuMessage(params: {
         
         ctx = { ...ctx, content: combinedContent };
         log(`feishu: extracted ${mergeResult.subMessages.length} sub-messages from merge_forward`);
+        
+        // Save media items for download later
+        if (mergeResult.mediaItems.length > 0) {
+          pendingMergeForwardMedia = mergeResult.mediaItems;
+          log(`feishu: found ${mergeResult.mediaItems.length} media items in merge_forward`);
+        }
       } else {
         ctx = { ...ctx, content: "[合并转发消息，无法获取内容]" };
         log(`feishu: merge_forward message had no sub-messages`);
@@ -1088,6 +1097,50 @@ export async function handleFeishuMessage(params: {
         });
     log(`feishu: resolveFeishuMediaList returned ${mediaList.length} items for type=${event.message.message_type}`);
 
+    // Download media from merge_forward message if any
+    if (pendingMergeForwardMedia && pendingMergeForwardMedia.length > 0) {
+      log(`feishu: downloading ${pendingMergeForwardMedia.length} media items from merge_forward`);
+      for (const mediaItem of pendingMergeForwardMedia) {
+        try {
+          const result = await downloadMessageResourceFeishu({
+            cfg,
+            messageId: mediaItem.messageId,
+            fileKey: mediaItem.imageKey || mediaItem.fileKey || "",
+            type: mediaItem.imageKey ? "image" : "file",
+          });
+
+          let contentType = result.contentType;
+          if (!contentType) {
+            contentType = await core.media.detectMime({ buffer: result.buffer });
+          }
+          if (!contentType || contentType === "application/octet-stream") {
+            // Default based on media type
+            if (mediaItem.mediaType === "image") contentType = "image/png";
+            else if (mediaItem.mediaType === "video") contentType = "video/mp4";
+            else if (mediaItem.mediaType === "audio") contentType = "audio/mp3";
+          }
+
+          const saved = await core.channel.media.saveMediaBuffer(
+            result.buffer,
+            contentType,
+            "inbound",
+            mediaMaxBytes,
+            mediaItem.fileName,
+          );
+
+          mediaList.push({
+            path: saved.path,
+            contentType: saved.contentType,
+            placeholder: `<media:${mediaItem.mediaType}>`,
+          });
+
+          log(`feishu: downloaded merge_forward media (${mediaItem.mediaType}), saved to ${saved.path}`);
+        } catch (err) {
+          log(`feishu: failed to download merge_forward media: ${String(err)}`);
+        }
+      }
+    }
+
     // Fetch quoted/replied message content if parentId exists
     // (moved before media cost confirmation so quoted audio/video is also intercepted)
     let quotedContent: string | undefined;
@@ -1095,7 +1148,7 @@ export async function handleFeishuMessage(params: {
       try {
         const quotedMsg = await getMessageFeishu({ cfg, messageId: ctx.parentId });
         if (quotedMsg) {
-          // Special handling for merge_forward: fetch sub-messages
+          // Special handling for merge_forward: fetch sub-messages and download media
           if (quotedMsg.contentType === "merge_forward") {
             log(`feishu: quoted message is merge_forward, fetching sub-messages`);
             try {
@@ -1110,6 +1163,49 @@ export async function handleFeishuMessage(params: {
                 });
                 quotedContent = `[合并转发消息，包含 ${mergeResult.subMessages.length} 条消息]\n${formattedMessages.join("\n")}`;
                 log(`feishu: extracted ${mergeResult.subMessages.length} sub-messages from quoted merge_forward`);
+                
+                // Download media from quoted merge_forward
+                if (mergeResult.mediaItems.length > 0) {
+                  log(`feishu: downloading ${mergeResult.mediaItems.length} media items from quoted merge_forward`);
+                  for (const mediaItem of mergeResult.mediaItems) {
+                    try {
+                      const result = await downloadMessageResourceFeishu({
+                        cfg,
+                        messageId: mediaItem.messageId,
+                        fileKey: mediaItem.imageKey || mediaItem.fileKey || "",
+                        type: mediaItem.imageKey ? "image" : "file",
+                      });
+
+                      let contentType = result.contentType;
+                      if (!contentType) {
+                        contentType = await core.media.detectMime({ buffer: result.buffer });
+                      }
+                      if (!contentType || contentType === "application/octet-stream") {
+                        if (mediaItem.mediaType === "image") contentType = "image/png";
+                        else if (mediaItem.mediaType === "video") contentType = "video/mp4";
+                        else if (mediaItem.mediaType === "audio") contentType = "audio/mp3";
+                      }
+
+                      const saved = await core.channel.media.saveMediaBuffer(
+                        result.buffer,
+                        contentType,
+                        "inbound",
+                        mediaMaxBytes,
+                        mediaItem.fileName,
+                      );
+
+                      mediaList.push({
+                        path: saved.path,
+                        contentType: saved.contentType,
+                        placeholder: `<media:${mediaItem.mediaType}>`,
+                      });
+
+                      log(`feishu: downloaded quoted merge_forward media (${mediaItem.mediaType}), saved to ${saved.path}`);
+                    } catch (err) {
+                      log(`feishu: failed to download quoted merge_forward media: ${String(err)}`);
+                    }
+                  }
+                }
               } else {
                 quotedContent = "[合并转发消息]";
               }
@@ -1151,7 +1247,7 @@ export async function handleFeishuMessage(params: {
       try {
         const quotedMsg = await getMessageFeishu({ cfg, messageId: ctx.parentId });
         if (quotedMsg) {
-          // Special handling for merge_forward: fetch sub-messages
+          // Special handling for merge_forward: fetch sub-messages and download media
           if (quotedMsg.contentType === "merge_forward") {
             try {
               const mergeResult = await getMergeForwardMessages({
@@ -1164,6 +1260,46 @@ export async function handleFeishuMessage(params: {
                   return `[${idx + 1}] ${senderLabel}: ${msg.content}`;
                 });
                 quotedContent = `[合并转发消息，包含 ${mergeResult.subMessages.length} 条消息]\n${formattedMessages.join("\n")}`;
+                
+                // Download media from quoted merge_forward (when resuming from cost confirmation)
+                if (mergeResult.mediaItems.length > 0) {
+                  for (const mediaItem of mergeResult.mediaItems) {
+                    try {
+                      const result = await downloadMessageResourceFeishu({
+                        cfg,
+                        messageId: mediaItem.messageId,
+                        fileKey: mediaItem.imageKey || mediaItem.fileKey || "",
+                        type: mediaItem.imageKey ? "image" : "file",
+                      });
+
+                      let contentType = result.contentType;
+                      if (!contentType) {
+                        contentType = await core.media.detectMime({ buffer: result.buffer });
+                      }
+                      if (!contentType || contentType === "application/octet-stream") {
+                        if (mediaItem.mediaType === "image") contentType = "image/png";
+                        else if (mediaItem.mediaType === "video") contentType = "video/mp4";
+                        else if (mediaItem.mediaType === "audio") contentType = "audio/mp3";
+                      }
+
+                      const saved = await core.channel.media.saveMediaBuffer(
+                        result.buffer,
+                        contentType,
+                        "inbound",
+                        mediaMaxBytes,
+                        mediaItem.fileName,
+                      );
+
+                      mediaList.push({
+                        path: saved.path,
+                        contentType: saved.contentType,
+                        placeholder: `<media:${mediaItem.mediaType}>`,
+                      });
+                    } catch {
+                      // Ignore media download errors in resume flow
+                    }
+                  }
+                }
               } else {
                 quotedContent = "[合并转发消息]";
               }
