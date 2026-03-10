@@ -1110,6 +1110,172 @@ function graphControllers(limit = 100, project?: string): {
 }
 
 /**
+ * Go Nakama RPC 注册点
+ */
+function graphGoRpcRegistrations(project?: string): {
+    registrations: { rpcName: string; handlerName: string; file: string; line: number; registerType: string }[];
+    total: number;
+    byType: Record<string, number>;
+} {
+    // 查找所有 Go 项目
+    const goProjects = Object.keys(GRAPH_DB_PATHS).filter(p => {
+        const db = getGraphDb(p);
+        if (!db) return false;
+        try {
+            // 检查是否有 rpc_registrations 表
+            db.prepare("SELECT 1 FROM rpc_registrations LIMIT 1").get();
+            return true;
+        } catch {
+            return false;
+        }
+    });
+    
+    if (project) {
+        // 只查指定项目
+        const db = getGraphDb(project);
+        if (!db) return { registrations: [], total: 0, byType: {} };
+        
+        try {
+            const rows = db.prepare(`
+                SELECT rpc_name, handler_name, file, line, register_type
+                FROM rpc_registrations
+                ORDER BY register_type, rpc_name
+            `).all() as any[];
+            
+            const byType: Record<string, number> = {};
+            for (const row of rows) {
+                byType[row.register_type] = (byType[row.register_type] || 0) + 1;
+            }
+            
+            return {
+                registrations: rows.map(r => ({
+                    rpcName: r.rpc_name,
+                    handlerName: r.handler_name,
+                    file: r.file,
+                    line: r.line,
+                    registerType: r.register_type,
+                })),
+                total: rows.length,
+                byType,
+            };
+        } catch (e: any) {
+            console.error('[CodeIndex] graphGoRpcRegistrations error:', e.message);
+            return { registrations: [], total: 0, byType: {} };
+        }
+    }
+    
+    // 聚合所有 Go 项目
+    const allRegistrations: any[] = [];
+    const byType: Record<string, number> = {};
+    
+    for (const proj of goProjects) {
+        const db = getGraphDb(proj);
+        if (!db) continue;
+        try {
+            const rows = db.prepare(`
+                SELECT rpc_name, handler_name, file, line, register_type
+                FROM rpc_registrations
+            `).all() as any[];
+            
+            for (const row of rows) {
+                allRegistrations.push({
+                    project: proj,
+                    rpcName: row.rpc_name,
+                    handlerName: row.handler_name,
+                    file: row.file,
+                    line: row.line,
+                    registerType: row.register_type,
+                });
+                byType[row.register_type] = (byType[row.register_type] || 0) + 1;
+            }
+        } catch {}
+    }
+    
+    return {
+        registrations: allRegistrations,
+        total: allRegistrations.length,
+        byType,
+    };
+}
+
+/**
+ * 跨语言 RPC 映射
+ * Go RPC 注册 ↔ TS @Rpc 实现
+ */
+function graphRpcMapping(): {
+    mappings: { goRpc: string; goHandler: string; goFile: string; goProject: string; tsHandler?: string; tsFile?: string; tsRpcName?: string }[];
+    goOnly: number;
+    tsOnly: number;
+    matched: number;
+} {
+    // 获取 Go RPC 注册
+    const goResult = graphGoRpcRegistrations();
+    
+    // 获取 TS RPC 端点
+    const tsDb = getGraphDb('bf-nakama-ts');
+    const tsEndpoints: Map<string, { name: string; file: string; rpcName: string }> = new Map();
+    
+    if (tsDb) {
+        try {
+            const endpoints = tsDb.prepare(`
+                SELECT target_name as name, file, decorator_args as args
+                FROM decorators
+                WHERE decorator_name = 'Rpc'
+            `).all() as any[];
+            
+            for (const e of endpoints) {
+                let rpcName = '';
+                try {
+                    const args = JSON.parse(e.args);
+                    rpcName = args[0] || '';
+                } catch {}
+                if (rpcName) {
+                    tsEndpoints.set(rpcName.toLowerCase(), { name: e.name, file: e.file, rpcName });
+                }
+            }
+        } catch {}
+    }
+    
+    const mappings: any[] = [];
+    const goRpcNames = new Set<string>();
+    
+    for (const reg of goResult.registrations) {
+        // 规范化 RPC 名称用于匹配
+        let normalizedName = reg.rpcName;
+        // 去掉 <> 包装
+        if (normalizedName.startsWith('<') && normalizedName.endsWith('>')) {
+            normalizedName = normalizedName.slice(1, -1);
+        }
+        // 去掉 expr: 前缀
+        if (normalizedName.startsWith('expr:')) {
+            normalizedName = normalizedName.slice(5);
+        }
+        
+        goRpcNames.add(normalizedName.toLowerCase());
+        
+        // 尝试匹配 TS 端点
+        const tsMatch = tsEndpoints.get(normalizedName.toLowerCase());
+        
+        mappings.push({
+            goRpc: reg.rpcName,
+            goHandler: reg.handlerName,
+            goFile: reg.file,
+            goProject: (reg as any).project || 'bf-server-nakama',
+            tsHandler: tsMatch?.name,
+            tsFile: tsMatch?.file,
+            tsRpcName: tsMatch?.rpcName,
+        });
+    }
+    
+    // 统计
+    const matched = mappings.filter(m => m.tsHandler).length;
+    const goOnly = mappings.length - matched;
+    const tsOnly = tsEndpoints.size - matched;
+    
+    return { mappings, goOnly, tsOnly, matched };
+}
+
+/**
  * 继承统计
  */
 function graphInheritanceStats(project?: string): {
@@ -1768,6 +1934,29 @@ async function handleRequest(req: IncomingMessage, res: ServerResponse) {
             sendJson({ 
                 ok: true, 
                 description: '所有 Controller（@Controller 装饰器）',
+                ...result
+            });
+            return;
+        }
+        
+        // Go: Nakama RPC 注册列表
+        if (path === '/graph/go-rpc-registrations') {
+            const project = url.searchParams.get('project') || undefined;
+            const result = graphGoRpcRegistrations(project);
+            sendJson({ 
+                ok: true, 
+                description: 'Go Nakama RPC 注册点',
+                ...result
+            });
+            return;
+        }
+        
+        // 跨语言: RPC 关联（Go 注册 ↔ TS 实现）
+        if (path === '/graph/rpc-mapping') {
+            const result = graphRpcMapping();
+            sendJson({ 
+                ok: true, 
+                description: 'Go RPC 注册与 TS RPC 实现的关联',
                 ...result
             });
             return;

@@ -48,6 +48,14 @@ interface CallEdge {
   line: number;
 }
 
+interface RpcRegistration {
+  file: string;
+  rpcName: string;
+  handlerName: string;
+  line: number;
+  registerType: string; // RegisterRpc, RegisterBeforeRt, RegisterAfterRt, etc.
+}
+
 interface InheritanceEdge {
   childName: string;
   childFile: string;
@@ -61,6 +69,7 @@ interface FileIndex {
   nodes: NodeInfo[];
   edges: CallEdge[];
   inheritance: InheritanceEdge[];
+  rpcRegistrations: RpcRegistration[];
 }
 
 // ============ 解析器 ============
@@ -85,6 +94,18 @@ function parseGoFile(filePath: string, relativePath: string): FileIndex {
   const nodes: NodeInfo[] = [];
   const edges: CallEdge[] = [];
   const inheritance: InheritanceEdge[] = [];
+  const rpcRegistrations: RpcRegistration[] = [];
+  
+  // Nakama runtime registration patterns
+  const REGISTER_PATTERNS = new Set([
+    'RegisterRpc',
+    'RegisterBeforeRt',
+    'RegisterAfterRt',
+    'RegisterBeforeGetAccount',
+    'RegisterAfterGetAccount',
+    'RegisterMatch',
+    'RegisterMatchmakerMatched',
+  ]);
   
   let currentFunc: { name: string; type: string } | null = null;
   
@@ -268,29 +289,77 @@ function parseGoFile(filePath: string, relativePath: string): FileIndex {
       
       case 'call_expression': {
         // 函数调用
-        if (currentFunc) {
-          const funcNode = node.childForFieldName('function');
-          if (funcNode) {
-            let calleeName = '';
-            
-            if (funcNode.type === 'identifier') {
-              calleeName = funcNode.text;
-            } else if (funcNode.type === 'selector_expression') {
-              // obj.Method() 或 pkg.Func()
-              const field = funcNode.childForFieldName('field');
-              if (field) {
-                calleeName = field.text;
-              }
+        const funcNode = node.childForFieldName('function');
+        if (funcNode) {
+          let calleeName = '';
+          
+          if (funcNode.type === 'identifier') {
+            calleeName = funcNode.text;
+          } else if (funcNode.type === 'selector_expression') {
+            // obj.Method() 或 pkg.Func()
+            const field = funcNode.childForFieldName('field');
+            if (field) {
+              calleeName = field.text;
             }
-            
-            if (calleeName) {
-              edges.push({
-                callerFile: relativePath,
-                callerName: currentFunc.name,
-                callerType: currentFunc.type,
-                calleeName,
-                line: node.startPosition.row + 1,
-              });
+          }
+          
+          // 记录普通调用
+          if (calleeName && currentFunc) {
+            edges.push({
+              callerFile: relativePath,
+              callerName: currentFunc.name,
+              callerType: currentFunc.type,
+              calleeName,
+              line: node.startPosition.row + 1,
+            });
+          }
+          
+          // 检测 Nakama RPC 注册
+          if (REGISTER_PATTERNS.has(calleeName)) {
+            const argsNode = node.childForFieldName('arguments');
+            if (argsNode) {
+              const args = argsNode.children.filter(c => 
+                c.type !== '(' && c.type !== ')' && c.type !== ','
+              );
+              
+              // RegisterRpc(id, handler) - 第一个参数是 RPC 名称
+              if (args.length >= 2) {
+                let rpcName = '';
+                const firstArg = args[0];
+                
+                // 提取 RPC 名称
+                if (firstArg.type === 'interpreted_string_literal') {
+                  // "rpc_name"
+                  rpcName = firstArg.text.slice(1, -1); // 去掉引号
+                } else if (firstArg.type === 'identifier') {
+                  // 变量引用，记录变量名
+                  rpcName = `<${firstArg.text}>`;
+                } else if (firstArg.type === 'call_expression') {
+                  // string(xxx) 或 fmt.Sprintf(...)
+                  rpcName = `<expr:${firstArg.text.slice(0, 50)}>`;
+                }
+                
+                // 提取处理函数名
+                let handlerName = '';
+                const secondArg = args[1];
+                if (secondArg.type === 'identifier') {
+                  handlerName = secondArg.text;
+                } else if (secondArg.type === 'selector_expression') {
+                  handlerName = secondArg.text;
+                } else if (secondArg.type === 'func_literal') {
+                  handlerName = '<anonymous>';
+                }
+                
+                if (rpcName) {
+                  rpcRegistrations.push({
+                    file: relativePath,
+                    rpcName,
+                    handlerName,
+                    line: node.startPosition.row + 1,
+                    registerType: calleeName,
+                  });
+                }
+              }
             }
           }
         }
@@ -306,7 +375,7 @@ function parseGoFile(filePath: string, relativePath: string): FileIndex {
   
   visit(tree.rootNode);
   
-  return { nodes, edges, inheritance };
+  return { nodes, edges, inheritance, rpcRegistrations };
 }
 
 // ============ 数据库 ============
@@ -351,12 +420,23 @@ function initDatabase(dbPath: string): Database.Database {
       relation TEXT NOT NULL DEFAULT 'embeds'
     );
     
+    CREATE TABLE IF NOT EXISTS rpc_registrations (
+      id INTEGER PRIMARY KEY,
+      file TEXT NOT NULL,
+      rpc_name TEXT NOT NULL,
+      handler_name TEXT,
+      line INTEGER,
+      register_type TEXT NOT NULL
+    );
+    
     CREATE INDEX IF NOT EXISTS idx_nodes_name ON nodes(name);
     CREATE INDEX IF NOT EXISTS idx_nodes_file ON nodes(file);
     CREATE INDEX IF NOT EXISTS idx_edges_caller ON edges(caller_name);
     CREATE INDEX IF NOT EXISTS idx_edges_callee ON edges(callee_name);
     CREATE INDEX IF NOT EXISTS idx_inheritance_child ON inheritance(child_name);
     CREATE INDEX IF NOT EXISTS idx_inheritance_parent ON inheritance(parent_name);
+    CREATE INDEX IF NOT EXISTS idx_rpc_name ON rpc_registrations(rpc_name);
+    CREATE INDEX IF NOT EXISTS idx_rpc_handler ON rpc_registrations(handler_name);
   `);
   
   return db;
@@ -408,9 +488,14 @@ async function indexProject(config: Config) {
     INSERT INTO inheritance (child_name, child_file, child_type, parent_name, parent_type, relation)
     VALUES (?, ?, ?, ?, ?, ?)
   `);
+  const insertRpcRegistration = db.prepare(`
+    INSERT INTO rpc_registrations (file, rpc_name, handler_name, line, register_type)
+    VALUES (?, ?, ?, ?, ?)
+  `);
   const deleteFileNodes = db.prepare('DELETE FROM nodes WHERE file = ?');
   const deleteFileEdges = db.prepare('DELETE FROM edges WHERE caller_file = ?');
   const deleteFileInheritance = db.prepare('DELETE FROM inheritance WHERE child_file = ?');
+  const deleteFileRpcRegistrations = db.prepare('DELETE FROM rpc_registrations WHERE file = ?');
   
   // 当前文件集
   const currentFiles = new Set<string>();
@@ -432,10 +517,11 @@ async function indexProject(config: Config) {
     deleteFileNodes.run(relativePath);
     deleteFileEdges.run(relativePath);
     deleteFileInheritance.run(relativePath);
+    deleteFileRpcRegistrations.run(relativePath);
     
     // 解析文件
     try {
-      const { nodes, edges, inheritance } = parseGoFile(filePath, relativePath);
+      const { nodes, edges, inheritance, rpcRegistrations } = parseGoFile(filePath, relativePath);
       
       for (const node of nodes) {
         insertNode.run(
@@ -472,6 +558,16 @@ async function indexProject(config: Config) {
         );
       }
       
+      for (const rpc of rpcRegistrations) {
+        insertRpcRegistration.run(
+          rpc.file,
+          rpc.rpcName,
+          rpc.handlerName,
+          rpc.line,
+          rpc.registerType
+        );
+      }
+      
       insertHash.run(relativePath, newHash);
       
       if (oldHash) {
@@ -496,6 +592,7 @@ async function indexProject(config: Config) {
       deleteFileNodes.run(oldFile);
       deleteFileEdges.run(oldFile);
       deleteFileInheritance.run(oldFile);
+      deleteFileRpcRegistrations.run(oldFile);
       db.prepare('DELETE FROM file_hashes WHERE file = ?').run(oldFile);
       removed++;
     }
@@ -505,6 +602,7 @@ async function indexProject(config: Config) {
   const nodeCount = (db.prepare('SELECT COUNT(*) as c FROM nodes').get() as { c: number }).c;
   const edgeCount = (db.prepare('SELECT COUNT(*) as c FROM edges').get() as { c: number }).c;
   const inheritanceCount = (db.prepare('SELECT COUNT(*) as c FROM inheritance').get() as { c: number }).c;
+  const rpcCount = (db.prepare('SELECT COUNT(*) as c FROM rpc_registrations').get() as { c: number }).c;
   
   db.close();
   
@@ -512,9 +610,9 @@ async function indexProject(config: Config) {
   
   console.log(`[Go Indexer] Done in ${elapsed}ms`);
   console.log(`[Go Indexer] Files: +${added} ~${updated} -${removed} =${unchanged}`);
-  console.log(`[Go Indexer] Total: ${nodeCount} nodes, ${edgeCount} edges, ${inheritanceCount} inheritance`);
+  console.log(`[Go Indexer] Total: ${nodeCount} nodes, ${edgeCount} edges, ${inheritanceCount} inheritance, ${rpcCount} RPC registrations`);
   
-  return { added, updated, removed, unchanged, nodeCount, edgeCount, inheritanceCount, elapsed };
+  return { added, updated, removed, unchanged, nodeCount, edgeCount, inheritanceCount, rpcCount, elapsed };
 }
 
 // ============ 生成摘要 JSONL ============
