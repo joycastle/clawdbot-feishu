@@ -12,7 +12,7 @@ import { getFeishuRuntime } from "./runtime.js";
 import { downloadFeishuDocMediaByUrl, enrichMessageWithDocs } from "./features/doc-parser.js";
 import { resolveFeishuGroupConfig, resolveFeishuReplyPolicy, resolveFeishuAllowlistMatch, isFeishuGroupAllowed } from "./policy.js";
 import { createFeishuReplyDispatcher } from "./reply-dispatcher.js";
-import { getMessageFeishu, sendMarkdownCardFeishu, sendMessageFeishu } from "./api/send.js";
+import { getMessageFeishu, getMergeForwardMessages, sendMarkdownCardFeishu, sendMessageFeishu } from "./api/send.js";
 import { downloadImageFeishu, downloadMessageResourceFeishu } from "./api/media.js";
 import { sendMediaConfirmCard } from "./features/media-confirm.js";
 // Video analysis is now handled by the LLM agent via bitable-video-cli.ts
@@ -878,6 +878,36 @@ export async function handleFeishuMessage(params: {
     }
   }
 
+  // Handle merge_forward messages: fetch sub-messages and combine their content
+  if (ctx.contentType === "merge_forward") {
+    log(`feishu: detected merge_forward message, fetching sub-messages`);
+    try {
+      const mergeResult = await getMergeForwardMessages({
+        cfg,
+        messageId: ctx.messageId,
+      });
+      
+      if (mergeResult && mergeResult.subMessages.length > 0) {
+        // Format sub-messages into readable text
+        const formattedMessages = mergeResult.subMessages.map((msg, idx) => {
+          const senderLabel = msg.senderOpenId || msg.senderId || "Unknown";
+          return `[${idx + 1}] ${senderLabel}: ${msg.content}`;
+        });
+        
+        const combinedContent = `[合并转发消息，包含 ${mergeResult.subMessages.length} 条消息]\n\n${formattedMessages.join("\n\n")}`;
+        
+        ctx = { ...ctx, content: combinedContent };
+        log(`feishu: extracted ${mergeResult.subMessages.length} sub-messages from merge_forward`);
+      } else {
+        ctx = { ...ctx, content: "[合并转发消息，无法获取内容]" };
+        log(`feishu: merge_forward message had no sub-messages`);
+      }
+    } catch (err) {
+      log(`feishu: failed to fetch merge_forward sub-messages: ${String(err)}`);
+      ctx = { ...ctx, content: "[合并转发消息，获取内容失败]" };
+    }
+  }
+
   const historyLimit = Math.max(
     0,
     feishuCfg?.historyLimit ?? cfg.messages?.groupChat?.historyLimit ?? DEFAULT_GROUP_HISTORY_LIMIT,
@@ -913,8 +943,8 @@ export async function handleFeishuMessage(params: {
       groupConfig,
     });
 
-    // Allow video/media messages through without @mention — users can't @mention in media messages
-    const isMediaMessage = ["video", "media", "audio", "image", "file"].includes(ctx.contentType);
+    // Allow video/media/merge_forward messages through without @mention — users can't @mention in these message types
+    const isMediaMessage = ["video", "media", "audio", "image", "file", "merge_forward"].includes(ctx.contentType);
     if (requireMention && !ctx.mentionedBot && !isMediaMessage) {
       if (senderIsAdmin && ctx.contentType === "text") {
         const reply = tryHandleAdminCommand({ cfg, senderId: senderIdForAuth, text: ctx.content });
@@ -1065,7 +1095,31 @@ export async function handleFeishuMessage(params: {
       try {
         const quotedMsg = await getMessageFeishu({ cfg, messageId: ctx.parentId });
         if (quotedMsg) {
-          quotedContent = formatQuotedContent(quotedMsg.content, quotedMsg.contentType);
+          // Special handling for merge_forward: fetch sub-messages
+          if (quotedMsg.contentType === "merge_forward") {
+            log(`feishu: quoted message is merge_forward, fetching sub-messages`);
+            try {
+              const mergeResult = await getMergeForwardMessages({
+                cfg,
+                messageId: ctx.parentId,
+              });
+              if (mergeResult && mergeResult.subMessages.length > 0) {
+                const formattedMessages = mergeResult.subMessages.map((msg, idx) => {
+                  const senderLabel = msg.senderOpenId || msg.senderId || "Unknown";
+                  return `[${idx + 1}] ${senderLabel}: ${msg.content}`;
+                });
+                quotedContent = `[合并转发消息，包含 ${mergeResult.subMessages.length} 条消息]\n${formattedMessages.join("\n")}`;
+                log(`feishu: extracted ${mergeResult.subMessages.length} sub-messages from quoted merge_forward`);
+              } else {
+                quotedContent = "[合并转发消息]";
+              }
+            } catch (mergeErr) {
+              log(`feishu: failed to fetch merge_forward sub-messages: ${String(mergeErr)}`);
+              quotedContent = "[合并转发消息]";
+            }
+          } else {
+            quotedContent = formatQuotedContent(quotedMsg.content, quotedMsg.contentType);
+          }
           log(`feishu: fetched quoted message (type=${quotedMsg.contentType}): ${quotedContent?.slice(0, 100)}`);
 
           // Also download media from quoted message if it contains media
@@ -1097,7 +1151,28 @@ export async function handleFeishuMessage(params: {
       try {
         const quotedMsg = await getMessageFeishu({ cfg, messageId: ctx.parentId });
         if (quotedMsg) {
-          quotedContent = formatQuotedContent(quotedMsg.content, quotedMsg.contentType);
+          // Special handling for merge_forward: fetch sub-messages
+          if (quotedMsg.contentType === "merge_forward") {
+            try {
+              const mergeResult = await getMergeForwardMessages({
+                cfg,
+                messageId: ctx.parentId,
+              });
+              if (mergeResult && mergeResult.subMessages.length > 0) {
+                const formattedMessages = mergeResult.subMessages.map((msg, idx) => {
+                  const senderLabel = msg.senderOpenId || msg.senderId || "Unknown";
+                  return `[${idx + 1}] ${senderLabel}: ${msg.content}`;
+                });
+                quotedContent = `[合并转发消息，包含 ${mergeResult.subMessages.length} 条消息]\n${formattedMessages.join("\n")}`;
+              } else {
+                quotedContent = "[合并转发消息]";
+              }
+            } catch {
+              quotedContent = "[合并转发消息]";
+            }
+          } else {
+            quotedContent = formatQuotedContent(quotedMsg.content, quotedMsg.contentType);
+          }
           log(`feishu: fetched quoted message (type=${quotedMsg.contentType}): ${quotedContent?.slice(0, 100)}`);
         }
       } catch (err) {

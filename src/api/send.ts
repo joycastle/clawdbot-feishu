@@ -110,6 +110,153 @@ export async function getMessageFeishu(params: {
   }
 }
 
+/**
+ * Get all sub-messages from a merge_forward message.
+ * merge_forward messages contain multiple forwarded messages as children.
+ * 
+ * @returns Array of sub-messages with their content, sender info, and original chat context
+ */
+export async function getMergeForwardMessages(params: {
+  cfg: ClawdbotConfig;
+  messageId: string;
+}): Promise<{
+  subMessages: Array<{
+    messageId: string;
+    chatId: string;
+    senderId?: string;
+    senderOpenId?: string;
+    content: string;
+    contentType: string;
+    createTime?: number;
+  }>;
+  parentMessageId: string;
+} | null> {
+  const { cfg, messageId } = params;
+  const feishuCfg = cfg.channels?.feishu as FeishuConfig | undefined;
+  if (!feishuCfg) {
+    throw new Error("Feishu channel not configured");
+  }
+
+  const client = createFeishuClient(feishuCfg);
+
+  try {
+    const response = (await client.im.message.get({
+      path: { message_id: messageId },
+    })) as {
+      code?: number;
+      msg?: string;
+      data?: {
+        items?: Array<{
+          message_id?: string;
+          chat_id?: string;
+          msg_type?: string;
+          body?: { content?: string };
+          sender?: {
+            id?: string;
+            id_type?: string;
+            sender_type?: string;
+          };
+          create_time?: string;
+          upper_message_id?: string;
+        }>;
+      };
+    };
+
+    if (response.code !== 0) {
+      return null;
+    }
+
+    const items = response.data?.items ?? [];
+    if (items.length === 0) {
+      return null;
+    }
+
+    // First item is the parent merge_forward message
+    const parentItem = items[0];
+    if (parentItem.msg_type !== "merge_forward") {
+      return null;
+    }
+
+    // Remaining items are sub-messages (they have upper_message_id pointing to parent)
+    const subMessages = items
+      .filter((item) => item.upper_message_id === messageId)
+      .map((item) => {
+        let content = item.body?.content ?? "";
+        const msgType = item.msg_type ?? "text";
+
+        // Parse content based on message type
+        try {
+          const parsed = JSON.parse(content);
+          if (msgType === "text" && parsed.text) {
+            content = parsed.text;
+          } else if (msgType === "post") {
+            // Extract text from rich text post
+            const title = parsed.title || "";
+            const contentBlocks = parsed.content || [];
+            let textContent = title ? `${title}\n\n` : "";
+            for (const paragraph of contentBlocks) {
+              if (Array.isArray(paragraph)) {
+                for (const element of paragraph) {
+                  if (element.tag === "text") {
+                    textContent += element.text || "";
+                  } else if (element.tag === "a") {
+                    textContent += element.text || element.href || "";
+                  } else if (element.tag === "at") {
+                    textContent += `@${element.user_name || ""}`;
+                  } else if (element.tag === "img") {
+                    textContent += "[图片]";
+                  } else if (element.tag === "media") {
+                    textContent += "[媒体]";
+                  }
+                }
+                textContent += "\n";
+              }
+            }
+            content = textContent.trim() || "[富文本消息]";
+          } else if (msgType === "image") {
+            content = "[图片]";
+          } else if (msgType === "file") {
+            content = `[文件: ${parsed.file_name || "未知"}]`;
+          } else if (msgType === "audio") {
+            content = "[语音]";
+          } else if (msgType === "video" || msgType === "media") {
+            content = "[视频]";
+          } else if (msgType === "sticker") {
+            content = "[表情]";
+          } else if (msgType === "interactive") {
+            content = "[卡片消息]";
+          } else if (msgType === "share_chat") {
+            content = "[群名片]";
+          } else if (msgType === "share_user") {
+            content = "[用户名片]";
+          }
+        } catch {
+          // Keep raw content if parsing fails
+          if (msgType !== "text") {
+            content = `[${msgType}]`;
+          }
+        }
+
+        return {
+          messageId: item.message_id ?? "",
+          chatId: item.chat_id ?? "",
+          senderId: item.sender?.id,
+          senderOpenId: item.sender?.id_type === "open_id" ? item.sender?.id : undefined,
+          content,
+          contentType: msgType,
+          createTime: item.create_time ? parseInt(item.create_time, 10) : undefined,
+        };
+      });
+
+    return {
+      subMessages,
+      parentMessageId: messageId,
+    };
+  } catch {
+    return null;
+  }
+}
+
 export type SendFeishuMessageParams = {
   cfg: ClawdbotConfig;
   to: string;
