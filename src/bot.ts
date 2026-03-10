@@ -880,7 +880,10 @@ export async function handleFeishuMessage(params: {
 
   // Handle merge_forward messages: fetch sub-messages and combine their content
   // Store media items for later download (after mediaList is initialized)
-  let pendingMergeForwardMedia: Awaited<ReturnType<typeof getMergeForwardMessages>>["mediaItems"] | undefined;
+  let pendingMergeForwardMedia: {
+    parentMessageId: string;
+    mediaItems: Awaited<ReturnType<typeof getMergeForwardMessages>>["mediaItems"];
+  } | undefined;
   
   if (ctx.contentType === "merge_forward") {
     log(`feishu: detected merge_forward message, fetching sub-messages`);
@@ -902,9 +905,12 @@ export async function handleFeishuMessage(params: {
         ctx = { ...ctx, content: combinedContent };
         log(`feishu: extracted ${mergeResult.subMessages.length} sub-messages from merge_forward`);
         
-        // Save media items for download later
+        // Save media items for download later (with parent message ID for API calls)
         if (mergeResult.mediaItems.length > 0) {
-          pendingMergeForwardMedia = mergeResult.mediaItems;
+          pendingMergeForwardMedia = {
+            parentMessageId: ctx.messageId,
+            mediaItems: mergeResult.mediaItems,
+          };
           log(`feishu: found ${mergeResult.mediaItems.length} media items in merge_forward`);
         }
       } else {
@@ -1098,13 +1104,14 @@ export async function handleFeishuMessage(params: {
     log(`feishu: resolveFeishuMediaList returned ${mediaList.length} items for type=${event.message.message_type}`);
 
     // Download media from merge_forward message if any
-    if (pendingMergeForwardMedia && pendingMergeForwardMedia.length > 0) {
-      log(`feishu: downloading ${pendingMergeForwardMedia.length} media items from merge_forward`);
-      for (const mediaItem of pendingMergeForwardMedia) {
+    // NOTE: Media in merge_forward sub-messages must be downloaded using the PARENT message ID
+    if (pendingMergeForwardMedia && pendingMergeForwardMedia.mediaItems.length > 0) {
+      log(`feishu: downloading ${pendingMergeForwardMedia.mediaItems.length} media items from merge_forward (parent=${pendingMergeForwardMedia.parentMessageId})`);
+      for (const mediaItem of pendingMergeForwardMedia.mediaItems) {
         try {
           const result = await downloadMessageResourceFeishu({
             cfg,
-            messageId: mediaItem.messageId,
+            messageId: pendingMergeForwardMedia.parentMessageId, // Use parent message ID, not sub-message ID
             fileKey: mediaItem.imageKey || mediaItem.fileKey || "",
             type: mediaItem.imageKey ? "image" : "file",
           });
@@ -1165,13 +1172,14 @@ export async function handleFeishuMessage(params: {
                 log(`feishu: extracted ${mergeResult.subMessages.length} sub-messages from quoted merge_forward`);
                 
                 // Download media from quoted merge_forward
+                // NOTE: Media in merge_forward sub-messages must be downloaded using the PARENT message ID (ctx.parentId)
                 if (mergeResult.mediaItems.length > 0) {
-                  log(`feishu: downloading ${mergeResult.mediaItems.length} media items from quoted merge_forward`);
+                  log(`feishu: downloading ${mergeResult.mediaItems.length} media items from quoted merge_forward (parent=${ctx.parentId})`);
                   for (const mediaItem of mergeResult.mediaItems) {
                     try {
                       const result = await downloadMessageResourceFeishu({
                         cfg,
-                        messageId: mediaItem.messageId,
+                        messageId: ctx.parentId, // Use parent message ID (the merge_forward message), not sub-message ID
                         fileKey: mediaItem.imageKey || mediaItem.fileKey || "",
                         type: mediaItem.imageKey ? "image" : "file",
                       });
@@ -1262,12 +1270,13 @@ export async function handleFeishuMessage(params: {
                 quotedContent = `[合并转发消息，包含 ${mergeResult.subMessages.length} 条消息]\n${formattedMessages.join("\n")}`;
                 
                 // Download media from quoted merge_forward (when resuming from cost confirmation)
+                // NOTE: Use parent message ID (ctx.parentId) for download, not sub-message ID
                 if (mergeResult.mediaItems.length > 0) {
                   for (const mediaItem of mergeResult.mediaItems) {
                     try {
                       const result = await downloadMessageResourceFeishu({
                         cfg,
-                        messageId: mediaItem.messageId,
+                        messageId: ctx.parentId, // Use parent message ID (the merge_forward message)
                         fileKey: mediaItem.imageKey || mediaItem.fileKey || "",
                         type: mediaItem.imageKey ? "image" : "file",
                       });
