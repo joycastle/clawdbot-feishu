@@ -282,8 +282,13 @@ async function monitorWebSocket(params: {
             // Check if this is a video that should be auto-analyzed with Gemini
             const hasVideo = confirmed.mediaType === "video" ||
               confirmed.mediaList.some((m) => m.contentType?.startsWith("video/"));
+            
+            // Also check merge_forward media
+            const hasMergeForwardVideo = confirmed.mergeForwardMedia?.mediaItems.some(
+              (m) => m.mediaType === "video" || m.mediaType === "audio"
+            );
 
-            if (hasVideo) {
+            if (hasVideo || hasMergeForwardVideo) {
               // Fire-and-forget: run video analysis without blocking the event loop
               const confirmedRef = confirmed;
               const inFlightKey = `feishu:media-video:${confirmedRef.id}`;
@@ -295,13 +300,64 @@ async function monitorWebSocket(params: {
                 senderId: confirmedRef.senderOpenId || "unknown",
                 isAdmin: senderIsAdmin,
               });
-              log(`feishu: starting async video analysis (pendingId=${confirmedRef.id})`);
+              log(`feishu: starting async video analysis (pendingId=${confirmedRef.id}, hasMergeForwardVideo=${hasMergeForwardVideo})`);
               // Update card to "processing" via delayed PATCH (after callback response completes).
               void (async () => {
                 try {
-                  const videoMedia = confirmedRef.mediaList.find(
+                  let videoMedia = confirmedRef.mediaList.find(
                     (m) => m.contentType?.startsWith("video/") && m.path,
                   );
+                  
+                  // If no video in mediaList but have mergeForwardMedia, download it first
+                  if (!videoMedia && confirmedRef.mergeForwardMedia) {
+                    log(`feishu: downloading merge_forward video for analysis`);
+                    const { downloadMessageResourceFeishu } = await import("./api/media.js");
+                    const { getFeishuRuntime } = await import("./runtime.js");
+                    const core = getFeishuRuntime();
+                    const mediaMaxBytes = 200 * 1024 * 1024; // 200MB
+                    
+                    for (const mediaItem of confirmedRef.mergeForwardMedia.mediaItems) {
+                      if (mediaItem.mediaType !== "video" && mediaItem.mediaType !== "audio") continue;
+                      
+                      try {
+                        const result = await downloadMessageResourceFeishu({
+                          cfg: confirmedRef.cfg,
+                          messageId: confirmedRef.mergeForwardMedia.parentMessageId,
+                          fileKey: mediaItem.fileKey || "",
+                          type: "file",
+                        });
+                        
+                        let contentType = result.contentType || "video/mp4";
+                        const saved = await core.channel.media.saveMediaBuffer(
+                          result.buffer,
+                          contentType,
+                          "inbound",
+                          mediaMaxBytes,
+                          mediaItem.fileName,
+                        );
+                        
+                        // Add to media list for analysis
+                        confirmedRef.mediaList.push({
+                          path: saved.path,
+                          contentType: saved.contentType,
+                          placeholder: `<media:${mediaItem.mediaType}>`,
+                        });
+                        
+                        log(`feishu: downloaded merge_forward video, saved to ${saved.path}`);
+                        
+                        // Use the first video for analysis
+                        if (!videoMedia && contentType.startsWith("video/")) {
+                          videoMedia = {
+                            path: saved.path,
+                            contentType: saved.contentType,
+                            placeholder: "<media:video>",
+                          };
+                        }
+                      } catch (downloadErr) {
+                        log(`feishu: failed to download merge_forward video: ${String(downloadErr)}`);
+                      }
+                    }
+                  }
                   if (videoMedia) {
                     // Init GCS config in case analyzeVideo needs to auto-escalate to GCS for >20MB videos
                     const { initGcsConfig } = await import("./features/big-video/gcs-upload.js");

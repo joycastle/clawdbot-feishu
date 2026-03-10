@@ -1126,14 +1126,76 @@ export async function handleFeishuMessage(params: {
     // Download media from merge_forward message if any
     // NOTE: Media in merge_forward sub-messages must be downloaded using the PARENT message ID
     if (pendingMergeForwardMedia && pendingMergeForwardMedia.mediaItems.length > 0) {
+      // Check if there are any audio/video items that need cost confirmation
+      const mergeForwardHasAudioVideo = pendingMergeForwardMedia.mediaItems.some(
+        (m) => m.mediaType === "video" || m.mediaType === "audio"
+      );
+      
+      if (mergeForwardHasAudioVideo && !skipMediaConfirm && feishuCfg?.confirmMediaCost) {
+        // Trigger cost confirmation for merge_forward videos
+        log(`feishu: merge_forward contains video/audio, triggering cost confirmation`);
+        
+        // Get actual duration from media items if available
+        const videoItems = pendingMergeForwardMedia.mediaItems.filter(m => m.mediaType === "video");
+        const audioItems = pendingMergeForwardMedia.mediaItems.filter(m => m.mediaType === "audio");
+        
+        // Sum up all durations (if available)
+        const totalDurationMs = [...videoItems, ...audioItems]
+          .map(m => m.durationMs || 0)
+          .reduce((a, b) => a + b, 0);
+        
+        // Estimate file size based on duration (rough: 1MB per 10 seconds for video, 100KB per 10 seconds for audio)
+        const estimatedSize = totalDurationMs > 0
+          ? Math.round((videoItems.length > 0 ? totalDurationMs / 10000 : totalDurationMs / 100000) * 1024 * 1024)
+          : (videoItems.length * 5 + audioItems.length * 1) * 1024 * 1024; // fallback: 5MB per video, 1MB per audio
+        
+        log(`feishu: merge_forward video/audio totalDuration=${totalDurationMs}ms, estimatedSize=${estimatedSize}`);
+        
+        try {
+          await sendMediaConfirmCard({
+            cfg,
+            event,
+            mediaType: videoItems.length > 0 ? "video" : "audio",
+            fileSizeBytes: estimatedSize,
+            mediaList: [], // Will be populated after confirmation
+            durationMs: totalDurationMs > 0 ? totalDurationMs : undefined,
+            botOpenId,
+            runtime,
+            chatHistories,
+            log,
+            // Pass merge_forward info for resume
+            mergeForwardMedia: pendingMergeForwardMedia,
+          });
+          log(`feishu: merge_forward media cost confirmation card sent`);
+          return; // Stop processing, will resume after user confirms
+        } catch (err) {
+          log(`feishu: failed to send merge_forward media confirmation card: ${String(err)}`);
+          // Fall through to download without confirmation
+        }
+      }
+      
+      // Download media items (images directly, videos only if skipMediaConfirm or confirmMediaCost disabled)
       log(`feishu: downloading ${pendingMergeForwardMedia.mediaItems.length} media items from merge_forward (parent=${pendingMergeForwardMedia.parentMessageId})`);
       for (const mediaItem of pendingMergeForwardMedia.mediaItems) {
+        // Skip video/audio if cost confirmation is enabled and not confirmed
+        if ((mediaItem.mediaType === "video" || mediaItem.mediaType === "audio") && 
+            feishuCfg?.confirmMediaCost && !skipMediaConfirm) {
+          continue;
+        }
+        
         try {
+          // For video/audio, use fileKey; for images, use imageKey
+          const isVideoOrAudio = mediaItem.mediaType === "video" || mediaItem.mediaType === "audio";
+          const fileKey = isVideoOrAudio 
+            ? (mediaItem.fileKey || mediaItem.imageKey || "")
+            : (mediaItem.imageKey || mediaItem.fileKey || "");
+          const resourceType = isVideoOrAudio ? "file" : "image";
+          
           const result = await downloadMessageResourceFeishu({
             cfg,
             messageId: pendingMergeForwardMedia.parentMessageId, // Use parent message ID, not sub-message ID
-            fileKey: mediaItem.imageKey || mediaItem.fileKey || "",
-            type: mediaItem.imageKey ? "image" : "file",
+            fileKey,
+            type: resourceType,
           });
 
           let contentType = result.contentType;

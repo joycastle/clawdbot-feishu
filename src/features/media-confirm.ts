@@ -19,6 +19,19 @@ import type { FeishuMediaInfo } from "../types.js";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
+/** Media info from merge_forward sub-messages */
+export interface MergeForwardMediaInfo {
+  parentMessageId: string;
+  mediaItems: Array<{
+    messageId: string;
+    imageKey?: string;
+    fileKey?: string;
+    mediaType: string;
+    fileName?: string;
+    durationMs?: number;
+  }>;
+}
+
 export interface PendingMediaConfirmation {
   /** Unique pending ID */
   id: string;
@@ -48,6 +61,8 @@ export interface PendingMediaConfirmation {
   chatHistories?: Map<string, HistoryEntry[]>;
   /** Pre-resolved media list (already downloaded) */
   mediaList: FeishuMediaInfo[];
+  /** Merge forward media info (for downloading after confirmation) */
+  mergeForwardMedia?: MergeForwardMediaInfo;
 }
 
 /** Card action event data from Feishu (card.action.trigger) */
@@ -262,6 +277,8 @@ export async function sendMediaConfirmCard(params: {
   runtime?: unknown;
   chatHistories?: Map<string, HistoryEntry[]>;
   log?: (msg: string) => void;
+  /** Merge forward media info (for downloading after confirmation) */
+  mergeForwardMedia?: MergeForwardMediaInfo;
 }): Promise<PendingMediaConfirmation> {
   const {
     cfg,
@@ -275,6 +292,7 @@ export async function sendMediaConfirmCard(params: {
     runtime,
     chatHistories,
     log,
+    mergeForwardMedia,
   } = params;
 
   const costEstimate = estimateMediaCost({
@@ -325,6 +343,7 @@ export async function sendMediaConfirmCard(params: {
     runtime,
     chatHistories: chatHistories as Map<string, HistoryEntry[]>,
     mediaList,
+    mergeForwardMedia,
   };
 
   pendingConfirmations.set(pendingId, entry);

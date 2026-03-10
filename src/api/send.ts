@@ -122,6 +122,8 @@ export type MergeForwardMediaInfo = {
   mediaType: string;
   /** Optional file name for files */
   fileName?: string;
+  /** Duration in milliseconds (for audio/video) */
+  durationMs?: number;
 };
 
 /**
@@ -272,6 +274,7 @@ export async function getMergeForwardMessages(params: {
                 messageId: subMsgId,
                 fileKey: parsed.file_key,
                 mediaType: "audio",
+                durationMs: typeof parsed.duration === "number" ? parsed.duration : undefined,
               });
             }
           } else if (msgType === "video" || msgType === "media") {
@@ -282,6 +285,7 @@ export async function getMergeForwardMessages(params: {
                 fileKey: parsed.file_key,
                 imageKey: parsed.image_key, // thumbnail
                 mediaType: "video",
+                durationMs: typeof parsed.duration === "number" ? parsed.duration : undefined,
               });
             }
           } else if (msgType === "sticker") {
