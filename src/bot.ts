@@ -885,6 +885,9 @@ export async function handleFeishuMessage(params: {
     mediaItems: Awaited<ReturnType<typeof getMergeForwardMessages>>["mediaItems"];
   } | undefined;
   
+  // Store doc image URLs from merge_forward for later download
+  let pendingMergeForwardDocImages: string[] = [];
+  
   if (ctx.contentType === "merge_forward") {
     log(`feishu: detected merge_forward message, fetching sub-messages`);
     try {
@@ -894,11 +897,28 @@ export async function handleFeishuMessage(params: {
       });
       
       if (mergeResult && mergeResult.subMessages.length > 0) {
-        // Format sub-messages into readable text
-        const formattedMessages = mergeResult.subMessages.map((msg, idx) => {
+        // Format sub-messages into readable text, enriching with doc content if URLs are found
+        const formattedMessages: string[] = [];
+        for (let idx = 0; idx < mergeResult.subMessages.length; idx++) {
+          const msg = mergeResult.subMessages[idx];
           const senderLabel = msg.senderOpenId || msg.senderId || "Unknown";
-          return `[${idx + 1}] ${senderLabel}: ${msg.content}`;
-        });
+          
+          // Enrich message content with Feishu document content (if URLs detected)
+          let enrichedContent = msg.content;
+          if (feishuCfg && msg.contentType === "text") {
+            try {
+              const enriched = await enrichMessageWithDocs(feishuCfg, msg.content, log);
+              enrichedContent = enriched.text;
+              if (enriched.docImageUrls.length > 0) {
+                pendingMergeForwardDocImages.push(...enriched.docImageUrls);
+              }
+            } catch (docErr) {
+              log(`feishu: doc enrichment failed for merge_forward sub-message: ${String(docErr)}`);
+            }
+          }
+          
+          formattedMessages.push(`[${idx + 1}] ${senderLabel}: ${enrichedContent}`);
+        }
         
         const combinedContent = `[合并转发消息，包含 ${mergeResult.subMessages.length} 条消息]\n\n${formattedMessages.join("\n\n")}`;
         
@@ -1148,6 +1168,42 @@ export async function handleFeishuMessage(params: {
       }
     }
 
+    // Download doc images from merge_forward sub-messages
+    if (pendingMergeForwardDocImages.length > 0 && feishuCfg) {
+      const uniqueDocImages = [...new Set(pendingMergeForwardDocImages)].slice(0, 8);
+      log(`feishu: downloading ${uniqueDocImages.length} doc image(s) from merge_forward sub-messages`);
+      for (const url of uniqueDocImages) {
+        try {
+          const result = await downloadFeishuDocMediaByUrl({
+            cfg: feishuCfg,
+            url,
+            maxBytes: mediaMaxBytes,
+          });
+          let contentType = result.contentType;
+          if (!contentType) {
+            contentType = await core.media.detectMime({ buffer: result.buffer });
+          }
+          if (!contentType || contentType === "application/octet-stream") {
+            contentType = "image/png";
+          }
+          const saved = await core.channel.media.saveMediaBuffer(
+            result.buffer,
+            contentType,
+            "inbound",
+            mediaMaxBytes,
+          );
+          mediaList.push({
+            path: saved.path,
+            contentType: saved.contentType,
+            placeholder: "<media:image>",
+          });
+          log(`feishu: downloaded merge_forward doc image, saved to ${saved.path}`);
+        } catch (err) {
+          log(`feishu: failed to download merge_forward doc image ${url}: ${String(err)}`);
+        }
+      }
+    }
+
     // Fetch quoted/replied message content if parentId exists
     // (moved before media cost confirmation so quoted audio/video is also intercepted)
     let quotedContent: string | undefined;
@@ -1164,10 +1220,26 @@ export async function handleFeishuMessage(params: {
                 messageId: ctx.parentId,
               });
               if (mergeResult && mergeResult.subMessages.length > 0) {
-                const formattedMessages = mergeResult.subMessages.map((msg, idx) => {
+                // Format sub-messages, enriching with doc content if URLs are found
+                const formattedMessages: string[] = [];
+                const quotedMergeDocImages: string[] = [];
+                for (let idx = 0; idx < mergeResult.subMessages.length; idx++) {
+                  const msg = mergeResult.subMessages[idx];
                   const senderLabel = msg.senderOpenId || msg.senderId || "Unknown";
-                  return `[${idx + 1}] ${senderLabel}: ${msg.content}`;
-                });
+                  
+                  let enrichedContent = msg.content;
+                  if (feishuCfg && msg.contentType === "text") {
+                    try {
+                      const enriched = await enrichMessageWithDocs(feishuCfg, msg.content, log);
+                      enrichedContent = enriched.text;
+                      if (enriched.docImageUrls.length > 0) {
+                        quotedMergeDocImages.push(...enriched.docImageUrls);
+                      }
+                    } catch { /* ignore doc enrichment errors */ }
+                  }
+                  
+                  formattedMessages.push(`[${idx + 1}] ${senderLabel}: ${enrichedContent}`);
+                }
                 quotedContent = `[合并转发消息，包含 ${mergeResult.subMessages.length} 条消息]\n${formattedMessages.join("\n")}`;
                 log(`feishu: extracted ${mergeResult.subMessages.length} sub-messages from quoted merge_forward`);
                 
@@ -1212,6 +1284,39 @@ export async function handleFeishuMessage(params: {
                     } catch (err) {
                       log(`feishu: failed to download quoted merge_forward media: ${String(err)}`);
                     }
+                  }
+                }
+                
+                // Download doc images from quoted merge_forward sub-messages
+                if (quotedMergeDocImages.length > 0 && feishuCfg) {
+                  const uniqueDocImages = [...new Set(quotedMergeDocImages)].slice(0, 8);
+                  log(`feishu: downloading ${uniqueDocImages.length} doc image(s) from quoted merge_forward`);
+                  for (const url of uniqueDocImages) {
+                    try {
+                      const result = await downloadFeishuDocMediaByUrl({
+                        cfg: feishuCfg,
+                        url,
+                        maxBytes: mediaMaxBytes,
+                      });
+                      let contentType = result.contentType;
+                      if (!contentType) {
+                        contentType = await core.media.detectMime({ buffer: result.buffer });
+                      }
+                      if (!contentType || contentType === "application/octet-stream") {
+                        contentType = "image/png";
+                      }
+                      const saved = await core.channel.media.saveMediaBuffer(
+                        result.buffer,
+                        contentType,
+                        "inbound",
+                        mediaMaxBytes,
+                      );
+                      mediaList.push({
+                        path: saved.path,
+                        contentType: saved.contentType,
+                        placeholder: "<media:image>",
+                      });
+                    } catch { /* ignore doc image download errors */ }
                   }
                 }
               } else {
@@ -1263,10 +1368,26 @@ export async function handleFeishuMessage(params: {
                 messageId: ctx.parentId,
               });
               if (mergeResult && mergeResult.subMessages.length > 0) {
-                const formattedMessages = mergeResult.subMessages.map((msg, idx) => {
+                // Format sub-messages, enriching with doc content
+                const formattedMessages: string[] = [];
+                const resumeDocImages: string[] = [];
+                for (let idx = 0; idx < mergeResult.subMessages.length; idx++) {
+                  const msg = mergeResult.subMessages[idx];
                   const senderLabel = msg.senderOpenId || msg.senderId || "Unknown";
-                  return `[${idx + 1}] ${senderLabel}: ${msg.content}`;
-                });
+                  
+                  let enrichedContent = msg.content;
+                  if (feishuCfg && msg.contentType === "text") {
+                    try {
+                      const enriched = await enrichMessageWithDocs(feishuCfg, msg.content, log);
+                      enrichedContent = enriched.text;
+                      if (enriched.docImageUrls.length > 0) {
+                        resumeDocImages.push(...enriched.docImageUrls);
+                      }
+                    } catch { /* ignore */ }
+                  }
+                  
+                  formattedMessages.push(`[${idx + 1}] ${senderLabel}: ${enrichedContent}`);
+                }
                 quotedContent = `[合并转发消息，包含 ${mergeResult.subMessages.length} 条消息]\n${formattedMessages.join("\n")}`;
                 
                 // Download media from quoted merge_forward (when resuming from cost confirmation)
@@ -1307,6 +1428,38 @@ export async function handleFeishuMessage(params: {
                     } catch {
                       // Ignore media download errors in resume flow
                     }
+                  }
+                }
+                
+                // Download doc images (resume flow)
+                if (resumeDocImages.length > 0 && feishuCfg) {
+                  const uniqueDocImages = [...new Set(resumeDocImages)].slice(0, 8);
+                  for (const url of uniqueDocImages) {
+                    try {
+                      const result = await downloadFeishuDocMediaByUrl({
+                        cfg: feishuCfg,
+                        url,
+                        maxBytes: mediaMaxBytes,
+                      });
+                      let contentType = result.contentType;
+                      if (!contentType) {
+                        contentType = await core.media.detectMime({ buffer: result.buffer });
+                      }
+                      if (!contentType || contentType === "application/octet-stream") {
+                        contentType = "image/png";
+                      }
+                      const saved = await core.channel.media.saveMediaBuffer(
+                        result.buffer,
+                        contentType,
+                        "inbound",
+                        mediaMaxBytes,
+                      );
+                      mediaList.push({
+                        path: saved.path,
+                        contentType: saved.contentType,
+                        placeholder: "<media:image>",
+                      });
+                    } catch { /* ignore */ }
                   }
                 }
               } else {
