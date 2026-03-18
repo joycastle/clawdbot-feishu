@@ -2,6 +2,7 @@ import type { ClawdbotPluginApi } from "clawdbot/plugin-sdk";
 import { emptyPluginConfigSchema } from "clawdbot/plugin-sdk";
 import { feishuPlugin } from "./src/channel.js";
 import { setFeishuRuntime } from "./src/runtime.js";
+import { registerAllFeishuTools } from "./src/tools/index.js";
 
 export { monitorFeishuProvider } from "./src/monitor.js";
 export {
@@ -39,6 +40,7 @@ const plugin = {
   register(api: ClawdbotPluginApi) {
     setFeishuRuntime(api.runtime);
     api.registerChannel({ plugin: feishuPlugin });
+    registerAllFeishuTools(api);
   },
 };
 
