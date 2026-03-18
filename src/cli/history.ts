@@ -59,22 +59,36 @@ async function getHistoryMessages(
   chatId: string,
   count: number
 ): Promise<Array<{ messageId: string; time: string; sender: string; type: string; content: string }>> {
-  const url = new URL("https://open.feishu.cn/open-apis/im/v1/messages");
-  url.searchParams.set("container_id_type", "chat");
-  url.searchParams.set("container_id", chatId);
-  url.searchParams.set("page_size", String(Math.min(count, 50)));
-  url.searchParams.set("sort_type", "ByCreateTimeDesc");
-
-  const resp = await fetch(url.toString(), {
-    headers: { Authorization: `Bearer ${token}` },
-  });
-  const data = await resp.json() as any;
-  if (data.code !== 0) {
-    throw new Error(`Failed to get history: ${data.msg || data.code}`);
-  }
-
   const messages: Array<{ messageId: string; time: string; sender: string; type: string; content: string }> = [];
-  for (const item of data.data?.items || []) {
+  let pageToken: string | undefined;
+  let fetched = 0;
+
+  // 分页获取，直到拿够 count 条或没有更多数据
+  while (fetched < count) {
+    const url = new URL("https://open.feishu.cn/open-apis/im/v1/messages");
+    url.searchParams.set("container_id_type", "chat");
+    url.searchParams.set("container_id", chatId);
+    url.searchParams.set("page_size", String(Math.min(count - fetched, 50)));
+    url.searchParams.set("sort_type", "ByCreateTimeDesc");
+    if (pageToken) {
+      url.searchParams.set("page_token", pageToken);
+    }
+
+    const resp = await fetch(url.toString(), {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    const data = await resp.json() as any;
+    if (data.code !== 0) {
+      throw new Error(`Failed to get history: ${data.msg || data.code}`);
+    }
+
+    const items = data.data?.items || [];
+    if (items.length === 0) break;
+
+    fetched += items.length;
+    pageToken = data.data?.page_token;
+
+    for (const item of items) {
     const messageId = item.message_id || "";
     const time = new Date(parseInt(item.create_time)).toISOString().replace("T", " ").slice(0, 19);
     const sender = item.sender?.id || "unknown";
@@ -172,6 +186,10 @@ async function getHistoryMessages(
     }
 
     messages.push({ messageId, time, sender, type, content });
+    }
+
+    // 没有下一页了就退出
+    if (!pageToken) break;
   }
 
   // 反转顺序，让旧消息在前
