@@ -92,10 +92,51 @@ channels:
 - Pairing flow for DM approval
 - User and group directory lookup
 - **Card render mode**: Optional markdown rendering with syntax highlighting
+- **Streaming cards**: Real-time text output via Card Kit streaming API
+- **Native Tools**: Direct tool calls for Feishu operations (no HTTP/CLI needed)
 
-## Services
+## Native Tools (Recommended)
 
-The Feishu plugin exposes several HTTP APIs on localhost for the AI Agent to perform advanced actions.
+The plugin registers native tools that the AI agent can call directly, without HTTP APIs or CLI scripts.
+
+| Tool | Description | Actions |
+|------|-------------|---------|
+| `feishu_doc` | Read documents | read, read_wiki |
+| `feishu_wiki` | Knowledge base | spaces, nodes, get, resolve |
+| `feishu_bitable` | Multi-dimensional tables | list_tables, list_records, create_record, update_record, delete_record |
+| `feishu_sheets` | Spreadsheets | list_sheets, read, find |
+| `feishu_task` | Task management | list_tasks, create_task, update_task, delete_task |
+| `feishu_message` | Send messages | send, send_card, reply, edit, get |
+| `feishu_history` | Chat history | list_by_chat, list_by_message |
+| `feishu_contact` | User/chat info | get_user, get_chat, list_chat_members |
+| `feishu_project` | Work items (story/issue) | list_types, list_workitems, get_workitem, create_workitem, add_comment |
+
+**Usage examples:**
+```typescript
+// Read a wiki document
+feishu_doc({ action: "read_wiki", wiki_token: "xxx" })
+
+// Get user info
+feishu_contact({ action: "get_user", user_id: "ou_xxx" })
+
+// List work items
+feishu_project({ action: "list_workitems", type_key: "issue" })
+
+// Get chat history
+feishu_history({ action: "list_by_message", message_id: "om_xxx", count: 20 })
+```
+
+**When to use HTTP APIs instead:**
+- External systems calling into the agent
+- Debugging and testing
+- Cron jobs or scheduled tasks
+- Non-agent integrations
+
+## HTTP Services (Alternative)
+
+> ⚠️ For agent internal operations, prefer Native Tools above. HTTP APIs are for external systems, debugging, and cron jobs.
+
+The Feishu plugin exposes several HTTP APIs on localhost:
 
 | Service | Port | Description |
 |---------|------|-------------|
