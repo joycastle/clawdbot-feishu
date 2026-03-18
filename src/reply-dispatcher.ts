@@ -7,6 +7,8 @@ import {
   type ReplyPayload,
 } from "clawdbot/plugin-sdk";
 import { getFeishuRuntime } from "./runtime.js";
+import { createFeishuClient } from "./client.js";
+import { resolveFeishuCredentials } from "./accounts.js";
 import { sendMessageFeishu, sendMarkdownCardFeishu, sendCardFeishu } from "./api/send.js";
 import { containsMarkdownTable, textToTableCard } from "./features/table-card.js";
 import type { FeishuConfig, MentionTarget } from "./types.js";
@@ -15,6 +17,7 @@ import {
   removeTypingIndicator,
   type TypingIndicatorState,
 } from "./features/typing.js";
+import { FeishuStreamingSession, mergeStreamingText } from "./streaming-card.js";
 
 /**
  * Detect if text contains markdown elements that benefit from card rendering.
@@ -40,6 +43,11 @@ export type CreateFeishuReplyDispatcherParams = {
 export function createFeishuReplyDispatcher(params: CreateFeishuReplyDispatcherParams) {
   const core = getFeishuRuntime();
   const { cfg, agentId, chatId, replyToMessageId, mentionTargets } = params;
+
+  const feishuCfg = cfg.channels?.feishu as FeishuConfig | undefined;
+  const renderMode = feishuCfg?.renderMode ?? "auto";
+  // Streaming is enabled by default unless explicitly disabled or renderMode is "raw"
+  const streamingEnabled = feishuCfg?.streaming !== false && renderMode !== "raw";
 
   const prefixContext = createReplyPrefixContext({
     cfg,
@@ -91,25 +99,85 @@ export function createFeishuReplyDispatcher(params: CreateFeishuReplyDispatcherP
     channel: "feishu",
   });
 
+  // Streaming state
+  let streaming: FeishuStreamingSession | null = null;
+  let streamText = "";
+  let lastPartial = "";
+  let partialUpdateQueue: Promise<void> = Promise.resolve();
+  let streamingStartPromise: Promise<void> | null = null;
+  type StreamTextUpdateMode = "snapshot" | "delta";
+
+  const queueStreamingUpdate = (
+    nextText: string,
+    options?: {
+      dedupeWithLastPartial?: boolean;
+      mode?: StreamTextUpdateMode;
+    },
+  ) => {
+    if (!nextText) return;
+    if (options?.dedupeWithLastPartial && nextText === lastPartial) return;
+    if (options?.dedupeWithLastPartial) lastPartial = nextText;
+    const mode = options?.mode ?? "snapshot";
+    streamText =
+      mode === "delta" ? `${streamText}${nextText}` : mergeStreamingText(streamText, nextText);
+    partialUpdateQueue = partialUpdateQueue.then(async () => {
+      if (streamingStartPromise) await streamingStartPromise;
+      if (streaming?.isActive()) await streaming.update(streamText);
+    });
+  };
+
+  const startStreaming = () => {
+    if (!streamingEnabled || streamingStartPromise || streaming) return;
+    streamingStartPromise = (async () => {
+      const creds = resolveFeishuCredentials(feishuCfg);
+      if (!creds) return;
+      streaming = new FeishuStreamingSession(
+        createFeishuClient(feishuCfg!),
+        creds,
+        (msg) => params.runtime.log?.(`feishu: ${msg}`),
+      );
+      try {
+        await streaming.start(chatId, "chat_id", { replyToMessageId });
+      } catch (e) {
+        params.runtime.error?.(`feishu: streaming start failed: ${String(e)}`);
+        streaming = null;
+      }
+    })();
+  };
+
+  const closeStreaming = async () => {
+    if (streamingStartPromise) await streamingStartPromise;
+    await partialUpdateQueue;
+    if (streaming?.isActive()) {
+      await streaming.close(streamText || undefined);
+    }
+    streaming = null;
+    streamingStartPromise = null;
+    streamText = "";
+    lastPartial = "";
+  };
+
   const { dispatcher, replyOptions, markDispatchIdle } =
     core.channel.reply.createReplyDispatcherWithTyping({
       responsePrefix: prefixContext.responsePrefix,
       responsePrefixContextProvider: prefixContext.responsePrefixContextProvider,
       humanDelay: core.channel.reply.resolveHumanDelayConfig(cfg, agentId),
-      onReplyStart: typingCallbacks.onReplyStart,
-      deliver: async (payload: ReplyPayload) => {
-        params.runtime.log?.(`feishu deliver called: text=${payload.text?.slice(0, 100)}`);
+      onReplyStart: () => {
+        // For explicit card mode, start streaming immediately to show "⏳ Thinking..."
+        if (streamingEnabled && renderMode === "card") {
+          startStreaming();
+        }
+        void typingCallbacks.onReplyStart?.();
+      },
+      deliver: async (payload: ReplyPayload, info: { kind: "tool" | "block" | "final" }) => {
+        params.runtime.log?.(`feishu deliver called: kind=${info?.kind} text=${payload.text?.slice(0, 100)}`);
         const text = payload.text ?? "";
         if (!text.trim()) {
           params.runtime.log?.(`feishu deliver: empty text, skipping`);
           return;
         }
 
-        // Check render mode: auto (default), raw, or card
-        const feishuCfg = cfg.channels?.feishu as FeishuConfig | undefined;
-        const renderMode = feishuCfg?.renderMode ?? "auto";
-
-        // Priority 1: Check for markdown tables → use table card for proper rendering
+        // Priority 1: Check for markdown tables → use table card (not streamed)
         if (containsMarkdownTable(text)) {
           const tableCard = textToTableCard(text);
           if (tableCard) {
@@ -124,10 +192,41 @@ export function createFeishuReplyDispatcher(params: CreateFeishuReplyDispatcherP
           }
         }
 
-        // Determine if we should use card for this message
         const useCard =
           renderMode === "card" || (renderMode === "auto" && shouldUseCard(text));
 
+        // Handle block chunks (intermediate streaming chunks from AI)
+        if (info?.kind === "block") {
+          if (!(streamingEnabled && useCard)) {
+            // Drop block chunks unless we can use them for streaming
+            return;
+          }
+          startStreaming();
+          if (streamingStartPromise) await streamingStartPromise;
+          if (streaming?.isActive()) {
+            // Accumulate block text into streaming card as delta
+            queueStreamingUpdate(text, { mode: "delta" });
+            return;
+          }
+          return;
+        }
+
+        // For final delivery with streaming enabled + card mode: ensure streaming is active
+        if (info?.kind === "final" && streamingEnabled && useCard) {
+          startStreaming();
+          if (streamingStartPromise) await streamingStartPromise;
+        }
+
+        // If streaming session is active, close it with the final text
+        if (streaming?.isActive()) {
+          if (info?.kind === "final") {
+            streamText = mergeStreamingText(streamText, text);
+            await closeStreaming();
+          }
+          return;
+        }
+
+        // Fall through to normal (non-streaming) delivery
         let isFirstChunk = true;
         if (useCard) {
           // Card mode: send as interactive card with markdown rendering
@@ -160,11 +259,15 @@ export function createFeishuReplyDispatcher(params: CreateFeishuReplyDispatcherP
           }
         }
       },
-      onError: (err, info) => {
+      onError: async (err: unknown, info: { kind: "tool" | "block" | "final" }) => {
         params.runtime.error?.(`feishu ${info.kind} reply failed: ${String(err)}`);
+        await closeStreaming();
         typingCallbacks.onIdle?.();
       },
-      onIdle: typingCallbacks.onIdle,
+      onIdle: async () => {
+        await closeStreaming();
+        typingCallbacks.onIdle?.();
+      },
     });
 
   return {
@@ -172,6 +275,12 @@ export function createFeishuReplyDispatcher(params: CreateFeishuReplyDispatcherP
     replyOptions: {
       ...replyOptions,
       onModelSelected: prefixContext.onModelSelected,
+      onPartialReply: streamingEnabled
+        ? (payload: ReplyPayload) => {
+            if (!payload.text) return;
+            queueStreamingUpdate(payload.text, { dedupeWithLastPartial: true, mode: "snapshot" });
+          }
+        : undefined,
     },
     markDispatchIdle,
   };
