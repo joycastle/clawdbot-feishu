@@ -33,6 +33,7 @@ get_view() {
 get_job_suffix() {
     case "$1" in
         develop1) echo "develop-1" ;;
+        plan) echo "design" ;;
         *) echo "$1" ;;
     esac
 }

@@ -11,6 +11,10 @@ import { registerFeishuWikiTool } from "./feishu-wiki.js";
 import { registerFeishuBitableTool } from "./feishu-bitable.js";
 import { registerFeishuSheetsTool } from "./feishu-sheets.js";
 import { registerFeishuTaskTool } from "./feishu-task.js";
+import { registerFeishuMessageTool } from "./feishu-message.js";
+import { registerFeishuHistoryTool } from "./feishu-history.js";
+import { registerFeishuContactTool } from "./feishu-contact.js";
+import { registerFeishuProjectTool } from "./feishu-project.js";
 
 export function registerAllFeishuTools(api: ClawdbotPluginApi) {
   registerFeishuDocTool(api);
@@ -18,4 +22,8 @@ export function registerAllFeishuTools(api: ClawdbotPluginApi) {
   registerFeishuBitableTool(api);
   registerFeishuSheetsTool(api);
   registerFeishuTaskTool(api);
+  registerFeishuMessageTool(api);
+  registerFeishuHistoryTool(api);
+  registerFeishuContactTool(api);
+  registerFeishuProjectTool(api);
 }
