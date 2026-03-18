@@ -1,6 +1,4 @@
-import * as fs from "node:fs";
-import * as path from "node:path";
-import * as os from "node:os";
+import * as http from "node:http";
 import * as Lark from "@larksuiteoapi/node-sdk";
 import type { ClawdbotConfig, RuntimeEnv, HistoryEntry } from "clawdbot/plugin-sdk";
 import type { FeishuConfig } from "./types.js";
@@ -24,6 +22,12 @@ import { startCronApi } from "./services/cron-api.js";
 import { startDocsRouter } from "./services/docs-router.js";
 import { startBroadcastApi } from "./services/broadcast-api.js";
 import { startRagApi } from "./services/rag-api.js";
+import { isDuplicateMessage, warmupDedupFromDisk } from "./dedup.js";
+import {
+  FixedWindowRateLimiter,
+  applyBasicWebhookRequestGuards,
+  installBodyLimitGuard,
+} from "./webhook-guard.js";
 
 export type MonitorFeishuOpts = {
   config?: ClawdbotConfig;
@@ -94,68 +98,38 @@ export async function monitorFeishuProvider(opts: MonitorFeishuOpts = {}): Promi
     return monitorWebSocket({ cfg, feishuCfg, runtime: opts.runtime, abortSignal: opts.abortSignal });
   }
 
-  log("feishu: webhook mode not implemented in monitor, use HTTP server directly");
+  if (connectionMode === "webhook") {
+    const creds = resolveFeishuCredentials(feishuCfg);
+    if (!feishuCfg || !creds) {
+      error("feishu: missing credentials (appId/appSecret); webhook disabled");
+      return;
+    }
+    return monitorWebhook({ cfg, feishuCfg, runtime: opts.runtime, abortSignal: opts.abortSignal });
+  }
+
+  log(`feishu: unknown connectionMode="${connectionMode}", defaulting to websocket`);
 }
 
-async function monitorWebSocket(params: {
+// ─── Shared event dispatcher setup ───────────────────────────────────────────
+
+type BuildEventDispatcherParams = {
   cfg: ClawdbotConfig;
   feishuCfg: FeishuConfig;
   runtime?: RuntimeEnv;
-  abortSignal?: AbortSignal;
-}): Promise<void> {
-  const { cfg, feishuCfg, runtime, abortSignal } = params;
+  chatHistories: Map<string, HistoryEntry[]>;
+};
+
+async function buildEventDispatcher({
+  cfg,
+  feishuCfg,
+  runtime,
+  chatHistories,
+}: BuildEventDispatcherParams): Promise<Lark.EventDispatcher> {
   const log = runtime?.log ?? console.log;
   const error = runtime?.error ?? console.error;
 
-  log("feishu: starting WebSocket connection...");
-
-  const wsClient = createFeishuWSClient(feishuCfg);
-  currentWsClient = wsClient;
-
-  const chatHistories = new Map<string, HistoryEntry[]>();
-
-  // ─── Message deduplication ─────────────────────────────────────────────────
-  // Feishu WebSocket may re-deliver events on reconnect (even hours later).
-  // Persist recent message_ids to disk so restarts don't lose dedup state.
-  const DEDUP_TTL_MS = 24 * 60 * 60 * 1000; // 24 hours
-  const DEDUP_FILE = path.join(
-    process.env.CLAWDBOT_DATA_DIR || path.join(os.homedir(), ".clawdbot"),
-    "feishu-dedup.json",
-  );
-  const recentMessageIds = new Map<string, number>();
-
-  // Load persisted dedup state on startup
-  try {
-    const raw = fs.readFileSync(DEDUP_FILE, "utf-8");
-    const entries = JSON.parse(raw) as [string, number][];
-    const now = Date.now();
-    for (const [id, ts] of entries) {
-      if (now - ts < DEDUP_TTL_MS) recentMessageIds.set(id, ts);
-    }
-    log(`feishu: loaded ${recentMessageIds.size} dedup entries from disk`);
-  } catch {
-    // File doesn't exist or is corrupt — start fresh
-  }
-
-  function persistDedup(): void {
-    try {
-      fs.writeFileSync(DEDUP_FILE, JSON.stringify([...recentMessageIds]), "utf-8");
-    } catch {
-      // Non-fatal — dedup still works in-memory
-    }
-  }
-
-  function isDuplicateMessage(messageId: string): boolean {
-    const now = Date.now();
-    // Purge expired entries
-    for (const [id, ts] of recentMessageIds) {
-      if (now - ts > DEDUP_TTL_MS) recentMessageIds.delete(id);
-    }
-    if (recentMessageIds.has(messageId)) return true;
-    recentMessageIds.set(messageId, now);
-    persistDedup();
-    return false;
-  }
+  // Warm up dedup cache from disk before registering event handlers
+  await warmupDedupFromDisk(log);
 
   const eventDispatcher = createEventDispatcher(feishuCfg);
 
@@ -571,11 +545,31 @@ async function monitorWebSocket(params: {
     },
   });
 
+  return eventDispatcher;
+}
+
+// ─── WebSocket transport ──────────────────────────────────────────────────────
+
+async function monitorWebSocket(params: {
+  cfg: ClawdbotConfig;
+  feishuCfg: FeishuConfig;
+  runtime?: RuntimeEnv;
+  abortSignal?: AbortSignal;
+}): Promise<void> {
+  const { cfg, feishuCfg, runtime, abortSignal } = params;
+  const log = runtime?.log ?? console.log;
+
+  log("feishu: starting WebSocket connection...");
+
+  const chatHistories = new Map<string, HistoryEntry[]>();
+  const eventDispatcher = await buildEventDispatcher({ cfg, feishuCfg, runtime, chatHistories });
+
+  const wsClient = createFeishuWSClient(feishuCfg);
+  currentWsClient = wsClient;
+
   return new Promise((resolve, reject) => {
     const cleanup = () => {
-      if (currentWsClient === wsClient) {
-        currentWsClient = null;
-      }
+      if (currentWsClient === wsClient) currentWsClient = null;
     };
 
     const handleAbort = () => {
@@ -593,16 +587,100 @@ async function monitorWebSocket(params: {
     abortSignal?.addEventListener("abort", handleAbort, { once: true });
 
     try {
-      wsClient.start({
-        eventDispatcher,
-      });
-
+      wsClient.start({ eventDispatcher });
       log("feishu: WebSocket client started");
     } catch (err) {
       cleanup();
       abortSignal?.removeEventListener("abort", handleAbort);
       reject(err);
     }
+  });
+}
+
+// ─── Webhook transport (with security guards) ─────────────────────────────────
+
+// Rate limiter shared across all webhook requests: 120 req / 60s per IP
+const webhookRateLimiter = new FixedWindowRateLimiter({
+  windowMs: 60_000,
+  maxRequests: 120,
+  maxTrackedKeys: 4_096,
+});
+
+async function monitorWebhook(params: {
+  cfg: ClawdbotConfig;
+  feishuCfg: FeishuConfig;
+  runtime?: RuntimeEnv;
+  abortSignal?: AbortSignal;
+}): Promise<void> {
+  const { cfg, feishuCfg, runtime, abortSignal } = params;
+  const log = runtime?.log ?? console.log;
+  const error = runtime?.error ?? console.error;
+
+  const port = feishuCfg.webhookPort ?? 3000;
+  const webhookPath = feishuCfg.webhookPath ?? "/feishu/events";
+  log(`feishu: starting Webhook server on port ${port}, path ${webhookPath}...`);
+
+  const chatHistories = new Map<string, HistoryEntry[]>();
+  const eventDispatcher = await buildEventDispatcher({ cfg, feishuCfg, runtime, chatHistories });
+  const webhookHandler = Lark.adaptDefault(webhookPath, eventDispatcher, { autoChallenge: true });
+
+  const server = http.createServer();
+
+  server.on("request", (req, res) => {
+    const rateLimitKey = `feishu:${webhookPath}:${req.socket.remoteAddress ?? "unknown"}`;
+    if (
+      !applyBasicWebhookRequestGuards({
+        req,
+        res,
+        rateLimiter: webhookRateLimiter,
+        rateLimitKey,
+        nowMs: Date.now(),
+        requireJsonContentType: true,
+      })
+    ) {
+      return;
+    }
+
+    const guard = installBodyLimitGuard(req, res);
+    if (guard.isTripped()) return;
+
+    void Promise.resolve(webhookHandler(req, res))
+      .catch((err) => {
+        if (!guard.isTripped()) {
+          error(`feishu: webhook handler error: ${String(err)}`);
+        }
+      })
+      .finally(() => {
+        guard.dispose();
+      });
+  });
+
+  return new Promise((resolve, reject) => {
+    const cleanup = () => server.close();
+
+    const handleAbort = () => {
+      log("feishu: abort signal received, stopping Webhook server");
+      cleanup();
+      resolve();
+    };
+
+    if (abortSignal?.aborted) {
+      cleanup();
+      resolve();
+      return;
+    }
+
+    abortSignal?.addEventListener("abort", handleAbort, { once: true });
+
+    server.listen(port, () => {
+      log(`feishu: Webhook server listening on port ${port}`);
+    });
+
+    server.on("error", (err) => {
+      error(`feishu: Webhook server error: ${String(err)}`);
+      abortSignal?.removeEventListener("abort", handleAbort);
+      reject(err);
+    });
   });
 }
 
