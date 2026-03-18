@@ -130,11 +130,11 @@ export async function downloadFeishuDocMediaByUrl(params: {
     return res;
   };
 
-  let res = await tryFetch(false);
-  if (
-    (res.status === 401 || res.status === 403) &&
-    (safeUrl.hostname.endsWith("feishu.cn") || safeUrl.hostname.endsWith("larksuite.com"))
-  ) {
+  // For Feishu/Lark URLs, always use auth (drive API requires it)
+  const isFeishuUrl = safeUrl.hostname.endsWith("feishu.cn") || safeUrl.hostname.endsWith("larksuite.com");
+  let res = await tryFetch(isFeishuUrl);
+  if (!res.ok && isFeishuUrl && res.status >= 400 && res.status < 500) {
+    // Retry with auth in case first attempt failed
     res = await tryFetch(true);
   }
   if (!res.ok) {
@@ -355,10 +355,34 @@ export async function fetchFeishuDocContent(
     const creds = resolveFeishuCredentials(cfg);
     const wantsMarkdown = Boolean(creds?.appId && creds.appSecret);
 
+    // Always fetch blocks to extract image tokens (markdown API doesn't include images)
+    log?.(`feishu-doc: fetching blocks for ${docId}`);
+    const blocksResp = await (client as any).docx.v1.documentBlock.list({
+      path: { document_id: docId },
+      params: { page_size: 500 },
+    });
+    const items: DocBlock[] = blocksResp?.data?.items ?? [];
+
+    // Extract image tokens from blocks (block_type 27 = image)
+    const base = resolveOpenApiBase(creds?.domain ?? "feishu");
+    for (const block of items) {
+      if (block.block_type === 27) {
+        const imageToken = (block as any).image?.token;
+        if (imageToken) {
+          // Construct download URL for the image
+          const imageUrl = `${base}/drive/v1/medias/${imageToken}/download`;
+          docImageUrls.push(imageUrl);
+        }
+      }
+    }
+    if (docImageUrls.length > 0) {
+      log?.(`feishu-doc: found ${docImageUrls.length} image(s) in document`);
+    }
+
+    // Try markdown content for better text formatting
     if (wantsMarkdown) {
       try {
         const token = await getTenantAccessToken(cfg);
-        const base = resolveOpenApiBase(creds!.domain);
         const url = new URL(`${base}/docs/v1/content`);
         url.searchParams.set("doc_token", docId);
         url.searchParams.set("doc_type", "docx");
@@ -374,32 +398,14 @@ export async function fetchFeishuDocContent(
         const payload = (await contentRes.json().catch(() => ({}))) as DocsContentResponse;
         const markdown = extractDocsMarkdownFromResponse(payload);
 
-        const imageRe = /!\[[^\]]*?\]\(([^)\s]+)(?:\s+\"[^\"]*\")?\)/g;
-        let safeMarkdown = markdown;
-        let match: RegExpExecArray | null;
-        while ((match = imageRe.exec(markdown)) !== null) {
-          const urlRaw = match[1];
-          if (typeof urlRaw === "string" && urlRaw.startsWith("http")) {
-            docImageUrls.push(urlRaw);
-          }
-        }
-        safeMarkdown = safeMarkdown.replace(imageRe, "<media:image>");
-
-        log?.(`feishu-doc: fetched markdown content (${safeMarkdown.length} chars)`);
-        return { title, content: safeMarkdown, docImageUrls };
+        log?.(`feishu-doc: fetched markdown content (${markdown.length} chars)`);
+        return { title, content: markdown, docImageUrls };
       } catch (err) {
         log?.(`feishu-doc: markdown fetch failed, falling back to blocks: ${String(err)}`);
       }
     }
 
-    // Fallback: Fetch blocks and render as plain text
-    log?.(`feishu-doc: fetching blocks for ${docId}`);
-    const blocksResp = await (client as any).docx.v1.documentBlock.list({
-      path: { document_id: docId },
-      params: { page_size: 500 },
-    });
-
-    const items: DocBlock[] = blocksResp?.data?.items ?? [];
+    // Fallback: render blocks as plain text
     if (items.length === 0) {
       log?.(`feishu-doc: no blocks found`);
       return { title, content: "(文档内容为空)", docImageUrls };

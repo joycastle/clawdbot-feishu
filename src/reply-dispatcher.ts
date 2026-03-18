@@ -107,6 +107,9 @@ export function createFeishuReplyDispatcher(params: CreateFeishuReplyDispatcherP
   let streamingStartPromise: Promise<void> | null = null;
   type StreamTextUpdateMode = "snapshot" | "delta";
 
+  // Track dropped block text for fallback delivery (when streaming not used)
+  let droppedBlockText = "";
+
   const queueStreamingUpdate = (
     nextText: string,
     options?: {
@@ -198,7 +201,9 @@ export function createFeishuReplyDispatcher(params: CreateFeishuReplyDispatcherP
         // Handle block chunks (intermediate streaming chunks from AI)
         if (info?.kind === "block") {
           if (!(streamingEnabled && useCard)) {
-            // Drop block chunks unless we can use them for streaming
+            // Accumulate dropped block text for final fallback (don't lose content!)
+            droppedBlockText = mergeStreamingText(droppedBlockText, text);
+            params.runtime.log?.(`feishu deliver: accumulated block text for fallback (${droppedBlockText.length} chars)`);
             return;
           }
           startStreaming();
@@ -226,11 +231,22 @@ export function createFeishuReplyDispatcher(params: CreateFeishuReplyDispatcherP
           return;
         }
 
+        // Merge any dropped block text with the current text for final delivery
+        let deliverText = text;
+        if (info?.kind === "final" && droppedBlockText) {
+          deliverText = mergeStreamingText(droppedBlockText, text);
+          params.runtime.log?.(`feishu deliver: merged dropped block text, final length=${deliverText.length}`);
+          droppedBlockText = ""; // Clear after use
+        }
+
         // Fall through to normal (non-streaming) delivery
         let isFirstChunk = true;
-        if (useCard) {
+        // Re-evaluate useCard with the merged text (might contain code blocks now)
+        const finalUseCard =
+          renderMode === "card" || (renderMode === "auto" && shouldUseCard(deliverText));
+        if (finalUseCard) {
           // Card mode: send as interactive card with markdown rendering
-          const chunks = core.channel.text.chunkTextWithMode(text, textChunkLimit, chunkMode);
+          const chunks = core.channel.text.chunkTextWithMode(deliverText, textChunkLimit, chunkMode);
           params.runtime.log?.(`feishu deliver: sending ${chunks.length} card chunks to ${chatId}`);
           for (const chunk of chunks) {
             await sendMarkdownCardFeishu({
@@ -244,7 +260,7 @@ export function createFeishuReplyDispatcher(params: CreateFeishuReplyDispatcherP
           }
         } else {
           // Raw mode: send as plain text with table conversion
-          const converted = core.channel.text.convertMarkdownTables(text, tableMode);
+          const converted = core.channel.text.convertMarkdownTables(deliverText, tableMode);
           const chunks = core.channel.text.chunkTextWithMode(converted, textChunkLimit, chunkMode);
           params.runtime.log?.(`feishu deliver: sending ${chunks.length} text chunks to ${chatId}`);
           for (const chunk of chunks) {
@@ -266,6 +282,21 @@ export function createFeishuReplyDispatcher(params: CreateFeishuReplyDispatcherP
       },
       onIdle: async () => {
         await closeStreaming();
+        // Safety: flush any remaining dropped block text that wasn't delivered
+        if (droppedBlockText) {
+          params.runtime.log?.(`feishu onIdle: flushing ${droppedBlockText.length} chars of dropped block text`);
+          const converted = core.channel.text.convertMarkdownTables(droppedBlockText, tableMode);
+          const chunks = core.channel.text.chunkTextWithMode(converted, textChunkLimit, chunkMode);
+          for (const chunk of chunks) {
+            await sendMessageFeishu({
+              cfg,
+              to: chatId,
+              text: chunk,
+              replyToMessageId,
+            });
+          }
+          droppedBlockText = "";
+        }
         typingCallbacks.onIdle?.();
       },
     });

@@ -19,7 +19,7 @@ from urllib.parse import urlparse, parse_qs
 from pathlib import Path
 
 # 配置
-PORT = 18800
+PORT = 18810
 VERTEX_PROJECT = os.environ.get("VERTEX_PROJECT", "larkbot-485707")
 VERTEX_LOCATION = os.environ.get("VERTEX_LOCATION", "us-central1")
 EXPANSION_MODEL = "gemini-2.0-flash-001"  # 便宜快速

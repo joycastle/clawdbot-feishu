@@ -4,6 +4,7 @@ import {
   recordPendingHistoryEntryIfEnabled,
   clearHistoryEntriesIfEnabled,
   DEFAULT_GROUP_HISTORY_LIMIT,
+  isSessionProcessing,
   type HistoryEntry,
 } from "clawdbot/plugin-sdk";
 import type { FeishuConfig, FeishuMessageContext, FeishuMediaInfo, MentionTarget } from "./types.js";
@@ -840,29 +841,39 @@ export async function handleFeishuMessage(params: {
   // Before processing any user message, inject a /stop to abort any ongoing run.
   // This makes the conversation feel more responsive - user can always interrupt.
   // Skip if this is already an abort message to avoid infinite loop.
+  // Only send abort if there's actually an active run (avoid unnecessary delays).
   if (!_isAbortMessage && ctx.contentType === "text") {
-    const abortEvent: FeishuMessageEvent = {
-      sender: event.sender,
-      message: {
-        ...event.message,
-        message_id: `abort_${event.message.message_id}`,
-        content: JSON.stringify({ text: "/stop" }),
-      },
-    };
+    // Pre-calculate sessionKey to check if session is processing
+    const preSessionKey = isGroup
+      ? `agent:main:feishu:group:${ctx.chatId.toLowerCase()}`
+      : `agent:main:feishu:dm:${ctx.senderOpenId?.toLowerCase() ?? "unknown"}`;
     
-    // Fire-and-forget: send abort signal before processing the actual message
-    // Don't await - let it run in parallel
-    void handleFeishuMessage({
-      ...params,
-      event: abortEvent,
-      _isAbortMessage: true,
-    }).catch(() => {
-      // Ignore abort errors
-    });
+    const sessionProcessing = isSessionProcessing(preSessionKey);
+    log(`feishu: isSessionProcessing(${preSessionKey}) = ${sessionProcessing}`);
     
-    // Small delay to let abort propagate
-    await new Promise(resolve => setTimeout(resolve, 100));
-    log(`feishu: sent abort signal before processing new message`);
+    if (sessionProcessing) {
+      const abortEvent: FeishuMessageEvent = {
+        sender: event.sender,
+        message: {
+          ...event.message,
+          message_id: `abort_${event.message.message_id}`,
+          content: JSON.stringify({ text: "/stop" }),
+        },
+      };
+      
+      // Fire-and-forget: send abort signal before processing the actual message
+      void handleFeishuMessage({
+        ...params,
+        event: abortEvent,
+        _isAbortMessage: true,
+      }).catch(() => {
+        // Ignore abort errors
+      });
+      
+      // Small delay to let abort propagate
+      await new Promise(resolve => setTimeout(resolve, 50));
+      log(`feishu: sent abort signal (session was processing)`);
+    }
   }
 
   log(`feishu: received message from ${ctx.senderOpenId} in ${ctx.chatId} (${ctx.chatType})`);

@@ -1,34 +1,8 @@
 [
   {
-    "name": "bf-nakama-ts",
-    "path": "/home/ubuntu/work/bf/nakama-ts/src",
-    "indexedAt": "2026-03-01T14:45:00.706Z",
-    "count": 3849
-  },
-  {
     "name": "clawdbot",
     "path": "/home/ubuntu/work/clawdbot/src",
     "indexedAt": "2026-03-02T18:26:10.118Z",
     "count": 11603
-  },
-  {
-    "name": "bf-nakama-lua",
-    "path": "/home/ubuntu/work/bf/nakama-lua/src",
-    "indexedAt": "2026-03-03T09:29:16.545Z",
-    "count": 3849
-  },
-  {
-    "name": "bf-server-nakama",
-    "path": "/home/ubuntu/work/bf/bingo-frenzy-server-nakama",
-    "indexedAt": "2026-03-10T07:15:00.000Z",
-    "count": 24400,
-    "language": "go"
-  },
-  {
-    "name": "bf-server-nakama-game",
-    "path": "/home/ubuntu/work/bf/bingo-frenzy-server-nakama-game",
-    "indexedAt": "2026-03-10T07:16:00.000Z",
-    "count": 23858,
-    "language": "go"
   }
 ]

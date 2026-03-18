@@ -37,7 +37,14 @@ export async function request<T>(
 
   const url = path.startsWith('http') ? path : `${BASE_URL}${path}`;
   const resp = await fetch(url, options);
-  return (await resp.json()) as ApiResponse<T>;
+  const text = await resp.text();
+  
+  try {
+    return JSON.parse(text) as ApiResponse<T>;
+  } catch (e) {
+    console.error(`[FeishuProject] JSON parse error for ${method} ${path}:`, text.slice(0, 500));
+    throw new Error(`Invalid JSON response: ${text.slice(0, 200)}`);
+  }
 }
 
 /**

@@ -1147,6 +1147,93 @@ async function handleRequest(req: http.IncomingMessage, res: http.ServerResponse
       return;
     }
 
+    // ==================== 版本工作项查询 ====================
+    // GET /version/workitems?version=3.11&typeKey=story&roles=DE,FE
+    // 查询指定版本下的工作项，可按角色筛选
+    if (path === '/version/workitems' && req.method === 'GET') {
+      const versionQuery = query.version as string;
+      if (!versionQuery) {
+        errorResponse(res, 'version parameter is required (e.g., version=3.11)');
+        return;
+      }
+      const workItemTypeKey = (query.typeKey as string) || 'story';
+      const rolesFilter = query.roles ? (query.roles as string).split(',').map(r => r.trim()) : [];
+
+      // 1. 查找匹配的版本（使用 searchByParams）
+      const versionsResp = await client.workitem.searchByParams(ctx, projectKey, 'version', {
+        page_size: 200,
+        page_num: 1,
+      });
+      if (versionsResp.err_code !== 0) {
+        errorResponse(res, `Failed to fetch versions: ${versionsResp.err_msg}`, 400);
+        return;
+      }
+
+      const versions = versionsResp.data || [];
+      const matchedVersion = versions.find((v: any) => 
+        v.name?.includes(versionQuery) || v.name?.includes(`| ${versionQuery}`)
+      );
+      if (!matchedVersion) {
+        errorResponse(res, `No version found matching "${versionQuery}"`, 404);
+        return;
+      }
+
+      // 2. 搜索绑定到该版本的工作项（使用 planning_version 字段）
+      const searchResp = await client.workitem.searchByParams(ctx, projectKey, workItemTypeKey, {
+        search_group: {
+          conjunction: 'AND',
+          search_params: [
+            { param_key: 'planning_version', value: [matchedVersion.id], operator: 'HAS ANY OF' }
+          ],
+          search_groups: []
+        },
+        page_num: 1,
+        page_size: 200,
+      });
+      if (searchResp.err_code !== 0) {
+        errorResponse(res, `Failed to search work items: ${searchResp.err_msg}`, 400);
+        return;
+      }
+
+      let workItems = searchResp.data || [];
+
+      // 3. 如果指定了角色筛选
+      if (rolesFilter.length > 0) {
+        workItems = workItems.filter((item: any) => {
+          const roleOwners = item.fields?.find((f: any) => f.field_key === 'role_owners')?.field_value || [];
+          return rolesFilter.some(role => 
+            roleOwners.some((ro: any) => ro.role === role && ro.owners?.length > 0)
+          );
+        });
+      }
+
+      // 4. 格式化输出
+      const result = workItems.map((item: any) => {
+        const roleOwners = item.fields?.find((f: any) => f.field_key === 'role_owners')?.field_value || [];
+        const roles: Record<string, string[]> = {};
+        for (const ro of roleOwners) {
+          if (ro.owners?.length > 0) {
+            roles[ro.role] = ro.owners;
+          }
+        }
+        return {
+          id: item.id,
+          name: item.name,
+          status: item.sub_stage,
+          roles,
+        };
+      });
+
+      jsonResponse(res, {
+        version: { id: matchedVersion.id, name: matchedVersion.name },
+        typeKey: workItemTypeKey,
+        rolesFilter: rolesFilter.length > 0 ? rolesFilter : 'none',
+        total: result.length,
+        workItems: result,
+      });
+      return;
+    }
+
     errorResponse(res, 'Not found', 404);
   } catch (err) {
     errorResponse(res, err instanceof Error ? err.message : 'Unknown error', 500);
