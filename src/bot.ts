@@ -116,6 +116,110 @@ async function resolveFeishuSenderName(params: {
   }
 }
 
+// ─── Group History Context ───────────────────────────────────────────────────
+// Fetch recent chat history via Feishu API to provide context for group messages
+// This helps the agent understand conversation flow even when not @mentioned in every message
+
+type RecentHistoryEntry = {
+  senderId: string;
+  senderName?: string;
+  content: string;
+  timestamp: number;
+  messageId: string;
+};
+
+async function fetchRecentChatHistory(params: {
+  feishuCfg: FeishuConfig;
+  chatId: string;
+  currentMessageId: string;
+  limit: number;
+  filterBySenderId?: string; // If provided, only return messages from this user (+ bot replies)
+  includeBotReplies?: boolean; // If true, include bot's replies in the history
+  log: (...args: any[]) => void;
+}): Promise<RecentHistoryEntry[]> {
+  const { feishuCfg, chatId, currentMessageId, limit, filterBySenderId, includeBotReplies, log } = params;
+  
+  try {
+    const client = createFeishuClient(feishuCfg);
+    // If filtering by user, fetch more to ensure we get enough after filtering
+    const fetchSize = filterBySenderId ? Math.min((limit + 1) * 3, 50) : Math.min(limit + 1, 50);
+    const resp = (await client.im.message.list({
+      params: {
+        container_id_type: "chat",
+        container_id: chatId,
+        page_size: fetchSize,
+        sort_type: "ByCreateTimeDesc",
+      },
+    })) as any;
+
+    if (resp.code !== 0) {
+      log(`feishu: failed to fetch chat history: ${resp.msg}`);
+      return [];
+    }
+
+    const items = resp.data?.items || [];
+    const entries: RecentHistoryEntry[] = [];
+
+    for (const item of items) {
+      // Skip current message
+      if (item.message_id === currentMessageId) continue;
+      
+      const isBot = item.sender?.sender_type === "app";
+      
+      // Filter logic
+      if (filterBySenderId) {
+        // When filtering by user: include user's messages + optionally bot replies
+        if (isBot) {
+          if (!includeBotReplies) continue;
+        } else if (item.sender?.id !== filterBySenderId) {
+          continue;
+        }
+      } else {
+        // Default: skip bot messages
+        if (isBot) continue;
+      }
+      
+      const msgType = item.msg_type || "text";
+      let content = "";
+      
+      try {
+        const parsed = JSON.parse(item.body?.content || "{}");
+        if (msgType === "text") {
+          content = parsed.text || "";
+        } else if (msgType === "post") {
+          // Rich text - extract flat text
+          const postContent = parsed.content || parsed.zh_cn?.content || [];
+          content = postContent
+            .flat()
+            .map((seg: any) => seg.text || seg.content || "")
+            .join("");
+        } else {
+          content = `[${msgType}]`;
+        }
+      } catch {
+        content = "[parse error]";
+      }
+
+      if (!content) continue;
+
+      entries.push({
+        senderId: isBot ? "[bot]" : (item.sender?.id || "unknown"),
+        content,
+        timestamp: item.create_time ? Number(item.create_time) : Date.now(),
+        messageId: item.message_id || "",
+      });
+
+      if (entries.length >= limit) break;
+    }
+
+    // Return in chronological order (oldest first)
+    return entries.reverse();
+  } catch (err) {
+    log(`feishu: error fetching chat history: ${String(err)}`);
+    return [];
+  }
+}
+
 function parseMessageContent(content: string, messageType: string): string {
   try {
     const parsed = JSON.parse(content);
@@ -1811,6 +1915,71 @@ export async function handleFeishuMessage(params: {
     });
 
     let combinedBody = body;
+
+    // ── Group History Context: fetch recent messages via API ──
+    // Two-layer context: 1) Global recent messages, 2) Per-user conversation thread
+    const groupHistoryContextEnabled = feishuCfg?.groupHistoryContext !== false;
+    const groupHistoryContextLimit = feishuCfg?.groupHistoryContextLimit ?? 50;
+    const perUserHistoryLimit = 15; // Per-user conversation history
+    
+    if (isGroup && groupHistoryContextEnabled && feishuCfg) {
+      // Layer 1: Global recent messages (for group context awareness)
+      const recentHistory = await fetchRecentChatHistory({
+        feishuCfg,
+        chatId: ctx.chatId,
+        currentMessageId: ctx.messageId,
+        limit: groupHistoryContextLimit,
+        log,
+      });
+      
+      // Layer 2: Per-user conversation thread (user's messages + bot replies)
+      const userHistory = await fetchRecentChatHistory({
+        feishuCfg,
+        chatId: ctx.chatId,
+        currentMessageId: ctx.messageId,
+        limit: perUserHistoryLimit,
+        filterBySenderId: ctx.senderOpenId,
+        includeBotReplies: true,
+        log,
+      });
+      
+      let historyContext = "";
+      
+      // Add per-user history first (more relevant for this conversation)
+      if (userHistory.length > 0) {
+        const senderLabel = ctx.senderName || ctx.senderOpenId;
+        const userHistoryText = userHistory
+          .map((entry) => {
+            const speaker = entry.senderId === "[bot]" ? "You" : senderLabel;
+            return `${speaker}: ${entry.content}`;
+          })
+          .join("\n");
+        historyContext += `[Previous conversation with ${senderLabel}]\n${userHistoryText}\n[End of previous conversation]\n\n`;
+        log(`feishu: prepended ${userHistory.length} per-user history entries for ${ctx.senderOpenId}`);
+      }
+      
+      // Add global recent messages (for broader group context)
+      if (recentHistory.length > 0) {
+        const globalHistoryText = recentHistory
+          .map((entry) =>
+            core.channel.reply.formatAgentEnvelope({
+              channel: "Feishu",
+              from: ctx.chatId,
+              timestamp: entry.timestamp,
+              body: `${entry.senderId}: ${entry.content}`,
+              envelope: envelopeOptions,
+            })
+          )
+          .join("\n");
+        historyContext += globalHistoryText + "\n";
+        log(`feishu: prepended ${recentHistory.length} global recent messages as context`);
+      }
+      
+      if (historyContext) {
+        combinedBody = `${historyContext}${combinedBody}`;
+      }
+    }
+
     // Thread-aware history key: messages in a topic get their own history
     const historyKey = isGroup
       ? (contextIsolation && ctx.rootId ? `${ctx.chatId}:thread:${ctx.rootId}` : ctx.chatId)

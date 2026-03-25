@@ -110,6 +110,28 @@ export function createFeishuReplyDispatcher(params: CreateFeishuReplyDispatcherP
   // Track dropped block text for fallback delivery (when streaming not used)
   let droppedBlockText = "";
 
+  // Track sent messages to prevent duplicate sends
+  const sentMessageHashes = new Set<string>();
+  const hashText = (text: string): string => {
+    // Simple hash for deduplication (first 200 chars + length)
+    const normalized = text.trim().slice(0, 200);
+    return `${normalized.length}:${normalized}`;
+  };
+  const wasAlreadySent = (text: string): boolean => {
+    const hash = hashText(text);
+    if (sentMessageHashes.has(hash)) {
+      params.runtime.log?.(`feishu: skipping duplicate message (hash=${hash.slice(0, 50)}...)`);
+      return true;
+    }
+    sentMessageHashes.add(hash);
+    // Keep set bounded
+    if (sentMessageHashes.size > 50) {
+      const first = sentMessageHashes.values().next().value;
+      if (first) sentMessageHashes.delete(first);
+    }
+    return false;
+  };
+
   const queueStreamingUpdate = (
     nextText: string,
     options?: {
@@ -173,7 +195,7 @@ export function createFeishuReplyDispatcher(params: CreateFeishuReplyDispatcherP
         void typingCallbacks.onReplyStart?.();
       },
       deliver: async (payload: ReplyPayload, info: { kind: "tool" | "block" | "final" }) => {
-        params.runtime.log?.(`feishu deliver called: kind=${info?.kind} text=${payload.text?.slice(0, 100)}`);
+        params.runtime.log?.(`[DEDUP-DEBUG] deliver called: kind=${info?.kind} len=${payload.text?.length ?? 0} text="${payload.text?.slice(0, 80)}..."`);
         const text = payload.text ?? "";
         if (!text.trim()) {
           params.runtime.log?.(`feishu deliver: empty text, skipping`);
@@ -240,6 +262,13 @@ export function createFeishuReplyDispatcher(params: CreateFeishuReplyDispatcherP
         }
 
         // Fall through to normal (non-streaming) delivery
+        // Check for duplicate before sending
+        if (wasAlreadySent(deliverText)) {
+          params.runtime.log?.(`feishu deliver: skipping duplicate final delivery`);
+          droppedBlockText = ""; // Still clear to prevent onIdle resend
+          return;
+        }
+
         let isFirstChunk = true;
         // Re-evaluate useCard with the merged text (might contain code blocks now)
         const finalUseCard =
@@ -274,6 +303,12 @@ export function createFeishuReplyDispatcher(params: CreateFeishuReplyDispatcherP
             isFirstChunk = false;
           }
         }
+
+        // Safety: ensure droppedBlockText is cleared after any successful final delivery
+        // to prevent duplicate sends in onIdle
+        if (info?.kind === "final") {
+          droppedBlockText = "";
+        }
       },
       onError: async (err: unknown, info: { kind: "tool" | "block" | "final" }) => {
         params.runtime.error?.(`feishu ${info.kind} reply failed: ${String(err)}`);
@@ -283,19 +318,33 @@ export function createFeishuReplyDispatcher(params: CreateFeishuReplyDispatcherP
       onIdle: async () => {
         await closeStreaming();
         // Safety: flush any remaining dropped block text that wasn't delivered
-        if (droppedBlockText) {
-          params.runtime.log?.(`feishu onIdle: flushing ${droppedBlockText.length} chars of dropped block text`);
-          const converted = core.channel.text.convertMarkdownTables(droppedBlockText, tableMode);
-          const chunks = core.channel.text.chunkTextWithMode(converted, textChunkLimit, chunkMode);
-          for (const chunk of chunks) {
-            await sendMessageFeishu({
-              cfg,
-              to: chatId,
-              text: chunk,
-              replyToMessageId,
-            });
+        // IMPORTANT: Save and clear BEFORE sending to prevent duplicate sends
+        // if onIdle is called multiple times (e.g., from markDispatchIdle + dispatcher.onIdle)
+        const textToFlush = droppedBlockText;
+        droppedBlockText = ""; // Clear immediately to prevent duplicates
+        
+        // DEBUG: track onIdle calls to diagnose duplicate sends
+        params.runtime.log?.(`[DEDUP-DEBUG] onIdle called, textToFlush=${textToFlush.length} chars, sentHashes=${sentMessageHashes.size}`);
+        
+        if (textToFlush) {
+          // Check for duplicate before sending
+          if (wasAlreadySent(textToFlush)) {
+            params.runtime.log?.(`feishu onIdle: SKIPPED duplicate flush (${textToFlush.length} chars)`);
+          } else {
+            params.runtime.log?.(`feishu onIdle: flushing ${textToFlush.length} chars of dropped block text`);
+            const converted = core.channel.text.convertMarkdownTables(textToFlush, tableMode);
+            const chunks = core.channel.text.chunkTextWithMode(converted, textChunkLimit, chunkMode);
+            params.runtime.log?.(`feishu onIdle: sending ${chunks.length} chunks to ${chatId}`);
+            for (const chunk of chunks) {
+              await sendMessageFeishu({
+                cfg,
+                to: chatId,
+                text: chunk,
+                replyToMessageId,
+              });
+            }
+            params.runtime.log?.(`feishu onIdle: done sending to ${chatId}`);
           }
-          droppedBlockText = "";
         }
         typingCallbacks.onIdle?.();
       },

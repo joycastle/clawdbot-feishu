@@ -15,8 +15,11 @@ import { registerFeishuMessageTool } from "./feishu-message.js";
 import { registerFeishuHistoryTool } from "./feishu-history.js";
 import { registerFeishuContactTool } from "./feishu-contact.js";
 import { registerFeishuProjectTool } from "./feishu-project.js";
+import { registerMemoryWriteTool } from "./memory-write.js";
+import { registerMemoryReadTool } from "./memory-read.js";
 
 export function registerAllFeishuTools(api: ClawdbotPluginApi) {
+  // Feishu tools
   registerFeishuDocTool(api);
   registerFeishuWikiTool(api);
   registerFeishuBitableTool(api);
@@ -26,4 +29,7 @@ export function registerAllFeishuTools(api: ClawdbotPluginApi) {
   registerFeishuHistoryTool(api);
   registerFeishuContactTool(api);
   registerFeishuProjectTool(api);
+  // Memory tools
+  registerMemoryWriteTool(api);
+  registerMemoryReadTool(api);
 }

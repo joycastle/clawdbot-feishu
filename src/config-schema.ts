@@ -94,6 +94,9 @@ export const FeishuConfigSchema = z
     streaming: z.boolean().optional(), // 流式卡片输出，边生成边推送（默认自动启用，设为 false 禁用）
     confirmMediaCost: z.boolean().optional(), // prompt user to confirm cost before processing audio/video
     contextIsolation: z.boolean().optional(), // per-user, per-group, per-topic context isolation (default: true)
+    // ── Group History Context ──
+    groupHistoryContext: z.boolean().optional(), // 群聊消息处理时自动拉取最近历史作为上下文 (default: true)
+    groupHistoryContextLimit: z.number().int().min(1).max(100).optional(), // 拉取历史消息数量 (default: 50)
     // ── Bitable Video Analysis ──
     bitableAppToken: z.string().optional(), // bitable app token for video attachment table
     bitableTableToken: z.string().optional(), // bitable table id for video attachment table

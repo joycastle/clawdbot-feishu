@@ -1149,11 +1149,12 @@ async function handleRequest(req: http.IncomingMessage, res: http.ServerResponse
 
     // ==================== 版本工作项查询 ====================
     // GET /version/workitems?version=3.11&typeKey=story&roles=DE,FE
+    // GET /version/workitems?version=current  -- 自动找当前进行中的版本
     // 查询指定版本下的工作项，可按角色筛选
     if (path === '/version/workitems' && req.method === 'GET') {
       const versionQuery = query.version as string;
       if (!versionQuery) {
-        errorResponse(res, 'version parameter is required (e.g., version=3.11)');
+        errorResponse(res, 'version parameter is required (e.g., version=3.11 or version=current)');
         return;
       }
       const workItemTypeKey = (query.typeKey as string) || 'story';
@@ -1170,9 +1171,39 @@ async function handleRequest(req: http.IncomingMessage, res: http.ServerResponse
       }
 
       const versions = versionsResp.data || [];
-      const matchedVersion = versions.find((v: any) => 
-        v.name?.includes(versionQuery) || v.name?.includes(`| ${versionQuery}`)
-      );
+      let matchedVersion: any = null;
+
+      if (versionQuery.toLowerCase() === 'current') {
+        // 简单逻辑：有今天的就发今天，没有就找今天往后最近的
+        const today = new Date();
+        const todayStr = `${today.getUTCMonth() + 1}.${today.getUTCDate()}`; // 如 "3.25"
+        const todayStart = new Date(Date.UTC(today.getUTCFullYear(), today.getUTCMonth(), today.getUTCDate())).getTime();
+        
+        // 1. 先找版本名包含今天日期的（如 "3.25"）
+        matchedVersion = versions.find((v: any) => 
+          v.name?.includes(`| ${todayStr}`) || v.name?.includes(todayStr)
+        );
+        
+        // 2. 没有的话，找封版日期 >= 今天 且最近的
+        if (!matchedVersion) {
+          const futureVersions = versions
+            .map((v: any) => {
+              const envelopeField = v.fields?.find((f: any) => f.field_key === 'envelope_date');
+              const envelopeDate = envelopeField?.field_value || 0;
+              return { ...v, envelopeDate };
+            })
+            .filter((v: any) => v.envelopeDate >= todayStart)
+            .sort((a: any, b: any) => a.envelopeDate - b.envelopeDate);
+          
+          matchedVersion = futureVersions[0] || versions[0]; // fallback to first version
+        }
+      } else {
+        // 原有逻辑：模糊匹配版本名
+        matchedVersion = versions.find((v: any) => 
+          v.name?.includes(versionQuery) || v.name?.includes(`| ${versionQuery}`)
+        );
+      }
+
       if (!matchedVersion) {
         errorResponse(res, `No version found matching "${versionQuery}"`, 404);
         return;
@@ -1224,8 +1255,26 @@ async function handleRequest(req: http.IncomingMessage, res: http.ServerResponse
         };
       });
 
+      // 提取版本的额外信息
+      const envelopeField = matchedVersion.fields?.find((f: any) => f.field_key === 'envelope_date');
+      const envelopeDate = envelopeField?.field_value;
+      const envelopeDateStr = envelopeDate ? new Date(envelopeDate).toISOString().split('T')[0] : null;
+      
+      // 从版本名提取周几信息（格式如 "r3.202.0| 3.25"）
+      const versionNameMatch = matchedVersion.name?.match(/\|\s*(\d+)\.(\d+)/);
+      const versionDateStr = versionNameMatch 
+        ? `${versionNameMatch[1]}月${versionNameMatch[2]}日`
+        : null;
+
       jsonResponse(res, {
-        version: { id: matchedVersion.id, name: matchedVersion.name },
+        version: { 
+          id: matchedVersion.id, 
+          name: matchedVersion.name,
+          url: `https://project.feishu.cn/${matchedVersion.simple_name || projectKey}/version/detail/${matchedVersion.id}`,
+          sub_stage: matchedVersion.sub_stage,
+          envelope_date: envelopeDateStr,
+          version_date: versionDateStr,  // 从名字提取的日期（如 "3月25日"）
+        },
         typeKey: workItemTypeKey,
         rolesFilter: rolesFilter.length > 0 ? rolesFilter : 'none',
         total: result.length,

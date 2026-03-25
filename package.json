@@ -54,6 +54,7 @@
     "@m1heng-clawd/feishu": "^0.1.10",
     "better-sqlite3": "^12.6.2",
     "chokidar": "^5.0.0",
+    "docx": "^9.6.1",
     "tree-sitter": "^0.21.1",
     "tree-sitter-go": "^0.21.0",
     "tree-sitter-typescript": "^0.23.2",

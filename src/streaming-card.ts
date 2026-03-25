@@ -98,6 +98,29 @@ export function mergeStreamingText(
   if (previous.includes(next)) {
     return previous;
   }
+
+  // Check if next starts somewhere in the middle of previous (partial resend)
+  // e.g., previous="让我帮你分析这个问题" next="分析这个问题，首先..."
+  for (let i = 1; i < previous.length; i++) {
+    const suffix = previous.slice(i);
+    if (next.startsWith(suffix)) {
+      // next is a continuation from the middle of previous
+      return previous + next.slice(suffix.length);
+    }
+  }
+
+  // CONSERVATIVE: If we can't determine relationship, prefer the longer one
+  // (assuming it's the more complete version). Only fallback to append if
+  // they appear to be genuinely different content.
+  if (previous.length > next.length * 2) {
+    // previous is much longer, likely more complete
+    return previous;
+  }
+  if (next.length > previous.length * 2) {
+    // next is much longer, likely more complete
+    return next;
+  }
+
   // Fallback for fragmented partial chunks: append as-is to avoid losing tokens.
   return `${previous}${next}`;
 }
