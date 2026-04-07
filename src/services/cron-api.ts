@@ -13,11 +13,25 @@ import * as path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { createRequire } from 'node:module';
 
-// 从 node_modules 引用 clawdbot 的 gateway 工具
+// callGateway is an internal openclaw API not exposed via plugin-sdk subpaths.
+// Resolve it dynamically from the openclaw package at runtime.
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const require = createRequire(import.meta.url);
-const gatewayPath = path.resolve(__dirname, '../../node_modules/clawdbot/dist/agents/tools/gateway.js');
-const { callGatewayTool } = require(gatewayPath);
+
+let _callGateway: ((opts: { method: string; params?: unknown }) => Promise<unknown>) | null = null;
+
+async function getCallGateway() {
+  if (_callGateway) return _callGateway;
+  // The extension runs inside the openclaw process, so openclaw is resolvable
+  const gatewayMod = require('openclaw/dist/plugin-sdk/src/gateway/call.js');
+  _callGateway = gatewayMod.callGateway;
+  return _callGateway!;
+}
+
+async function callGatewayTool(method: string, _opts: unknown, params?: unknown): Promise<unknown> {
+  const callGateway = await getCallGateway();
+  return callGateway({ method, params });
+}
 
 const PORT = 18797;
 let server: http.Server | null = null;
@@ -122,7 +136,7 @@ async function handleRequest(req: http.IncomingMessage, res: http.ServerResponse
     errorResponse(res, `Not Found: ${path}`, 404);
   } catch (err: any) {
     if (err?.message?.includes('connect ECONNREFUSED')) {
-      errorResponse(res, 'Gateway not running (ECONNREFUSED). Please make sure clawdbot is started.', 503);
+      errorResponse(res, 'Gateway not running (ECONNREFUSED). Please make sure openclaw is started.', 503);
     } else {
       console.error('[cron-api] Error:', err);
       errorResponse(res, String(err), 500);
