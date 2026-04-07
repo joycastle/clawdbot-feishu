@@ -11,7 +11,8 @@
  * through the WebSocket EventDispatcher.
  */
 
-import type { ClawdbotConfig, HistoryEntry } from "clawdbot/plugin-sdk";
+import type { ClawdbotConfig } from "openclaw/plugin-sdk";
+import type { HistoryEntry } from "openclaw/plugin-sdk/feishu";
 import { estimateMediaCost, formatFileSize, type CostEstimate } from "./cost-estimator.js";
 import { sendCardFeishu, updateCardFeishu } from "../api/send.js";
 import type { FeishuMessageEvent } from "../bot.js";

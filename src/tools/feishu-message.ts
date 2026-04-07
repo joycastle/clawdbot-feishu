@@ -10,7 +10,7 @@
  */
 
 import { Type, type Static } from "@sinclair/typebox";
-import type { ClawdbotPluginApi } from "clawdbot/plugin-sdk";
+import type { OpenClawPluginApi } from "openclaw/plugin-sdk";
 import type { FeishuConfig } from "../types.js";
 import { resolveFeishuCredentials } from "../accounts.js";
 import {
@@ -66,7 +66,7 @@ function json(data: unknown) {
 
 // ─── Tool Registration ────────────────────────────────────────────────────────
 
-export function registerFeishuMessageTool(api: ClawdbotPluginApi) {
+export function registerFeishuMessageTool(api: OpenClawPluginApi) {
   api.registerTool(
     (ctx) => {
       const feishuCfg = ctx.config?.channels?.feishu as FeishuConfig | undefined;
@@ -76,7 +76,7 @@ export function registerFeishuMessageTool(api: ClawdbotPluginApi) {
       const cfg = ctx.config!;
 
       return {
-        name: "feishu_message",
+        name: "joycastle_feishu_message",
         label: "Feishu Message",
         description:
           "发送、回复、编辑飞书消息。" +
@@ -153,6 +153,6 @@ export function registerFeishuMessageTool(api: ClawdbotPluginApi) {
         },
       };
     },
-    { name: "feishu_message" },
+    { name: "joycastle_feishu_message" },
   );
 }

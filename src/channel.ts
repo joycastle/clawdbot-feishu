@@ -1,5 +1,5 @@
-import type { ChannelPlugin, ClawdbotConfig } from "clawdbot/plugin-sdk";
-import { DEFAULT_ACCOUNT_ID, PAIRING_APPROVED_MESSAGE } from "clawdbot/plugin-sdk";
+import type { ChannelPlugin, ClawdbotConfig } from "openclaw/plugin-sdk";
+import { DEFAULT_ACCOUNT_ID, PAIRING_APPROVED_MESSAGE } from "openclaw/plugin-sdk/feishu";
 import { getFeishuExtDir } from "./utils/paths.js";
 import type { ResolvedFeishuAccount, FeishuConfig } from "./types.js";
 import { resolveFeishuAccount, resolveFeishuCredentials } from "./accounts.js";
@@ -14,7 +14,8 @@ import {
   listFeishuDirectoryPeersLive,
   listFeishuDirectoryGroupsLive,
 } from "./directory.js";
-import { feishuOnboardingAdapter } from "./onboarding.js";
+// onboarding adapter is no longer part of ChannelPlugin in openclaw SDK
+// import { feishuOnboardingAdapter } from "./onboarding.js";
 
 const meta = {
   id: "feishu",
@@ -25,7 +26,7 @@ const meta = {
   blurb: "飞书/Lark enterprise messaging.",
   aliases: ["lark"],
   order: 70,
-} as const;
+};
 
 export const feishuPlugin: ChannelPlugin<ResolvedFeishuAccount> = {
   id: "feishu",
@@ -76,7 +77,9 @@ export const feishuPlugin: ChannelPlugin<ResolvedFeishuAccount> = {
     },
   },
   actions: {
-    listActions: () => ["poll"],
+    describeMessageTool: () => ({
+      actions: ["poll"],
+    }),
   },
   groups: {
     resolveToolPolicy: resolveFeishuGroupToolPolicy,
@@ -177,7 +180,6 @@ export const feishuPlugin: ChannelPlugin<ResolvedFeishuAccount> = {
       },
     }),
   },
-  onboarding: feishuOnboardingAdapter,
   messaging: {
     normalizeTarget: normalizeFeishuTarget,
     targetResolver: {

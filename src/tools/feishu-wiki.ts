@@ -9,7 +9,7 @@
  */
 
 import { Type, type Static } from "@sinclair/typebox";
-import type { ClawdbotPluginApi } from "clawdbot/plugin-sdk";
+import type { OpenClawPluginApi } from "openclaw/plugin-sdk";
 import type { FeishuConfig } from "../types.js";
 import { createFeishuClient } from "../client.js";
 import { resolveFeishuCredentials } from "../accounts.js";
@@ -53,7 +53,7 @@ function json(data: unknown) {
 
 // ─── Tool Registration ────────────────────────────────────────────────────────
 
-export function registerFeishuWikiTool(api: ClawdbotPluginApi) {
+export function registerFeishuWikiTool(api: OpenClawPluginApi) {
   api.registerTool(
     (ctx) => {
       const feishuCfg = ctx.config?.channels?.feishu as FeishuConfig | undefined;
@@ -63,7 +63,7 @@ export function registerFeishuWikiTool(api: ClawdbotPluginApi) {
       const client = createFeishuClient(feishuCfg!);
 
       return {
-        name: "feishu_wiki",
+        name: "joycastle_feishu_wiki",
         label: "Feishu Wiki",
         description:
           "飞书知识库（Wiki）操作。" +
@@ -98,6 +98,6 @@ export function registerFeishuWikiTool(api: ClawdbotPluginApi) {
         },
       };
     },
-    { name: "feishu_wiki" },
+    { name: "joycastle_feishu_wiki" },
   );
 }

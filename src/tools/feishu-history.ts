@@ -7,7 +7,7 @@
  */
 
 import { Type, type Static } from "@sinclair/typebox";
-import type { ClawdbotPluginApi } from "clawdbot/plugin-sdk";
+import type { OpenClawPluginApi } from "openclaw/plugin-sdk";
 import type { FeishuConfig } from "../types.js";
 import { createFeishuClient } from "../client.js";
 import { resolveFeishuCredentials } from "../accounts.js";
@@ -70,7 +70,7 @@ function parseContent(msgType: string, bodyContent?: string): string {
 
 // ─── Tool Registration ────────────────────────────────────────────────────────
 
-export function registerFeishuHistoryTool(api: ClawdbotPluginApi) {
+export function registerFeishuHistoryTool(api: OpenClawPluginApi) {
   api.registerTool(
     (ctx) => {
       const feishuCfg = ctx.config?.channels?.feishu as FeishuConfig | undefined;
@@ -134,7 +134,7 @@ export function registerFeishuHistoryTool(api: ClawdbotPluginApi) {
       }
 
       return {
-        name: "feishu_history",
+        name: "joycastle_feishu_history",
         label: "Feishu History",
         description:
           "获取飞书聊天历史消息。" +
@@ -165,6 +165,6 @@ export function registerFeishuHistoryTool(api: ClawdbotPluginApi) {
         },
       };
     },
-    { name: "feishu_history" },
+    { name: "joycastle_feishu_history" },
   );
 }

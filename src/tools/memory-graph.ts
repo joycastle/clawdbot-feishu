@@ -6,7 +6,7 @@
  */
 
 import { Type, type Static } from "@sinclair/typebox";
-import type { ClawdbotPluginApi } from "clawdbot/plugin-sdk";
+import type { OpenClawPluginApi } from "openclaw/plugin-sdk";
 
 // ─── Schema ──────────────────────────────────────────────────────────────────
 
@@ -257,12 +257,12 @@ async function handleMemoryGraph(params: MemoryGraphParams) {
 
 // ─── Registration ────────────────────────────────────────────────────────────
 
-export function registerMemoryGraphTool(api: ClawdbotPluginApi) {
+export function registerMemoryGraphTool(api: OpenClawPluginApi) {
   // ⚠️ 重要：registerTool 必须用工厂函数签名 (ctx) => ({...})
   // 不能用 { inputSchema } 对象签名，否则会报 Cannot read properties of undefined (reading 'properties')
   api.registerTool(
     (_ctx) => ({
-      name: "memory_graph",
+      name: "joycastle_memory_graph",
       label: "Memory Graph",
       description:
         "实体关系图数据库。用于存储和查询人物、项目、概念之间的关系。\n\n" +
@@ -289,6 +289,6 @@ export function registerMemoryGraphTool(api: ClawdbotPluginApi) {
         return handleMemoryGraph(params);
       },
     }),
-    { name: "memory_graph" },
+    { name: "joycastle_memory_graph" },
   );
 }

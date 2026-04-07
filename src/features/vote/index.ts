@@ -14,7 +14,7 @@
  *   5. Feishu auto-broadcasts the update to all users
  */
 
-import type { ClawdbotConfig } from "clawdbot/plugin-sdk";
+import type { ClawdbotConfig } from "openclaw/plugin-sdk";
 import type { FeishuConfig } from "../../types.js";
 import type { VoteData } from "./store.js";
 import { loadVoteData, saveVoteData, withLock } from "./store.js";

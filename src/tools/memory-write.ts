@@ -11,7 +11,7 @@
 import * as fs from "node:fs";
 import * as path from "node:path";
 import { Type, type Static } from "@sinclair/typebox";
-import type { ClawdbotPluginApi } from "clawdbot/plugin-sdk";
+import type { OpenClawPluginApi } from "openclaw/plugin-sdk";
 
 // ─── Schema ──────────────────────────────────────────────────────────────────
 
@@ -110,14 +110,14 @@ function ensureDir(filePath: string): void {
 
 // ─── Tool Registration ────────────────────────────────────────────────────────
 
-export function registerMemoryWriteTool(api: ClawdbotPluginApi) {
+export function registerMemoryWriteTool(api: OpenClawPluginApi) {
   api.registerTool(
     (ctx) => {
       // Get workspace root from config or default
       const workspaceRoot = process.env.CLAWDBOT_WORKSPACE || process.cwd();
 
       return {
-        name: "memory_write",
+        name: "joycastle_memory_write",
         label: "Memory Write",
         description:
           "结构化写入记忆。根据内容价值判断是否需要记录：\n" +
@@ -172,6 +172,6 @@ export function registerMemoryWriteTool(api: ClawdbotPluginApi) {
         },
       };
     },
-    { name: "memory_write" },
+    { name: "joycastle_memory_write" },
   );
 }

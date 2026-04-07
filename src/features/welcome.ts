@@ -9,7 +9,7 @@
 
 import * as fs from "node:fs";
 import * as path from "node:path";
-import type { ClawdbotConfig } from "clawdbot/plugin-sdk";
+import type { ClawdbotConfig } from "openclaw/plugin-sdk";
 import type { FeishuConfig } from "../types.js";
 import { createFeishuClient } from "../client.js";
 import { sendMessageFeishu } from "../api/send.js";

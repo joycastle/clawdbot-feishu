@@ -1,11 +1,10 @@
+import type { ClawdbotConfig, RuntimeEnv } from "openclaw/plugin-sdk";
 import {
   createReplyPrefixContext,
-  createTypingCallbacks,
   logTypingFailure,
-  type ClawdbotConfig,
-  type RuntimeEnv,
   type ReplyPayload,
-} from "clawdbot/plugin-sdk";
+} from "openclaw/plugin-sdk/feishu";
+import { createTypingCallbacks } from "openclaw/plugin-sdk/matrix";
 import { getFeishuRuntime } from "./runtime.js";
 import { createFeishuClient } from "./client.js";
 import { resolveFeishuCredentials } from "./accounts.js";
@@ -88,10 +87,8 @@ export function createFeishuReplyDispatcher(params: CreateFeishuReplyDispatcherP
     },
   });
 
-  const textChunkLimit = core.channel.text.resolveTextChunkLimit({
-    cfg,
-    channel: "feishu",
-    defaultLimit: 4000,
+  const textChunkLimit = core.channel.text.resolveTextChunkLimit(cfg, "feishu", undefined, {
+    fallbackLimit: 4000,
   });
   const chunkMode = core.channel.text.resolveChunkMode(cfg, "feishu");
   const tableMode = core.channel.text.resolveMarkdownTableMode({

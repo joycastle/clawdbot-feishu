@@ -5,7 +5,7 @@
  * 而无需通过 HTTP 服务或 CLI 脚本。
  */
 
-import type { ClawdbotPluginApi } from "clawdbot/plugin-sdk";
+import type { OpenClawPluginApi } from "openclaw/plugin-sdk";
 import { registerFeishuDocTool } from "./feishu-doc.js";
 import { registerFeishuWikiTool } from "./feishu-wiki.js";
 import { registerFeishuBitableTool } from "./feishu-bitable.js";
@@ -19,7 +19,7 @@ import { registerMemoryWriteTool } from "./memory-write.js";
 import { registerMemoryReadTool } from "./memory-read.js";
 import { registerMemoryGraphTool } from "./memory-graph.js";
 
-export function registerAllFeishuTools(api: ClawdbotPluginApi) {
+export function registerAllFeishuTools(api: OpenClawPluginApi) {
   // Feishu tools
   registerFeishuDocTool(api);
   registerFeishuWikiTool(api);

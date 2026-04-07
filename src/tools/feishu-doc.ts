@@ -7,7 +7,7 @@
  */
 
 import { Type, type Static } from "@sinclair/typebox";
-import type { ClawdbotPluginApi } from "clawdbot/plugin-sdk";
+import type { OpenClawPluginApi } from "openclaw/plugin-sdk";
 import type { FeishuConfig } from "../types.js";
 import { createFeishuClient } from "../client.js";
 import { resolveFeishuCredentials } from "../accounts.js";
@@ -54,7 +54,7 @@ function json(data: unknown) {
 
 // ─── Tool Registration ────────────────────────────────────────────────────────
 
-export function registerFeishuDocTool(api: ClawdbotPluginApi) {
+export function registerFeishuDocTool(api: OpenClawPluginApi) {
   api.registerTool(
     (ctx) => {
       const feishuCfg = ctx.config?.channels?.feishu as FeishuConfig | undefined;
@@ -64,7 +64,7 @@ export function registerFeishuDocTool(api: ClawdbotPluginApi) {
       const client = createFeishuClient(feishuCfg!);
 
       return {
-        name: "feishu_doc",
+        name: "joycastle_feishu_doc",
         label: "Feishu Doc",
         description:
           "读取飞书文档内容。支持直接通过 doc token 读取，或通过 wiki token 自动解析后读取。" +
@@ -97,6 +97,6 @@ export function registerFeishuDocTool(api: ClawdbotPluginApi) {
         },
       };
     },
-    { name: "feishu_doc" },
+    { name: "joycastle_feishu_doc" },
   );
 }

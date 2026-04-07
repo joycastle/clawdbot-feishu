@@ -7,7 +7,7 @@
  *   - Card JSON construction for create / update
  */
 
-import type { ClawdbotConfig } from "clawdbot/plugin-sdk";
+import type { ClawdbotConfig } from "openclaw/plugin-sdk";
 import type { FeishuConfig } from "../../types.js";
 import type { VoteData } from "./store.js";
 import { createFeishuClient } from "../../client.js";

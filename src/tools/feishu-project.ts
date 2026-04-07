@@ -11,7 +11,7 @@
  */
 
 import { Type, type Static } from "@sinclair/typebox";
-import type { ClawdbotPluginApi } from "clawdbot/plugin-sdk";
+import type { OpenClawPluginApi } from "openclaw/plugin-sdk";
 import type { FeishuConfig } from "../types.js";
 import { FeishuProjectClient } from "../features/feishu-project/client.js";
 
@@ -84,7 +84,7 @@ const DEFAULT_PROJECT_KEY = "62b29e862be43458fc1ef6b2";
 
 // ─── Tool Registration ────────────────────────────────────────────────────────
 
-export function registerFeishuProjectTool(api: ClawdbotPluginApi) {
+export function registerFeishuProjectTool(api: OpenClawPluginApi) {
   api.registerTool(
     (ctx) => {
       const feishuCfg = ctx.config?.channels?.feishu as FeishuConfig | undefined;
@@ -109,7 +109,7 @@ export function registerFeishuProjectTool(api: ClawdbotPluginApi) {
       };
 
       return {
-        name: "feishu_project",
+        name: "joycastle_feishu_project",
         label: "Feishu Project",
         description:
           "飞书项目工作项管理（需求、缺陷、任务）。" +
@@ -227,6 +227,6 @@ export function registerFeishuProjectTool(api: ClawdbotPluginApi) {
         },
       };
     },
-    { name: "feishu_project" },
+    { name: "joycastle_feishu_project" },
   );
 }

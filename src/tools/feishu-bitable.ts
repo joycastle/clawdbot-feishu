@@ -13,7 +13,7 @@
  */
 
 import { Type, type Static } from "@sinclair/typebox";
-import type { ClawdbotPluginApi } from "clawdbot/plugin-sdk";
+import type { OpenClawPluginApi } from "openclaw/plugin-sdk";
 import type { FeishuConfig } from "../types.js";
 import { createFeishuClient } from "../client.js";
 import { resolveFeishuCredentials } from "../accounts.js";
@@ -222,7 +222,7 @@ async function deleteRecord(
 
 // ─── Tool Registration ────────────────────────────────────────────────────────
 
-export function registerFeishuBitableTool(api: ClawdbotPluginApi) {
+export function registerFeishuBitableTool(api: OpenClawPluginApi) {
   api.registerTool(
     (ctx) => {
       const feishuCfg = ctx.config?.channels?.feishu as FeishuConfig | undefined;
@@ -232,7 +232,7 @@ export function registerFeishuBitableTool(api: ClawdbotPluginApi) {
       const client = createFeishuClient(feishuCfg!);
 
       return {
-        name: "feishu_bitable",
+        name: "joycastle_feishu_bitable",
         label: "Feishu Bitable",
         description:
           "飞书多维表格（Bitable）操作，支持读写记录和字段。" +
@@ -270,6 +270,6 @@ export function registerFeishuBitableTool(api: ClawdbotPluginApi) {
         },
       };
     },
-    { name: "feishu_bitable" },
+    { name: "joycastle_feishu_bitable" },
   );
 }

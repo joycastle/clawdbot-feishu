@@ -1,12 +1,11 @@
-import type { ClawdbotConfig, RuntimeEnv } from "clawdbot/plugin-sdk";
+import type { ClawdbotConfig, RuntimeEnv } from "openclaw/plugin-sdk";
 import {
   buildPendingHistoryContextFromMap,
   recordPendingHistoryEntryIfEnabled,
   clearHistoryEntriesIfEnabled,
   DEFAULT_GROUP_HISTORY_LIMIT,
-  isSessionProcessing,
   type HistoryEntry,
-} from "clawdbot/plugin-sdk";
+} from "openclaw/plugin-sdk/feishu";
 import type { FeishuConfig, FeishuMessageContext, FeishuMediaInfo, MentionTarget } from "./types.js";
 import { createFeishuClient } from "./client.js";
 import { getFeishuRuntime } from "./runtime.js";
@@ -930,10 +929,8 @@ export async function handleFeishuMessage(params: {
   skipMediaConfirm?: boolean;
   /** Pre-resolved media list (passed from confirmation flow to avoid re-downloading) */
   preResolvedMediaList?: FeishuMediaInfo[];
-  /** Internal flag to skip abort-before-process logic (used for synthetic stop messages) */
-  _isAbortMessage?: boolean;
 }): Promise<void> {
-  const { cfg, event, botOpenId, runtime, chatHistories, skipMediaConfirm, preResolvedMediaList, _isAbortMessage } = params;
+  const { cfg, event, botOpenId, runtime, chatHistories, skipMediaConfirm, preResolvedMediaList } = params;
   const feishuCfg = cfg.channels?.feishu as FeishuConfig | undefined;
   const log = runtime?.log ?? console.log;
   const error = runtime?.error ?? console.error;
@@ -942,43 +939,10 @@ export async function handleFeishuMessage(params: {
   const isGroup = ctx.chatType === "group";
   
   // "New message aborts current run" behavior:
-  // Before processing any user message, inject a /stop to abort any ongoing run.
-  // This makes the conversation feel more responsive - user can always interrupt.
-  // Skip if this is already an abort message to avoid infinite loop.
-  // Only send abort if there's actually an active run (avoid unnecessary delays).
-  if (!_isAbortMessage && ctx.contentType === "text") {
-    // Pre-calculate sessionKey to check if session is processing
-    const preSessionKey = isGroup
-      ? `agent:main:feishu:group:${ctx.chatId.toLowerCase()}`
-      : `agent:main:feishu:dm:${ctx.senderOpenId?.toLowerCase() ?? "unknown"}`;
-    
-    const sessionProcessing = isSessionProcessing(preSessionKey);
-    log(`feishu: isSessionProcessing(${preSessionKey}) = ${sessionProcessing}`);
-    
-    if (sessionProcessing) {
-      const abortEvent: FeishuMessageEvent = {
-        sender: event.sender,
-        message: {
-          ...event.message,
-          message_id: `abort_${event.message.message_id}`,
-          content: JSON.stringify({ text: "/stop" }),
-        },
-      };
-      
-      // Fire-and-forget: send abort signal before processing the actual message
-      void handleFeishuMessage({
-        ...params,
-        event: abortEvent,
-        _isAbortMessage: true,
-      }).catch(() => {
-        // Ignore abort errors
-      });
-      
-      // Small delay to let abort propagate
-      await new Promise(resolve => setTimeout(resolve, 50));
-      log(`feishu: sent abort signal (session was processing)`);
-    }
-  }
+  // In clawdbot SDK this was handled by isSessionProcessing() + manual /stop injection.
+  // In openclaw SDK this is now handled at the framework level via the abort-cutoff
+  // mechanism (auto-reply/reply/abort-cutoff), so plugins no longer need to manually
+  // detect active sessions and inject abort signals.
 
   log(`feishu: received message from ${ctx.senderOpenId} in ${ctx.chatId} (${ctx.chatType})`);
 
@@ -1182,7 +1146,7 @@ export async function handleFeishuMessage(params: {
       cfg,
       channel: "feishu",
       peer: {
-        kind: isGroup ? "group" : "dm",
+        kind: isGroup ? "group" : "direct",
         id: isGroup ? ctx.chatId : ctx.senderOpenId,
       },
     });

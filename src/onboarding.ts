@@ -1,11 +1,32 @@
-import type {
-  ChannelOnboardingAdapter,
-  ChannelOnboardingDmPolicy,
-  ClawdbotConfig,
-  DmPolicy,
-  WizardPrompter,
-} from "clawdbot/plugin-sdk";
-import { addWildcardAllowFrom, DEFAULT_ACCOUNT_ID, formatDocsLink } from "clawdbot/plugin-sdk";
+import type { ClawdbotConfig } from "openclaw/plugin-sdk";
+import type { DmPolicy, WizardPrompter } from "openclaw/plugin-sdk/feishu";
+import { addWildcardAllowFrom, DEFAULT_ACCOUNT_ID, formatDocsLink } from "openclaw/plugin-sdk/feishu";
+
+// ChannelOnboardingAdapter and ChannelOnboardingDmPolicy were removed from openclaw SDK.
+// The onboarding surface is no longer part of the ChannelPlugin contract.
+// Keep the implementations for backwards compat but use structural types.
+type ChannelOnboardingDmPolicy = {
+  label: string;
+  channel: string;
+  policyKey: string;
+  allowFromKey: string;
+  getCurrent: (cfg: ClawdbotConfig) => DmPolicy;
+  setPolicy: (cfg: ClawdbotConfig, policy: DmPolicy) => ClawdbotConfig;
+  promptAllowFrom: (params: { cfg: ClawdbotConfig; prompter: WizardPrompter }) => Promise<ClawdbotConfig>;
+};
+type ChannelOnboardingAdapter = {
+  channel: string;
+  getStatus: (params: { cfg: ClawdbotConfig }) => Promise<{
+    channel: string;
+    configured: boolean;
+    statusLines: string[];
+    selectionHint: string;
+    quickstartScore: number;
+  }>;
+  configure: (params: { cfg: ClawdbotConfig; prompter: WizardPrompter }) => Promise<{ cfg: ClawdbotConfig; accountId: string }>;
+  dmPolicy: ChannelOnboardingDmPolicy;
+  disable: (cfg: ClawdbotConfig) => ClawdbotConfig;
+};
 
 import { resolveFeishuCredentials } from "./accounts.js";
 import { probeFeishu } from "./probe.js";

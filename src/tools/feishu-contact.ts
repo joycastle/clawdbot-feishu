@@ -9,7 +9,7 @@
  */
 
 import { Type, type Static } from "@sinclair/typebox";
-import type { ClawdbotPluginApi } from "clawdbot/plugin-sdk";
+import type { OpenClawPluginApi } from "openclaw/plugin-sdk";
 import type { FeishuConfig } from "../types.js";
 import { createFeishuClient } from "../client.js";
 import { resolveFeishuCredentials } from "../accounts.js";
@@ -47,7 +47,7 @@ function json(data: unknown) {
 
 // ─── Tool Registration ────────────────────────────────────────────────────────
 
-export function registerFeishuContactTool(api: ClawdbotPluginApi) {
+export function registerFeishuContactTool(api: OpenClawPluginApi) {
   api.registerTool(
     (ctx) => {
       const feishuCfg = ctx.config?.channels?.feishu as FeishuConfig | undefined;
@@ -57,7 +57,7 @@ export function registerFeishuContactTool(api: ClawdbotPluginApi) {
       const client = createFeishuClient(feishuCfg!);
 
       return {
-        name: "feishu_contact",
+        name: "joycastle_feishu_contact",
         label: "Feishu Contact",
         description:
           "获取飞书用户和群信息。" +
@@ -154,6 +154,6 @@ export function registerFeishuContactTool(api: ClawdbotPluginApi) {
         },
       };
     },
-    { name: "feishu_contact" },
+    { name: "joycastle_feishu_contact" },
   );
 }

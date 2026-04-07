@@ -10,7 +10,7 @@
  * This avoids the race condition where callback return and PATCH fight each other.
  */
 
-import type { ClawdbotConfig } from "clawdbot/plugin-sdk";
+import type { ClawdbotConfig } from "openclaw/plugin-sdk";
 import { sendCardFeishu, updateCardFeishu } from "../../api/send.js";
 import { formatFileSize } from "../cost-estimator.js";
 import { analyzeVideoFromGcs, getGeminiQueuePosition, getGeminiQueueStatus, setCredentialsPath, resolveVideoProvider } from "../video-analyze.js";

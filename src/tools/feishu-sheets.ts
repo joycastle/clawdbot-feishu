@@ -8,7 +8,7 @@
  */
 
 import { Type, type Static } from "@sinclair/typebox";
-import type { ClawdbotPluginApi } from "clawdbot/plugin-sdk";
+import type { OpenClawPluginApi } from "openclaw/plugin-sdk";
 import type { FeishuConfig } from "../types.js";
 import { createFeishuClient } from "../client.js";
 import { resolveFeishuCredentials } from "../accounts.js";
@@ -258,7 +258,7 @@ async function findInSheet(
 
 // ─── Tool Registration ────────────────────────────────────────────────────────
 
-export function registerFeishuSheetsTool(api: ClawdbotPluginApi) {
+export function registerFeishuSheetsTool(api: OpenClawPluginApi) {
   api.registerTool(
     (ctx) => {
       const feishuCfg = ctx.config?.channels?.feishu as FeishuConfig | undefined;
@@ -268,7 +268,7 @@ export function registerFeishuSheetsTool(api: ClawdbotPluginApi) {
       const client = createFeishuClient(feishuCfg!);
 
       return {
-        name: "feishu_sheets",
+        name: "joycastle_feishu_sheets",
         label: "Feishu Sheets",
         description:
           "飞书电子表格操作。" +
@@ -308,6 +308,6 @@ export function registerFeishuSheetsTool(api: ClawdbotPluginApi) {
         },
       };
     },
-    { name: "feishu_sheets" },
+    { name: "joycastle_feishu_sheets" },
   );
 }

@@ -13,7 +13,7 @@
  */
 
 import { Type, type Static } from "@sinclair/typebox";
-import type { ClawdbotPluginApi } from "clawdbot/plugin-sdk";
+import type { OpenClawPluginApi } from "openclaw/plugin-sdk";
 import type { FeishuConfig } from "../types.js";
 import { createFeishuClient } from "../client.js";
 import { resolveFeishuCredentials } from "../accounts.js";
@@ -187,7 +187,7 @@ async function createComment(client: Lark.Client, taskGuid: string, content: str
 
 // ─── Tool Registration ────────────────────────────────────────────────────────
 
-export function registerFeishuTaskTool(api: ClawdbotPluginApi) {
+export function registerFeishuTaskTool(api: OpenClawPluginApi) {
   api.registerTool(
     (ctx) => {
       const feishuCfg = ctx.config?.channels?.feishu as FeishuConfig | undefined;
@@ -197,7 +197,7 @@ export function registerFeishuTaskTool(api: ClawdbotPluginApi) {
       const client = createFeishuClient(feishuCfg!);
 
       return {
-        name: "feishu_task",
+        name: "joycastle_feishu_task",
         label: "Feishu Task",
         description:
           "飞书任务管理（Task v2）。" +
@@ -233,6 +233,6 @@ export function registerFeishuTaskTool(api: ClawdbotPluginApi) {
         },
       };
     },
-    { name: "feishu_task" },
+    { name: "joycastle_feishu_task" },
   );
 }

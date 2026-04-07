@@ -7,7 +7,7 @@
 import * as fs from "node:fs";
 import * as path from "node:path";
 import { Type, type Static } from "@sinclair/typebox";
-import type { ClawdbotPluginApi } from "clawdbot/plugin-sdk";
+import type { OpenClawPluginApi } from "openclaw/plugin-sdk";
 
 // ─── Schema ──────────────────────────────────────────────────────────────────
 
@@ -104,13 +104,13 @@ function filterByQuery(content: string, query: string): string {
 
 // ─── Tool Registration ────────────────────────────────────────────────────────
 
-export function registerMemoryReadTool(api: ClawdbotPluginApi) {
+export function registerMemoryReadTool(api: OpenClawPluginApi) {
   api.registerTool(
     (ctx) => {
       const workspaceRoot = process.env.CLAWDBOT_WORKSPACE || process.cwd();
 
       return {
-        name: "memory_read",
+        name: "joycastle_memory_read",
         label: "Memory Read",
         description:
           "读取记忆。支持按类型、session、时间范围读取。\n\n" +
@@ -197,6 +197,6 @@ export function registerMemoryReadTool(api: ClawdbotPluginApi) {
         },
       };
     },
-    { name: "memory_read" },
+    { name: "joycastle_memory_read" },
   );
 }
