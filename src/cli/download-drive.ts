@@ -9,7 +9,7 @@ if (!fileToken) {
   process.exit(1);
 }
 
-const configPath = process.env.CLAWDBOT_CONFIG || `${os.homedir()}/.clawdbot/clawdbot.json`;
+const configPath = process.env.CLAWDBOT_CONFIG || `${os.homedir()}/.openclaw/openclaw.json`;
 const cfg = JSON.parse(fs.readFileSync(configPath, 'utf-8'));
 const feishuCfg = cfg?.channels?.feishu;
 

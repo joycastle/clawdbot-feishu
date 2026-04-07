@@ -26,7 +26,7 @@ if (!fileKey || !messageId) {
   process.exit(1);
 }
 
-const configPath = process.env.CLAWDBOT_CONFIG || `${os.homedir()}/.clawdbot/clawdbot.json`;
+const configPath = process.env.CLAWDBOT_CONFIG || `${os.homedir()}/.openclaw/openclaw.json`;
 if (!fs.existsSync(configPath)) {
   console.error(`Config not found: ${configPath}`);
   process.exit(1);

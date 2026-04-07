@@ -9,7 +9,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 
 // 加载配置
-const configPath = path.join(process.env.HOME || '', '.clawdbot', 'clawdbot.json');
+const configPath = path.join(process.env.HOME || '', '.openclaw', 'openclaw.json');
 const config = JSON.parse(fs.readFileSync(configPath, 'utf-8'));
 const feishuCfg = config.channels?.feishu;
 

@@ -10,7 +10,7 @@ async function getTenantAccessToken(appId: string, appSecret: string): Promise<s
 }
 
 async function main() {
-  const cfgPath = `${process.env.HOME}/.clawdbot/clawdbot.json`;
+  const cfgPath = `${process.env.HOME}/.openclaw/openclaw.json`;
   const cfg = JSON.parse(fs.readFileSync(cfgPath, 'utf8'));
   const { appId, appSecret } = cfg.channels.feishu;
   

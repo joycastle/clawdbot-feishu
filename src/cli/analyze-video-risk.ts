@@ -1,7 +1,7 @@
 import { VertexAI } from '@google-cloud/vertexai';
 import * as fs from 'fs';
 
-const SA_PATH = '/home/ubuntu/.clawdbot/credentials/google-vertex-sa.json';
+const SA_PATH = '/home/ubuntu/.openclaw/credentials/google-vertex-sa.json';
 const PROJECT_ID = 'larkbot-485707';
 
 const videoPath = process.argv[2] || '/tmp/jimeng-video-new.mp4';

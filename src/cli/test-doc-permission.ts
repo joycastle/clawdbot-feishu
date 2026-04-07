@@ -5,7 +5,7 @@ import * as fs from "fs";
 
 async function main() {
   // Load config
-  const configPath = process.env.HOME + "/.clawdbot/clawdbot.json";
+  const configPath = process.env.HOME + "/.openclaw/openclaw.json";
   const cfg = JSON.parse(fs.readFileSync(configPath, "utf-8"));
   const feishuCfg = cfg.channels?.feishu;
   

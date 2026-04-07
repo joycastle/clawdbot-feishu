@@ -27,7 +27,7 @@ import { fileURLToPath } from 'url';
 
 // GCS + Vertex AI 配置
 const GCS_BUCKET = 'larkbot-storage';
-const GCS_SA_PATH = '/home/ubuntu/.clawdbot/credentials/google-vertex-sa.json';
+const GCS_SA_PATH = '/home/ubuntu/.openclaw/credentials/google-vertex-sa.json';
 const VERTEX_PROJECT = 'larkbot-485707';
 const VERTEX_LOCATION = 'global';
 

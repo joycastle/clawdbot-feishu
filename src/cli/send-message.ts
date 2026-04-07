@@ -27,7 +27,7 @@ async function main() {
   }
   
   // 读取配置
-  const cfgPath = path.join(process.env.HOME!, ".clawdbot/clawdbot.json");
+  const cfgPath = path.join(process.env.HOME!, ".openclaw/openclaw.json");
   const cfg = JSON.parse(fs.readFileSync(cfgPath, "utf-8"));
   const { appId, appSecret } = cfg.channels.feishu;
   

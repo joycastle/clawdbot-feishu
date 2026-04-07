@@ -2,7 +2,7 @@ import * as lark from '@larksuiteoapi/node-sdk';
 import fs from 'node:fs';
 import os from 'node:os';
 
-const configPath = process.env.CLAWDBOT_CONFIG || `${os.homedir()}/.clawdbot/clawdbot.json`;
+const configPath = process.env.CLAWDBOT_CONFIG || `${os.homedir()}/.openclaw/openclaw.json`;
 const config = JSON.parse(fs.readFileSync(configPath, 'utf-8'));
 const feishuCfg = config.channels?.feishu;
 

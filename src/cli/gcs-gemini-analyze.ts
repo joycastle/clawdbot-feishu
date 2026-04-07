@@ -1,7 +1,7 @@
 import { Storage } from '@google-cloud/storage';
 import { VertexAI } from '@google-cloud/vertexai';
 
-const SA_PATH = '/home/ubuntu/.clawdbot/credentials/google-vertex-sa.json';
+const SA_PATH = '/home/ubuntu/.openclaw/credentials/google-vertex-sa.json';
 const PROJECT_ID = 'larkbot-485707';
 const BUCKET_NAME = 'larkbot-storage';
 
