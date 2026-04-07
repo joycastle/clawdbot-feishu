@@ -17,6 +17,7 @@ import { registerFeishuContactTool } from "./feishu-contact.js";
 import { registerFeishuProjectTool } from "./feishu-project.js";
 import { registerMemoryWriteTool } from "./memory-write.js";
 import { registerMemoryReadTool } from "./memory-read.js";
+import { registerMemoryGraphTool } from "./memory-graph.js";
 
 export function registerAllFeishuTools(api: ClawdbotPluginApi) {
   // Feishu tools
@@ -32,4 +33,5 @@ export function registerAllFeishuTools(api: ClawdbotPluginApi) {
   // Memory tools
   registerMemoryWriteTool(api);
   registerMemoryReadTool(api);
+  registerMemoryGraphTool(api);
 }

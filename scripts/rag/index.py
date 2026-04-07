@@ -95,6 +95,103 @@ def compute_hash(text: str) -> str:
     """计算文本哈希，用于去重"""
     return hashlib.md5(text.encode("utf-8")).hexdigest()[:12]
 
+def index_local_file(file_path: str, force: bool = False, source: str = "local") -> bool:
+    """
+    索引本地文件（Markdown/文本）
+    
+    参数:
+        file_path: 文件路径
+        force: 强制重建索引
+        source: 来源标记（如 "feeds", "docs"）
+    
+    返回: True 成功, False 失败或跳过
+    """
+    try:
+        path = Path(file_path)
+        if not path.exists():
+            print(f"[Index] File not found: {file_path}")
+            return False
+        
+        print(f"[Index] Processing local file: {path.name}")
+        
+        # 读取文件内容
+        content = path.read_text(encoding="utf-8")
+        if not content.strip():
+            print(f"[Index] Warning: Empty file {file_path}")
+            return False
+        
+        title = path.stem  # 文件名作为标题
+        doc_id = f"local:{path.name}"
+        
+        # 计算哈希检查是否需要更新
+        content_hash = compute_hash(content)
+        
+        client = get_chroma_client()
+        docs_collection = client.get_or_create_collection("feishu_docs")
+        
+        # 检查是否已存在
+        existing = docs_collection.get(where={"url": doc_id})
+        if existing and existing.get("ids") and not force:
+            existing_hash = existing["metadatas"][0].get("hash", "")
+            if existing_hash == content_hash:
+                print(f"[Index] Skipped (unchanged): {title}")
+                return True
+            else:
+                # 删除旧的
+                docs_collection.delete(ids=existing["ids"])
+                print(f"[Index] Updating: {title}")
+        
+        # 切片
+        chunks = chunk_text(content)
+        if not chunks:
+            print(f"[Index] Warning: No chunks for {file_path}")
+            return False
+        
+        print(f"[Index] Generating embeddings for {len(chunks)} chunks...")
+        
+        # 生成 embedding
+        model = get_embedding_model()
+        embeddings = list(model.embed(chunks))
+        
+        # 存入 ChromaDB
+        ids = [f"{content_hash}_{i}" for i in range(len(chunks))]
+        metadatas = [{
+            "url": doc_id,
+            "title": title,
+            "type": "local",
+            "source": source,
+            "file_path": str(path.absolute()),
+            "hash": content_hash,
+            "chunk_index": i,
+            "total_chunks": len(chunks)
+        } for i in range(len(chunks))]
+        
+        docs_collection.add(
+            ids=ids,
+            embeddings=[e.tolist() for e in embeddings],
+            documents=chunks,
+            metadatas=metadatas
+        )
+        
+        # 同步更新 BM25 索引
+        try:
+            import bm25_index
+            bm25_docs = [{
+                "id": ids[i],
+                "content": chunks[i],
+                "metadata": metadatas[i]
+            } for i in range(len(chunks))]
+            bm25_index.add_documents(bm25_docs)
+        except Exception as e:
+            print(f"[Index] BM25 update failed (non-fatal): {e}")
+        
+        print(f"[Index] ✓ Indexed: {title} ({len(chunks)} chunks)")
+        return True
+        
+    except Exception as e:
+        print(f"[Index] Error indexing {file_path}: {e}")
+        return False
+
 def index_document(url: str, force: bool = False) -> bool:
     """
     索引单个文档
@@ -261,6 +358,9 @@ def main():
     parser = argparse.ArgumentParser(description="RAG 文档索引工具")
     parser.add_argument("--url", help="单个文档 URL")
     parser.add_argument("--urls", help="包含多个 URL 的文件（每行一个）")
+    parser.add_argument("--file", help="索引本地文件（Markdown/文本）")
+    parser.add_argument("--dir", help="索引目录下所有 .md 文件")
+    parser.add_argument("--source", default="local", help="来源标记（如 feeds, docs）")
     parser.add_argument("--advanced", action="store_true", help="同时生成摘要索引")
     parser.add_argument("--force", action="store_true", help="强制重建索引")
     parser.add_argument("--stats", action="store_true", help="显示统计信息")
@@ -278,6 +378,40 @@ def main():
             print(f"Data dir: {DATA_DIR}")
         except Exception as e:
             print(f"Error: {e}")
+        return
+    
+    # 处理本地文件
+    if args.file or args.dir:
+        files = []
+        if args.file:
+            files.append(args.file)
+        if args.dir:
+            dir_path = Path(args.dir)
+            if dir_path.exists():
+                files.extend([str(f) for f in dir_path.glob("*.md")])
+            else:
+                print(f"Directory not found: {args.dir}")
+                return
+        
+        if not files:
+            print("No files to index")
+            return
+        
+        success = 0
+        failed = 0
+        
+        for i, file_path in enumerate(files):
+            print(f"\n[{i+1}/{len(files)}]")
+            try:
+                if index_local_file(file_path, args.force, args.source):
+                    success += 1
+                else:
+                    failed += 1
+            except KeyboardInterrupt:
+                print("\n[Index] Stopped by user")
+                break
+        
+        print(f"\n[Index] Done: {success} success, {failed} failed")
         return
     
     # 收集要处理的 URL

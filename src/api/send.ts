@@ -12,6 +12,8 @@ export type FeishuMessageInfo = {
   content: string;
   contentType: string;
   createTime?: number;
+  parentId?: string;  // 父消息 ID（回复链）
+  rootId?: string;    // 根消息 ID（话题根）
 };
 
 function formatMentionForText(target: MentionTarget): string {
@@ -72,6 +74,8 @@ export async function getMessageFeishu(params: {
             sender_type?: string;
           };
           create_time?: string;
+          parent_id?: string;  // 父消息 ID
+          root_id?: string;    // 根消息 ID
         }>;
       };
     };
@@ -104,10 +108,57 @@ export async function getMessageFeishu(params: {
       content,
       contentType: item.msg_type ?? "text",
       createTime: item.create_time ? parseInt(item.create_time, 10) : undefined,
+      parentId: item.parent_id,  // 父消息 ID
+      rootId: item.root_id,      // 根消息 ID
     };
   } catch {
     return null;
   }
+}
+
+/**
+ * 递归获取回复链（从当前消息往上追溯到根消息）
+ * @param cfg 配置
+ * @param messageId 起始消息 ID
+ * @param maxDepth 最大深度，默认 5
+ * @returns 回复链数组（从最早到最新排序）
+ */
+export async function getReplyChain(params: {
+  cfg: ClawdbotConfig;
+  messageId: string;
+  maxDepth?: number;
+}): Promise<FeishuMessageInfo[]> {
+  const { cfg, messageId, maxDepth = 6 } = params;
+  const chain: FeishuMessageInfo[] = [];
+  let currentId: string | undefined = messageId;
+  
+  for (let i = 0; i < maxDepth && currentId; i++) {
+    const msg = await getMessageFeishu({ cfg, messageId: currentId });
+    if (!msg) break;
+    chain.unshift(msg);  // 头部插入，保持时间顺序（最早的在前）
+    currentId = msg.parentId;  // 继续往上追溯
+  }
+  
+  return chain;
+}
+
+/**
+ * 格式化回复链为可读文本
+ */
+export function formatReplyChain(chain: FeishuMessageInfo[]): string {
+  if (chain.length <= 1) return "";
+  
+  // 只格式化链条中的历史消息（不包括当前消息）
+  const history = chain.slice(0, -1);
+  if (history.length === 0) return "";
+  
+  const lines = history.map((msg, idx) => {
+    const sender = msg.senderOpenId ? `[${msg.senderOpenId.slice(-8)}]` : "[unknown]";
+    const preview = msg.content.replace(/\s+/g, " ").slice(0, 100);
+    return `  ${idx + 1}. ${sender}: ${preview}${msg.content.length > 100 ? "..." : ""}`;
+  });
+  
+  return `[Reply chain (${history.length} messages):\n${lines.join("\n")}\n]`;
 }
 
 /** Media info extracted from a sub-message */

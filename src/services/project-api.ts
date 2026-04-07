@@ -1258,7 +1258,10 @@ async function handleRequest(req: http.IncomingMessage, res: http.ServerResponse
       // 提取版本的额外信息
       const envelopeField = matchedVersion.fields?.find((f: any) => f.field_key === 'envelope_date');
       const envelopeDate = envelopeField?.field_value;
-      const envelopeDateStr = envelopeDate ? new Date(envelopeDate).toISOString().split('T')[0] : null;
+      // 用北京时间（UTC+8）而不是 UTC，避免日期偏移
+      const envelopeDateStr = envelopeDate 
+        ? new Date(envelopeDate).toLocaleDateString('sv-SE', { timeZone: 'Asia/Shanghai' })
+        : null;
       
       // 从版本名提取周几信息（格式如 "r3.202.0| 3.25"）
       const versionNameMatch = matchedVersion.name?.match(/\|\s*(\d+)\.(\d+)/);

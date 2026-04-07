@@ -33,8 +33,8 @@ export { handleUploadOnly } from "./src/features/big-video/bitable-video-handler
 export { analyzeVideoFromGcs } from "./src/features/video-analyze.js";
 
 const plugin = {
-  id: "feishu",
-  name: "Feishu",
+  id: "joycastle-feishu",
+  name: "joycastle-feishu",
   description: "Feishu/Lark channel plugin",
   configSchema: emptyPluginConfigSchema(),
   register(api: ClawdbotPluginApi) {

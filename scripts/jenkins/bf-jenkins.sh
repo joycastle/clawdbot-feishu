@@ -1,8 +1,8 @@
 #!/bin/bash
 # Bingo Frenzy (BF) Jenkins 操作脚本
 # 用法: bf-jenkins.sh <action> <env>
-# action: restart | update | check
-# env: develop | develop1 | release | plan
+# action: restart | update | lua | check
+# env: develop | develop1 | test | plan
 
 set -e
 
@@ -24,7 +24,7 @@ get_view() {
     case "$1" in
         develop) echo "develop" ;;
         develop1) echo "develop-1" ;;
-        release) echo "release" ;;
+        test) echo "test" ;;
         plan) echo "plan" ;;
         *) echo "develop" ;;
     esac
@@ -103,6 +103,11 @@ case "$ACTION" in
         check_config || { echo "配置检查失败，中止更新"; exit 1; }
         trigger_job "bingo1-gds-${JOB_SUFFIX}"
         ;;
+    lua)
+        # 热更 lua
+        echo "=== BF $ENV: 热更 Lua ==="
+        trigger_job "bingo1-nk-lua-${JOB_SUFFIX}"
+        ;;
     check)
         # 只检查配置
         check_config
@@ -111,8 +116,9 @@ case "$ACTION" in
         echo "用法: $0 <action> <env>"
         echo ""
         echo "Actions:"
-        echo "  restart  - 配置检查 + 重启服务器"
+        echo "  restart  - 配置检查 + 重启服务器 (gds)"
         echo "  update   - 配置检查 + 更新配置（不重启）"
+        echo "  lua      - 热更 Lua (bingo1-nk-lua-*)"
         echo "  check    - 仅检查配置"
         echo ""
         echo "Environments:"

@@ -13,7 +13,7 @@ import { getFeishuRuntime } from "./runtime.js";
 import { downloadFeishuDocMediaByUrl, enrichMessageWithDocs } from "./features/doc-parser.js";
 import { resolveFeishuGroupConfig, resolveFeishuReplyPolicy, resolveFeishuAllowlistMatch, isFeishuGroupAllowed } from "./policy.js";
 import { createFeishuReplyDispatcher } from "./reply-dispatcher.js";
-import { getMessageFeishu, getMergeForwardMessages, sendMarkdownCardFeishu, sendMessageFeishu } from "./api/send.js";
+import { getMessageFeishu, getMergeForwardMessages, getReplyChain, formatReplyChain, sendMarkdownCardFeishu, sendMessageFeishu } from "./api/send.js";
 import { downloadImageFeishu, downloadMessageResourceFeishu } from "./api/media.js";
 import { sendMediaConfirmCard } from "./features/media-confirm.js";
 // Video analysis is now handled by the LLM agent via bitable-video-cli.ts
@@ -1374,6 +1374,28 @@ export async function handleFeishuMessage(params: {
     // Fetch quoted/replied message content if parentId exists
     // (moved before media cost confirmation so quoted audio/video is also intercepted)
     let quotedContent: string | undefined;
+    let replyChainContent: string | undefined;
+    
+    // 获取完整回复链（递归到根消息）
+    if (ctx.parentId && !skipMediaConfirm) {
+      try {
+        const replyChain = await getReplyChain({ cfg, messageId: ctx.parentId, maxDepth: 5 });
+        if (replyChain.length > 1) {
+          // 有回复链，格式化为可读文本
+          replyChainContent = formatReplyChain([...replyChain, { 
+            messageId: ctx.messageId, 
+            chatId: ctx.chatId, 
+            content: ctx.content, 
+            contentType: ctx.contentType,
+            senderOpenId: ctx.senderOpenId,
+          } as any]);
+          log(`feishu: fetched reply chain with ${replyChain.length} messages`);
+        }
+      } catch (chainErr) {
+        log(`feishu: failed to fetch reply chain: ${String(chainErr)}`);
+      }
+    }
+    
     if (ctx.parentId && !skipMediaConfirm) {
       try {
         const quotedMsg = await getMessageFeishu({ cfg, messageId: ctx.parentId });
@@ -1898,7 +1920,10 @@ export async function handleFeishuMessage(params: {
 
     // Build message body with quoted content if available
     let messageBody = enrichedContent;
-    if (quotedContent) {
+    // 优先使用完整回复链，否则使用直接引用
+    if (replyChainContent) {
+      messageBody = `${replyChainContent}\n\n${enrichedContent}`;
+    } else if (quotedContent) {
       messageBody = `[Replying to: "${quotedContent}"]\n\n${enrichedContent}`;
     }
     if (ctx.mentionTargets && ctx.mentionTargets.length > 0) {

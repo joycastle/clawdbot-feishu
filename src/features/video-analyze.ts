@@ -98,7 +98,7 @@ export function resolveVideoProvider(cfg: any): VideoProviderConfig {
 
 // ─── Configuration ───────────────────────────────────────────────────────────
 
-const DEFAULT_MODEL = "gemini-3-flash-preview";
+const DEFAULT_MODEL = "gemini-3.1-pro-preview";
 const VERTEX_AI_SCOPE = "https://www.googleapis.com/auth/cloud-platform";
 const MAX_VIDEO_SIZE_MB = 20;
 
@@ -107,6 +107,8 @@ const PRICING = {
   "gemini-3-flash": { input: 0.50, output: 3.00 },
   "gemini-3-flash-preview": { input: 0.50, output: 3.00 },
   "gemini-3-pro-preview": { input: 2.00, output: 12.00 },
+  "gemini-3.1-pro-preview": { input: 2.00, output: 12.00 },
+  "gemini-3.1-flash-lite-preview": { input: 0.15, output: 0.60 },
   "gemini-2.0-flash-001": { input: 0.15, output: 0.60 },
   "gemini-2.5-flash-preview-05-20": { input: 0.30, output: 2.50 },
 } as Record<string, { input: number; output: number }>;

@@ -1,5 +1,5 @@
 {
-  "id": "feishu",
+  "id": "joycastle-feishu",
   "channels": ["feishu"],
   "configSchema": {
     "type": "object",
