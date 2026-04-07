@@ -9,28 +9,40 @@
  */
 
 import * as http from 'node:http';
-import * as path from 'node:path';
-import { fileURLToPath } from 'node:url';
-import { createRequire } from 'node:module';
+import { GatewayClient } from 'openclaw/plugin-sdk/gateway-runtime';
+import { getConfigPath } from '../utils/paths.js';
+import * as fs from 'node:fs';
 
-// callGateway is an internal openclaw API not exposed via plugin-sdk subpaths.
-// Resolve it dynamically from the openclaw package at runtime.
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const require = createRequire(import.meta.url);
+// Use the public GatewayClient API to call gateway cron methods.
+let _client: InstanceType<typeof GatewayClient> | null = null;
 
-let _callGateway: ((opts: { method: string; params?: unknown }) => Promise<unknown>) | null = null;
+function getGatewayClient(): InstanceType<typeof GatewayClient> {
+  if (_client) return _client;
 
-async function getCallGateway() {
-  if (_callGateway) return _callGateway;
-  // The extension runs inside the openclaw process, so openclaw is resolvable
-  const gatewayMod = require('openclaw/dist/plugin-sdk/src/gateway/call.js');
-  _callGateway = gatewayMod.callGateway;
-  return _callGateway!;
+  // Read gateway auth from openclaw config
+  let token: string | undefined;
+  let port = 18789;
+  try {
+    const cfg = JSON.parse(fs.readFileSync(getConfigPath(), 'utf-8'));
+    token = cfg.gateway?.auth?.token;
+    port = cfg.gateway?.port ?? 18789;
+  } catch {
+    // fallback to defaults
+  }
+
+  _client = new GatewayClient({
+    url: `ws://127.0.0.1:${port}`,
+    token,
+    clientName: 'cli' as any,
+    clientDisplayName: 'cron-api',
+  });
+  _client.start();
+  return _client;
 }
 
 async function callGatewayTool(method: string, _opts: unknown, params?: unknown): Promise<unknown> {
-  const callGateway = await getCallGateway();
-  return callGateway({ method, params });
+  const client = getGatewayClient();
+  return client.request(method, params);
 }
 
 const PORT = 18797;
@@ -169,5 +181,9 @@ export async function stopCronApi(): Promise<void> {
     server.close();
     server = null;
     console.log('[cron-api] Stopped');
+  }
+  if (_client) {
+    _client.stop();
+    _client = null;
   }
 }
