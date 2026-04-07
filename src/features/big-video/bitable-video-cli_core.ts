@@ -63,7 +63,8 @@ if (!toArg || !replyToArg) {
   process.exit(1);
 }
 
-const configPath = process.env.CLAWDBOT_CONFIG || `${os.homedir()}/.clawdbot/clawdbot.json`;
+import { getConfigPath } from "../../utils/paths.js";
+const configPath = getConfigPath();
 if (!fs.existsSync(configPath)) {
   console.error(`Error: config not found at ${configPath}`);
   process.exit(1);

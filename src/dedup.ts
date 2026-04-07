@@ -21,7 +21,7 @@ function resolveStateDirFromEnv(): string {
   const override =
     process.env.CLAWDBOT_STATE_DIR?.trim() || process.env.OPENCLAW_STATE_DIR?.trim();
   if (override) return override;
-  return path.join(os.homedir(), ".clawdbot");
+  return path.join(os.homedir(), ".openclaw");
 }
 
 function resolveDedupeFilePath(namespace: string): string {

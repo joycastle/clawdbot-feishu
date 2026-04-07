@@ -32,7 +32,8 @@ export interface VideoCacheData {
 
 // ─── Constants ───────────────────────────────────────────────────────────────
 
-const CACHE_DIR = process.env.CLAWDBOT_DATA_DIR ?? join(os.homedir(), ".clawdbot");
+import { getStateDir } from "../../utils/paths.js";
+const CACHE_DIR = process.env.CLAWDBOT_DATA_DIR ?? getStateDir();
 const CACHE_FILE = join(CACHE_DIR, "video-cache.json");
 const CACHE_TTL_MS = 15 * 24 * 60 * 60 * 1000;
 

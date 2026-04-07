@@ -188,7 +188,8 @@ interface FeishuConfig {
 let feishuAccessToken: { token: string; expiresAt: number } | null = null;
 
 function loadFeishuConfig(): FeishuConfig | null {
-  const configPath = join(process.env.HOME || '', '.clawdbot/clawdbot.json');
+  const { getConfigPath } = await import('../utils/paths.js');
+  const configPath = getConfigPath();
   
   if (!existsSync(configPath)) {
     console.warn('Clawdbot config not found, Feishu alerts disabled');
@@ -299,7 +300,8 @@ async function alertAdmins(message: string, severity: string, source?: string): 
 // ─── Gemini API ─────────────────────────────────────────────────────────────
 
 async function callGemini(prompt: string): Promise<string> {
-  const saPath = join(process.env.HOME || '', '.clawdbot/credentials/google-vertex-sa.json');
+  const { getGoogleSAPath } = await import('../utils/paths.js');
+  const saPath = getGoogleSAPath();
   
   if (!existsSync(saPath)) {
     throw new Error('Service account not found');
