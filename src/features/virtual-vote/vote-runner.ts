@@ -206,15 +206,31 @@ export async function runVoteInBackground(params: VoteRunnerParams): Promise<voi
     personas.map(async (persona) => {
       const release = await semaphore.acquire();
       try {
-        const messages: LLMMessage[] = [
-          buildSystemPrompt(persona),
-          buildVotePrompt({ topic, options, images }),
-        ];
+        const systemPrompt = buildSystemPrompt(persona);
+        const votePrompt = buildVotePrompt({ topic, options, images });
+        const messages: LLMMessage[] = [systemPrompt, votePrompt];
+
+        // Log input for first persona only (to avoid flooding logs with base64)
+        if (completedCount === 0) {
+          const promptContent = votePrompt.content;
+          if (Array.isArray(promptContent)) {
+            const parts = promptContent.map((p) => {
+              if (p.type === "text") return `[text: ${p.text.slice(0, 200)}...]`;
+              return `[image: ${p.mediaType}, base64_len=${p.data.length}]`;
+            });
+            log?.(`virtual-vote: first persona prompt parts: ${parts.join(", ")}`);
+          } else {
+            log?.(`virtual-vote: first persona prompt: ${String(promptContent).slice(0, 200)}`);
+          }
+        }
 
         const result = await callLLM(llmCfg, params.llmRuntime, messages);
+        log?.(`virtual-vote: [${persona.name}] raw response: ${result.text.slice(0, 300)}`);
+
         const parsed = parseVoteResponse(result.text, options.length);
 
         if (parsed) {
+          log?.(`virtual-vote: [${persona.name}] choice=${parsed.choice + 1}, reason=${parsed.reason}`);
           results.push({
             personaId: persona.id,
             personaName: persona.name,
@@ -223,7 +239,7 @@ export async function runVoteInBackground(params: VoteRunnerParams): Promise<voi
             reason: parsed.reason,
           });
         } else {
-          log?.(`virtual-vote: failed to parse response for ${persona.name}: ${result.text.slice(0, 100)}`);
+          log?.(`virtual-vote: [${persona.name}] PARSE FAILED, raw: ${result.text.slice(0, 300)}`);
         }
 
         completedCount++;
