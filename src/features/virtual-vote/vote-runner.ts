@@ -244,7 +244,7 @@ export async function runVoteInBackground(params: VoteRunnerParams): Promise<voi
           const commentText = `**${persona.name}** (${persona.summary})\n选择：${choiceLabel}\n理由：${parsed.reason}`;
           sendMessageFeishu({
             cfg,
-            to: "",
+            to: chatId,
             text: commentText,
             replyToMessageId: cardMessageId,
             replyInThread: true,
