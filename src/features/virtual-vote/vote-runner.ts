@@ -93,8 +93,8 @@ function buildVotePrompt(params: {
       `**投票主题：** ${topic}\n\n` +
       `**选项：**\n${optionList}\n\n` +
       `请根据你的个人背景、生活经历、审美偏好和游戏习惯，从以上选项中选择一个最吸引你的。\n\n` +
-      `请严格按以下 JSON 格式回复，不要输出其他内容：\n` +
-      `{"choice": <选项编号1-${options.length}>, "reason": "<一句话说明理由>"}`,
+      `请严格按以下 JSON 格式回复，不要输出其他内容。reason 必须用中文回答：\n` +
+      `{"choice": <选项编号1-${options.length}>, "reason": "<用中文一句话说明理由>"}`,
   });
 
   return { role: "user", content: parts };
