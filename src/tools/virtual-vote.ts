@@ -90,19 +90,28 @@ function json(data: unknown) {
  *   agent:main:feishu:group:oc_xxx                  → Group, target = oc_xxx
  */
 function resolveChatTarget(ctx: { sessionKey?: string }, paramChatId: string, log?: (msg: string) => void): string {
+  // Agent-provided chat_id is the most reliable source — it comes from
+  // the actual message context (ctx.chatId in bot.ts). Use it directly.
+  // Only strip "user:" or "chat:" prefixes via normalizeFeishuTarget-style logic.
+  const cleaned = paramChatId.replace(/^(user|chat):/, "").trim();
+  if (cleaned && (cleaned.startsWith("oc_") || cleaned.startsWith("ou_"))) {
+    log?.(`using agent chat_id: ${cleaned}`);
+    return cleaned;
+  }
+
+  // Fallback: parse sessionKey
   const sk = ctx.sessionKey ?? "";
-  // Try to extract oc_ (group) or ou_ (dm) from sessionKey
   const groupMatch = sk.match(/:group:(oc_[^:]+)/);
   if (groupMatch) {
-    log?.(`resolved chat target from sessionKey: ${groupMatch[1]}`);
+    log?.(`fallback to sessionKey group: ${groupMatch[1]}`);
     return groupMatch[1];
   }
   const dmMatch = sk.match(/:dm:(ou_[^:]+)/);
   if (dmMatch) {
-    log?.(`resolved chat target from sessionKey: ${dmMatch[1]}`);
+    log?.(`fallback to sessionKey dm: ${dmMatch[1]}`);
     return dmMatch[1];
   }
-  log?.(`could not parse sessionKey "${sk}", using params.chat_id: ${paramChatId}`);
+  log?.(`could not resolve chat target, using raw: ${paramChatId}`);
   return paramChatId;
 }
 

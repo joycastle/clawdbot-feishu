@@ -271,10 +271,13 @@ export async function runVoteInBackground(params: VoteRunnerParams): Promise<voi
   };
 
   try {
+    const resultCard = buildResultCard(resultData);
+    const cardJson = JSON.stringify(resultCard);
+    log?.(`virtual-vote: result card size: ${cardJson.length} chars, updating messageId=${cardMessageId}`);
     await updateCardFeishu({
       cfg,
       messageId: cardMessageId,
-      card: buildResultCard(resultData),
+      card: resultCard,
     });
     log?.(
       `virtual-vote: completed — ${results.length}/${personas.length} voted, ` +
