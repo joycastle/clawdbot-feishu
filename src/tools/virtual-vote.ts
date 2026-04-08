@@ -54,6 +54,9 @@ const VirtualVoteSchema = Type.Union([
       minItems: 2,
     }),
     chat_id: Type.String({ description: "当前会话的 chat_id，用于发送结果卡片" }),
+    source_message_id: Type.Optional(Type.String({
+      description: "当前消息的 message_id（MessageSid），用于检测消息是否包含图片",
+    })),
   }),
   Type.Object({
     action: Type.Literal("vote_image"),
@@ -111,8 +114,8 @@ async function resolveOneImage(params: {
 }): Promise<{ data: string; mediaType: string } | null> {
   const { cfg, messageId, imageKey, log } = params;
 
-  // Try local cache (bot.ts already downloaded this)
-  const cached = lookupMedia(imageKey);
+  // Try local cache (bot.ts already downloaded this, keyed by messageId + imageKey)
+  const cached = lookupMedia(messageId, imageKey);
   if (cached) {
     try {
       const { readFile } = await import("fs/promises");
@@ -316,12 +319,12 @@ export function registerVirtualVoteTool(api: OpenClawPluginApi) {
 
               // ── Vote Text ─────────────────────────────────────────────
               case "vote_text": {
-                // Guard: if current message context has images, agent must use vote_image
-                if (hasImageMedia()) {
-                  log("vote_text rejected — media cache contains images, must use vote_image");
+                // Guard: if current message has images in cache, agent must use vote_image
+                if (params.source_message_id && hasImageMedia(params.source_message_id)) {
+                  log("vote_text rejected — message has cached images, must use vote_image");
                   return json({
-                    error: "当前消息包含图片资源，请改用 vote_image action 并传入 source_message_id（当前消息或被引用消息的 message_id），让虚拟用户直接看到原图投票。",
-                    hint: "使用 action=vote_image, source_message_id=MessageSid 或被引用消息的 message_id",
+                    error: "当前消息包含图片资源，请改用 vote_image action 并传入 source_message_id，让虚拟用户直接看到原图投票。",
+                    hint: "使用 action=vote_image, source_message_id=" + params.source_message_id,
                   });
                 }
 

@@ -418,7 +418,7 @@ async function resolveFeishuMediaList(params: {
           placeholder: "<media:image>",
         });
 
-        registerMedia(imageKey, saved.path, saved.contentType);
+        registerMedia(messageId, imageKey, saved.path, saved.contentType);
         log?.(`feishu: downloaded embedded image ${imageKey}, saved to ${saved.path}`);
       } catch (err) {
         log?.(`feishu: failed to download embedded image ${imageKey}: ${String(err)}`);
@@ -556,7 +556,7 @@ async function resolveFeishuMediaList(params: {
       placeholder: inferPlaceholder(messageType),
     });
 
-    if (fileKey) registerMedia(fileKey, saved.path, saved.contentType);
+    if (fileKey) registerMedia(messageId, fileKey, saved.path, saved.contentType);
     log?.(`feishu: downloaded ${messageType} media, saved to ${saved.path}`);
   } catch (err) {
     const errStr = String(err);
@@ -1173,7 +1173,7 @@ export async function handleFeishuMessage(params: {
             placeholder: `<media:${mediaItem.mediaType}>`,
           });
 
-          if (fileKey) registerMedia(fileKey, saved.path, saved.contentType);
+          if (fileKey) registerMedia(pendingMergeForwardMedia.parentMessageId, fileKey, saved.path, saved.contentType);
           log(`feishu: downloaded merge_forward media (${mediaItem.mediaType}), saved to ${saved.path}`);
         } catch (err) {
           log(`feishu: failed to download merge_forward media: ${String(err)}`);
