@@ -33,3 +33,14 @@ export function lookupMedia(key: string): { localPath: string; contentType?: str
   cache.delete(key);
   return { localPath: entry.localPath, contentType: entry.contentType };
 }
+
+/**
+ * Check if there are any image entries in the cache (non-destructive).
+ * Used to detect whether the current message context contains images.
+ */
+export function hasImageMedia(): boolean {
+  for (const entry of cache.values()) {
+    if (entry.contentType?.startsWith("image/")) return true;
+  }
+  return cache.size > 0; // if no contentType info, assume images if anything is cached
+}

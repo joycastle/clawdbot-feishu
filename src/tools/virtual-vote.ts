@@ -14,7 +14,7 @@ import type { FeishuConfig } from "../types.js";
 import { resolveFeishuCredentials } from "../accounts.js";
 import { sendCardFeishu, getMergeForwardMessages, getMessageFeishu } from "../api/send.js";
 import { downloadMessageResourceFeishu } from "../api/media.js";
-import { lookupMedia } from "../media-cache.js";
+import { lookupMedia, hasImageMedia } from "../media-cache.js";
 import {
   loadPersonas,
   listAvailableGames,
@@ -316,20 +316,13 @@ export function registerVirtualVoteTool(api: OpenClawPluginApi) {
 
               // ── Vote Text ─────────────────────────────────────────────
               case "vote_text": {
-                // Guard: if the user's message contains images, agent should use vote_image instead
-                if (ctx.messageChannel === "feishu") {
-                  const messageSid = ctx.sessionKey?.split(":").pop() || "";
-                  // Check if options look like image descriptions (agent tried to describe images as text)
-                  const looksLikeImageDesc = params.options.some((opt) =>
-                    /图片|图[A-Z0-9]|卡片|边框|颜色|风格|设计图|截图|封面/i.test(opt),
-                  );
-                  if (looksLikeImageDesc) {
-                    log("vote_text rejected — options look like image descriptions, should use vote_image");
-                    return json({
-                      error: "检测到选项是对图片的描述。请改用 vote_image action 并传入 source_message_id，让虚拟用户直接看到原图投票，而不是看文字描述。",
-                      hint: "使用 action=vote_image, source_message_id=当前消息或被引用消息的 message_id",
-                    });
-                  }
+                // Guard: if current message context has images, agent must use vote_image
+                if (hasImageMedia()) {
+                  log("vote_text rejected — media cache contains images, must use vote_image");
+                  return json({
+                    error: "当前消息包含图片资源，请改用 vote_image action 并传入 source_message_id（当前消息或被引用消息的 message_id），让虚拟用户直接看到原图投票。",
+                    hint: "使用 action=vote_image, source_message_id=MessageSid 或被引用消息的 message_id",
+                  });
                 }
 
                 const personaIndex = await loadPersonas(loaderCfg, params.game);
