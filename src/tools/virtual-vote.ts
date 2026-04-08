@@ -166,7 +166,7 @@ export function registerVirtualVoteTool(api: OpenClawPluginApi) {
       };
 
       return {
-        name: "joycastle_virtual_vote",
+        name: "persona_vote",
         label: "虚拟用户投票",
         description:
           "发起虚拟用户投票，让虚拟用户群基于画像人设对方案/设计进行投票评选。\n" +
@@ -342,6 +342,6 @@ export function registerVirtualVoteTool(api: OpenClawPluginApi) {
         },
       };
     },
-    { name: "joycastle_virtual_vote" },
+    { name: "persona_vote" },
   );
 }
