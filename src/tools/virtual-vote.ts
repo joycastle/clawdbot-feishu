@@ -320,7 +320,10 @@ export function registerVirtualVoteTool(api: OpenClawPluginApi) {
               // ── Vote Text ─────────────────────────────────────────────
               case "vote_text": {
                 // Guard: if current message has images in cache, agent must use vote_image
-                if (params.source_message_id && hasImageMedia(params.source_message_id)) {
+                const hasMsgId = !!params.source_message_id;
+                const hasImages = hasMsgId && hasImageMedia(params.source_message_id!);
+                log(`vote_text guard: source_message_id=${params.source_message_id ?? "none"}, hasImages=${hasImages}`);
+                if (hasImages) {
                   log("vote_text rejected — message has cached images, must use vote_image");
                   return json({
                     error: "当前消息包含图片资源，请改用 vote_image action 并传入 source_message_id，让虚拟用户直接看到原图投票。",
