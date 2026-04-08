@@ -233,11 +233,19 @@ export function registerVirtualVoteTool(api: OpenClawPluginApi) {
     (ctx) => {
       const feishuCfg = ctx.config?.channels?.feishu as FeishuConfig | undefined;
       const creds = resolveFeishuCredentials(feishuCfg);
-      if (!creds) return null;
+      if (!creds) {
+        console.log(`[virtual-vote] tool factory: no feishu credentials, skipping registration`);
+        return null;
+      }
 
       // Only register if virtualVote config exists
       const vv = (feishuCfg as any)?.virtualVote;
-      if (!vv) return null;
+      if (!vv) {
+        console.log(`[virtual-vote] tool factory: no virtualVote config found, skipping registration`);
+        return null;
+      }
+
+      console.log(`[virtual-vote] tool factory: registering persona_vote (model=${vv.model ?? "default"})`);
 
       const cfg = ctx.config!;
       const log = (msg: string) => console.log(`[virtual-vote] ${msg}`);
@@ -262,6 +270,7 @@ export function registerVirtualVoteTool(api: OpenClawPluginApi) {
           "图片投票支持多种来源：合并转发消息、单条消息内多张图片(post/富文本)、单张图片消息、引用含图消息。传入包含图片的 message_id 即可。",
         parameters: VirtualVoteSchema,
         async execute(_id: string, params: VirtualVoteParams) {
+          log(`execute called — action=${params.action}, params=${JSON.stringify(params)}`);
           try {
             const loaderCfg = buildLoaderConfig(feishuCfg!);
 
