@@ -14,6 +14,7 @@ import type { FeishuConfig } from "../types.js";
 import { resolveFeishuCredentials } from "../accounts.js";
 import { sendCardFeishu, getMergeForwardMessages, getMessageFeishu } from "../api/send.js";
 import { downloadMessageResourceFeishu } from "../api/media.js";
+import { lookupMedia } from "../media-cache.js";
 import {
   loadPersonas,
   listAvailableGames,
@@ -100,25 +101,41 @@ function buildLLMConfig(feishuCfg: FeishuConfig): VirtualVoteLLMConfig {
 // Image/post parsing uses shared utilities from message-parsers.ts
 
 /**
- * Download a single image using the messageResource API.
- * Post/image messages require messageId + imageKey as fileKey via the resource endpoint.
+ * Resolve a single image by key: try local cache first, fallback to Feishu API.
  */
-async function downloadOneImage(params: {
+async function resolveOneImage(params: {
   cfg: any;
   messageId: string;
   imageKey: string;
   log?: (msg: string) => void;
 }): Promise<{ data: string; mediaType: string } | null> {
+  const { cfg, messageId, imageKey, log } = params;
+
+  // Try local cache (bot.ts already downloaded this)
+  const cached = lookupMedia(imageKey);
+  if (cached) {
+    try {
+      const { readFile } = await import("fs/promises");
+      const buffer = await readFile(cached.localPath);
+      log?.(`virtual-vote: cache hit for ${imageKey} → ${cached.localPath}`);
+      return { data: buffer.toString("base64"), mediaType: cached.contentType || "image/png" };
+    } catch {
+      log?.(`virtual-vote: cache file unreadable for ${imageKey}, falling back to API`);
+    }
+  }
+
+  // Fallback: download from Feishu API
   try {
     const result = await downloadMessageResourceFeishu({
-      cfg: params.cfg,
-      messageId: params.messageId,
-      fileKey: params.imageKey,
+      cfg,
+      messageId,
+      fileKey: imageKey,
       type: "image",
     });
+    log?.(`virtual-vote: API download for ${imageKey}`);
     return { data: result.buffer.toString("base64"), mediaType: result.contentType || "image/png" };
   } catch (err) {
-    params.log?.(`virtual-vote: failed to download image ${params.imageKey}: ${String(err)}`);
+    log?.(`virtual-vote: failed to download image ${imageKey}: ${String(err)}`);
     return null;
   }
 }
@@ -170,21 +187,15 @@ async function downloadImagesFromMessage(params: {
       const imageItems = mergeResult.mediaItems.filter((m) => m.mediaType === "image");
       log?.(`virtual-vote: found ${imageItems.length} images in merge_forward`);
 
-      for (const item of imageItems) {
-        const fileKey = item.imageKey || item.fileKey || "";
-        if (!fileKey) continue;
-        try {
-          const result = await downloadMessageResourceFeishu({
-            cfg,
-            messageId: mergeResult.parentMessageId,
-            fileKey,
-            type: "image",
-          });
-          images.push({ data: result.buffer.toString("base64"), mediaType: result.contentType || "image/png" });
-          log?.(`virtual-vote: downloaded merge_forward image ${fileKey}`);
-        } catch (err) {
-          log?.(`virtual-vote: failed to download merge_forward image ${fileKey}: ${String(err)}`);
-        }
+      const resolved = await Promise.all(
+        imageItems.map((item) => {
+          const fileKey = item.imageKey || item.fileKey || "";
+          if (!fileKey) return null;
+          return resolveOneImage({ cfg, messageId: mergeResult.parentMessageId, imageKey: fileKey, log });
+        }),
+      );
+      for (const img of resolved) {
+        if (img) images.push(img);
       }
       break;
     }
@@ -192,7 +203,7 @@ async function downloadImagesFromMessage(params: {
     case "image": {
       const { imageKey } = parseMediaKeys(msgInfo.content, "image");
       if (imageKey) {
-        const img = await downloadOneImage({ cfg, messageId: targetMessageId, imageKey, log });
+        const img = await resolveOneImage({ cfg, messageId: targetMessageId, imageKey, log });
         if (img) images.push(img);
       }
       break;
@@ -202,7 +213,7 @@ async function downloadImagesFromMessage(params: {
       const { imageKeys } = parsePostContent(msgInfo.content);
       log?.(`virtual-vote: found ${imageKeys.length} images in post message`);
       for (const key of imageKeys) {
-        const img = await downloadOneImage({ cfg, messageId: targetMessageId, imageKey: key, log });
+        const img = await resolveOneImage({ cfg, messageId: targetMessageId, imageKey: key, log });
         if (img) images.push(img);
       }
       break;

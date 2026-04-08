@@ -13,6 +13,7 @@ import { downloadFeishuDocMediaByUrl, enrichMessageWithDocs } from "./features/d
 import { resolveFeishuGroupConfig, resolveFeishuReplyPolicy, resolveFeishuAllowlistMatch, isFeishuGroupAllowed } from "./policy.js";
 import { createFeishuReplyDispatcher } from "./reply-dispatcher.js";
 import { getMessageFeishu, getMergeForwardMessages, getReplyChain, formatReplyChain, sendMarkdownCardFeishu, sendMessageFeishu } from "./api/send.js";
+import { registerMedia } from "./media-cache.js";
 import { downloadImageFeishu, downloadMessageResourceFeishu } from "./api/media.js";
 import { sendMediaConfirmCard } from "./features/media-confirm.js";
 // Video analysis is now handled by the LLM agent via bitable-video-cli.ts
@@ -417,6 +418,7 @@ async function resolveFeishuMediaList(params: {
           placeholder: "<media:image>",
         });
 
+        registerMedia(imageKey, saved.path, saved.contentType);
         log?.(`feishu: downloaded embedded image ${imageKey}, saved to ${saved.path}`);
       } catch (err) {
         log?.(`feishu: failed to download embedded image ${imageKey}: ${String(err)}`);
@@ -554,6 +556,7 @@ async function resolveFeishuMediaList(params: {
       placeholder: inferPlaceholder(messageType),
     });
 
+    if (fileKey) registerMedia(fileKey, saved.path, saved.contentType);
     log?.(`feishu: downloaded ${messageType} media, saved to ${saved.path}`);
   } catch (err) {
     const errStr = String(err);
@@ -1170,6 +1173,7 @@ export async function handleFeishuMessage(params: {
             placeholder: `<media:${mediaItem.mediaType}>`,
           });
 
+          if (fileKey) registerMedia(fileKey, saved.path, saved.contentType);
           log(`feishu: downloaded merge_forward media (${mediaItem.mediaType}), saved to ${saved.path}`);
         } catch (err) {
           log(`feishu: failed to download merge_forward media: ${String(err)}`);
