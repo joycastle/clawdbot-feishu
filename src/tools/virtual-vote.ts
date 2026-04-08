@@ -131,19 +131,32 @@ async function downloadImagesFromMessage(params: {
 }): Promise<Array<{ data: string; mediaType: string }>> {
   const { cfg, messageId, log } = params;
 
-  // First, get message info to determine type
-  const msgInfo = await getMessageFeishu({ cfg, messageId });
+  // Get message info to determine type
+  let msgInfo = await getMessageFeishu({ cfg, messageId });
   if (!msgInfo) {
     throw new Error(`无法获取消息 ${messageId}`);
   }
 
   log?.(`virtual-vote: message type="${msgInfo.contentType}" id=${messageId}`);
 
+  // If the message itself has no images (e.g. text), check if it quotes/replies to
+  // a message that contains images, and follow the reference.
+  const noImageTypes = new Set(["text"]);
+  if (noImageTypes.has(msgInfo.contentType) && msgInfo.parentId) {
+    log?.(`virtual-vote: message is "${msgInfo.contentType}" with parentId=${msgInfo.parentId}, following quoted message`);
+    const parentMsg = await getMessageFeishu({ cfg, messageId: msgInfo.parentId });
+    if (parentMsg) {
+      msgInfo = parentMsg;
+      log?.(`virtual-vote: resolved to quoted message type="${msgInfo.contentType}" id=${msgInfo.messageId}`);
+    }
+  }
+
   const images: Array<{ data: string; mediaType: string }> = [];
+  const targetMessageId = msgInfo.messageId;
 
   switch (msgInfo.contentType) {
     case "merge_forward": {
-      const mergeResult = await getMergeForwardMessages({ cfg, messageId });
+      const mergeResult = await getMergeForwardMessages({ cfg, messageId: targetMessageId });
       if (!mergeResult) {
         throw new Error("无法获取合并转发消息内容");
       }
@@ -189,7 +202,7 @@ async function downloadImagesFromMessage(params: {
     }
 
     default:
-      log?.(`virtual-vote: unsupported message type "${msgInfo.contentType}" for image extraction`);
+      log?.(`virtual-vote: no images found — message type "${msgInfo.contentType}", no parentId to follow`);
   }
 
   return images;
