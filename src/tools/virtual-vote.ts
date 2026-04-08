@@ -12,8 +12,8 @@ import { Type, type Static } from "@sinclair/typebox";
 import type { OpenClawPluginApi } from "openclaw/plugin-sdk";
 import type { FeishuConfig } from "../types.js";
 import { resolveFeishuCredentials } from "../accounts.js";
-import { sendCardFeishu, getMergeForwardMessages } from "../api/send.js";
-import { downloadMessageResourceFeishu } from "../api/media.js";
+import { sendCardFeishu, getMergeForwardMessages, getMessageFeishu } from "../api/send.js";
+import { downloadMessageResourceFeishu, downloadImageFeishu } from "../api/media.js";
 import {
   loadPersonas,
   listAvailableGames,
@@ -58,7 +58,7 @@ const VirtualVoteSchema = Type.Union([
     game: GameEnum,
     topic: Type.String({ description: "投票主题" }),
     source_message_id: Type.String({
-      description: "包含图片的合并转发消息 message_id",
+      description: "包含图片的消息 message_id。支持合并转发消息、包含多图的富文本(post)消息、单张图片消息、或引用消息的 message_id",
     }),
     chat_id: Type.String({ description: "当前会话的 chat_id，用于发送结果卡片" }),
   }),
@@ -96,46 +96,134 @@ function buildLLMConfig(feishuCfg: FeishuConfig): VirtualVoteLLMConfig {
 
 // ─── Image Download ─────────────────────────────────────────────────────────
 
-async function downloadMergeForwardImages(params: {
+/**
+ * Parse image_key from a single image message content.
+ * Content format: {"image_key": "img_xxx"}
+ */
+function parseImageContent(content: string): string | null {
+  try {
+    const parsed = JSON.parse(content);
+    return parsed.image_key || null;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Parse image_keys from a post (rich text) message content.
+ * Post structure: { content: [[{ tag: "img", image_key: "..." }, ...]] }
+ */
+function parsePostImageKeys(content: string): string[] {
+  try {
+    const parsed = JSON.parse(content);
+    const blocks = parsed.content || [];
+    const keys: string[] = [];
+    for (const paragraph of blocks) {
+      if (Array.isArray(paragraph)) {
+        for (const el of paragraph) {
+          if (el.tag === "img" && el.image_key) {
+            keys.push(el.image_key);
+          }
+        }
+      }
+    }
+    return keys;
+  } catch {
+    return [];
+  }
+}
+
+/**
+ * Download a single image by key using the im/images API.
+ */
+async function downloadOneImage(params: {
   cfg: any;
-  sourceMessageId: string;
+  imageKey: string;
+  log?: (msg: string) => void;
+}): Promise<{ data: string; mediaType: string } | null> {
+  try {
+    const result = await downloadImageFeishu({ cfg: params.cfg, imageKey: params.imageKey });
+    return { data: result.buffer.toString("base64"), mediaType: result.contentType || "image/png" };
+  } catch (err) {
+    params.log?.(`virtual-vote: failed to download image ${params.imageKey}: ${String(err)}`);
+    return null;
+  }
+}
+
+/**
+ * Download images from a message, supporting multiple message types:
+ * - merge_forward: extract images from sub-messages
+ * - image: single image message
+ * - post: rich text with embedded images
+ *
+ * Also handles quoted/replied messages by resolving the parent message.
+ */
+async function downloadImagesFromMessage(params: {
+  cfg: any;
+  messageId: string;
   log?: (msg: string) => void;
 }): Promise<Array<{ data: string; mediaType: string }>> {
-  const { cfg, sourceMessageId, log } = params;
+  const { cfg, messageId, log } = params;
 
-  const mergeResult = await getMergeForwardMessages({ cfg, messageId: sourceMessageId });
-  if (!mergeResult) {
-    throw new Error("无法获取合并转发消息内容");
+  // First, get message info to determine type
+  const msgInfo = await getMessageFeishu({ cfg, messageId });
+  if (!msgInfo) {
+    throw new Error(`无法获取消息 ${messageId}`);
   }
 
-  const imageItems = mergeResult.mediaItems.filter((m) => m.mediaType === "image");
-  if (imageItems.length === 0) {
-    throw new Error("合并转发消息中没有找到图片");
-  }
-
-  log?.(`virtual-vote: found ${imageItems.length} images in merge_forward`);
+  log?.(`virtual-vote: message type="${msgInfo.contentType}" id=${messageId}`);
 
   const images: Array<{ data: string; mediaType: string }> = [];
 
-  for (const item of imageItems) {
-    const fileKey = item.imageKey || item.fileKey || "";
-    if (!fileKey) continue;
+  switch (msgInfo.contentType) {
+    case "merge_forward": {
+      const mergeResult = await getMergeForwardMessages({ cfg, messageId });
+      if (!mergeResult) {
+        throw new Error("无法获取合并转发消息内容");
+      }
+      const imageItems = mergeResult.mediaItems.filter((m) => m.mediaType === "image");
+      log?.(`virtual-vote: found ${imageItems.length} images in merge_forward`);
 
-    try {
-      const result = await downloadMessageResourceFeishu({
-        cfg,
-        messageId: mergeResult.parentMessageId, // Must use parent message ID
-        fileKey,
-        type: "image",
-      });
-
-      const base64 = result.buffer.toString("base64");
-      const mediaType = result.contentType || "image/png";
-      images.push({ data: base64, mediaType });
-      log?.(`virtual-vote: downloaded image ${fileKey}`);
-    } catch (err) {
-      log?.(`virtual-vote: failed to download image ${fileKey}: ${String(err)}`);
+      for (const item of imageItems) {
+        const fileKey = item.imageKey || item.fileKey || "";
+        if (!fileKey) continue;
+        try {
+          const result = await downloadMessageResourceFeishu({
+            cfg,
+            messageId: mergeResult.parentMessageId,
+            fileKey,
+            type: "image",
+          });
+          images.push({ data: result.buffer.toString("base64"), mediaType: result.contentType || "image/png" });
+          log?.(`virtual-vote: downloaded merge_forward image ${fileKey}`);
+        } catch (err) {
+          log?.(`virtual-vote: failed to download merge_forward image ${fileKey}: ${String(err)}`);
+        }
+      }
+      break;
     }
+
+    case "image": {
+      const imageKey = parseImageContent(msgInfo.content);
+      if (imageKey) {
+        const img = await downloadOneImage({ cfg, imageKey, log });
+        if (img) images.push(img);
+      }
+      break;
+    }
+
+    case "post": {
+      const imageKeys = parsePostImageKeys(msgInfo.content);
+      log?.(`virtual-vote: found ${imageKeys.length} images in post message`);
+      for (const key of imageKeys) {
+        const img = await downloadOneImage({ cfg, imageKey: key, log });
+        if (img) images.push(img);
+      }
+      break;
+    }
+
+    default:
+      log?.(`virtual-vote: unsupported message type "${msgInfo.contentType}" for image extraction`);
   }
 
   return images;
@@ -173,7 +261,8 @@ export function registerVirtualVoteTool(api: OpenClawPluginApi) {
           "- MS (Matching Story): 三消游戏用户群(Match-3品类)，20个画像\n" +
           "- BV (Bingo Voyage): 与BF共享同一套画像\n" +
           "当用户提到Bingo Frenzy/BF/休闲/Bingo/Coin相关 → BF；三消/消除/match/Matching Story → MS；Bingo Voyage/BV → BV。\n" +
-          "支持 help 查看使用方法、list_groups 查看可用用户群、vote_text 文字投票、vote_image 图片投票（需要合并转发消息的message_id）。",
+          "支持 help 查看使用方法、list_groups 查看可用用户群、vote_text 文字投票、vote_image 图片投票。\n" +
+          "图片投票支持多种来源：合并转发消息、单条消息内多张图片(post/富文本)、单张图片消息、引用含图消息。传入包含图片的 message_id 即可。",
         parameters: VirtualVoteSchema,
         async execute(_id: string, params: VirtualVoteParams) {
           try {
@@ -277,10 +366,10 @@ export function registerVirtualVoteTool(api: OpenClawPluginApi) {
                   });
                 }
 
-                // Download images from merge_forward message
-                const images = await downloadMergeForwardImages({
+                // Download images from source message (supports merge_forward, post, image, quoted)
+                const images = await downloadImagesFromMessage({
                   cfg,
-                  sourceMessageId: params.source_message_id,
+                  messageId: params.source_message_id,
                   log,
                 });
 
