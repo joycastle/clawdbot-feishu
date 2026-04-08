@@ -13,7 +13,7 @@ import type { OpenClawPluginApi } from "openclaw/plugin-sdk";
 import type { FeishuConfig } from "../types.js";
 import { resolveFeishuCredentials } from "../accounts.js";
 import { sendCardFeishu, getMergeForwardMessages, getMessageFeishu } from "../api/send.js";
-import { downloadMessageResourceFeishu, downloadImageFeishu } from "../api/media.js";
+import { downloadMessageResourceFeishu } from "../api/media.js";
 import {
   loadPersonas,
   listAvailableGames,
@@ -100,15 +100,22 @@ function buildLLMConfig(feishuCfg: FeishuConfig): VirtualVoteLLMConfig {
 // Image/post parsing uses shared utilities from message-parsers.ts
 
 /**
- * Download a single image by key using the im/images API.
+ * Download a single image using the messageResource API.
+ * Post/image messages require messageId + imageKey as fileKey via the resource endpoint.
  */
 async function downloadOneImage(params: {
   cfg: any;
+  messageId: string;
   imageKey: string;
   log?: (msg: string) => void;
 }): Promise<{ data: string; mediaType: string } | null> {
   try {
-    const result = await downloadImageFeishu({ cfg: params.cfg, imageKey: params.imageKey });
+    const result = await downloadMessageResourceFeishu({
+      cfg: params.cfg,
+      messageId: params.messageId,
+      fileKey: params.imageKey,
+      type: "image",
+    });
     return { data: result.buffer.toString("base64"), mediaType: result.contentType || "image/png" };
   } catch (err) {
     params.log?.(`virtual-vote: failed to download image ${params.imageKey}: ${String(err)}`);
@@ -185,7 +192,7 @@ async function downloadImagesFromMessage(params: {
     case "image": {
       const { imageKey } = parseMediaKeys(msgInfo.content, "image");
       if (imageKey) {
-        const img = await downloadOneImage({ cfg, imageKey, log });
+        const img = await downloadOneImage({ cfg, messageId: targetMessageId, imageKey, log });
         if (img) images.push(img);
       }
       break;
@@ -195,7 +202,7 @@ async function downloadImagesFromMessage(params: {
       const { imageKeys } = parsePostContent(msgInfo.content);
       log?.(`virtual-vote: found ${imageKeys.length} images in post message`);
       for (const key of imageKeys) {
-        const img = await downloadOneImage({ cfg, imageKey: key, log });
+        const img = await downloadOneImage({ cfg, messageId: targetMessageId, imageKey: key, log });
         if (img) images.push(img);
       }
       break;
