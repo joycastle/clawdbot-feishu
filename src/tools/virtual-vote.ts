@@ -80,6 +80,32 @@ function json(data: unknown) {
   };
 }
 
+/**
+ * Extract the real Feishu chat target from tool ctx or params.
+ * Prefers ctx.sessionKey parsing (reliable), falls back to params.chat_id.
+ *
+ * sessionKey formats:
+ *   agent:main:feishu:dm:ou_xxx:thread:om_xxx     → DM, target = ou_xxx
+ *   agent:main:feishu:group:oc_xxx:thread:om_xxx   → Group, target = oc_xxx
+ *   agent:main:feishu:group:oc_xxx                  → Group, target = oc_xxx
+ */
+function resolveChatTarget(ctx: { sessionKey?: string }, paramChatId: string, log?: (msg: string) => void): string {
+  const sk = ctx.sessionKey ?? "";
+  // Try to extract oc_ (group) or ou_ (dm) from sessionKey
+  const groupMatch = sk.match(/:group:(oc_[^:]+)/);
+  if (groupMatch) {
+    log?.(`resolved chat target from sessionKey: ${groupMatch[1]}`);
+    return groupMatch[1];
+  }
+  const dmMatch = sk.match(/:dm:(ou_[^:]+)/);
+  if (dmMatch) {
+    log?.(`resolved chat target from sessionKey: ${dmMatch[1]}`);
+    return dmMatch[1];
+  }
+  log?.(`could not parse sessionKey "${sk}", using params.chat_id: ${paramChatId}`);
+  return paramChatId;
+}
+
 function buildLoaderConfig(feishuCfg: FeishuConfig): PersonaLoaderConfig {
   const vv = (feishuCfg as any).virtualVote ?? {};
   const workspace = process.env.CLAWDBOT_WORKSPACE || process.env.OPENCLAW_WORKSPACE || "";
@@ -277,6 +303,14 @@ export function registerVirtualVoteTool(api: OpenClawPluginApi) {
         parameters: VirtualVoteSchema,
         async execute(_id: string, params: VirtualVoteParams) {
           log(`execute called — action=${params.action}, params=${JSON.stringify(params)}`);
+
+          // Resolve real chat target from sessionKey (reliable) instead of agent-provided chat_id
+          const chatTarget = "chat_id" in params
+            ? resolveChatTarget(ctx, params.chat_id, log)
+            : "";
+          if ("chat_id" in params) {
+            log(`chat target: agent said "${params.chat_id}", resolved to "${chatTarget}"`);
+          }
           try {
             const loaderCfg = buildLoaderConfig(feishuCfg!);
 
@@ -354,13 +388,13 @@ export function registerVirtualVoteTool(api: OpenClawPluginApi) {
                 try {
                   cardResult = await sendCardFeishu({
                     cfg,
-                    to: params.chat_id,
+                    to: chatTarget,
                     card: progressCard,
                   });
                   log(`progress card sent, messageId=${cardResult.messageId}`);
                 } catch (cardErr) {
                   log(`failed to send progress card: ${String(cardErr)}`);
-                  return json({ error: `发送进度卡片失败: ${String(cardErr)}`, chat_id: params.chat_id });
+                  return json({ error: `发送进度卡片失败: ${String(cardErr)}`, chat_id: chatTarget });
                 }
 
                 // Fire-and-forget background execution
@@ -369,7 +403,7 @@ export function registerVirtualVoteTool(api: OpenClawPluginApi) {
                   llmCfg: { ...llmCfg },
                   llmRuntime,
                   cardMessageId: cardResult.messageId,
-                  chatId: params.chat_id,
+                  chatId: chatTarget,
                   game: params.game,
                   topic: params.topic,
                   options: params.options,
@@ -426,13 +460,13 @@ export function registerVirtualVoteTool(api: OpenClawPluginApi) {
                 try {
                   cardResult = await sendCardFeishu({
                     cfg,
-                    to: params.chat_id,
+                    to: chatTarget,
                     card: progressCard,
                   });
                   log(`progress card sent, messageId=${cardResult.messageId}`);
                 } catch (cardErr) {
                   log(`failed to send progress card: ${String(cardErr)}`);
-                  return json({ error: `发送进度卡片失败: ${String(cardErr)}`, chat_id: params.chat_id });
+                  return json({ error: `发送进度卡片失败: ${String(cardErr)}`, chat_id: chatTarget });
                 }
 
                 // Fire-and-forget
@@ -441,7 +475,7 @@ export function registerVirtualVoteTool(api: OpenClawPluginApi) {
                   llmCfg: { ...llmCfg },
                   llmRuntime,
                   cardMessageId: cardResult.messageId,
-                  chatId: params.chat_id,
+                  chatId: chatTarget,
                   game: params.game,
                   topic: params.topic,
                   images,
