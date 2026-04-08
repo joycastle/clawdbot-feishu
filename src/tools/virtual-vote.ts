@@ -27,6 +27,7 @@ import {
 import { buildProgressCard } from "../features/virtual-vote/result-card.js";
 import { runVoteInBackground } from "../features/virtual-vote/vote-runner.js";
 import { getFeishuRuntime } from "../runtime.js";
+import { parseMediaKeys, parsePostContent } from "../message-parsers.js";
 
 // ─── Schema ─────────────────────────────────────────────────────────────────
 
@@ -96,42 +97,7 @@ function buildLLMConfig(feishuCfg: FeishuConfig): VirtualVoteLLMConfig {
 
 // ─── Image Download ─────────────────────────────────────────────────────────
 
-/**
- * Parse image_key from a single image message content.
- * Content format: {"image_key": "img_xxx"}
- */
-function parseImageContent(content: string): string | null {
-  try {
-    const parsed = JSON.parse(content);
-    return parsed.image_key || null;
-  } catch {
-    return null;
-  }
-}
-
-/**
- * Parse image_keys from a post (rich text) message content.
- * Post structure: { content: [[{ tag: "img", image_key: "..." }, ...]] }
- */
-function parsePostImageKeys(content: string): string[] {
-  try {
-    const parsed = JSON.parse(content);
-    const blocks = parsed.content || [];
-    const keys: string[] = [];
-    for (const paragraph of blocks) {
-      if (Array.isArray(paragraph)) {
-        for (const el of paragraph) {
-          if (el.tag === "img" && el.image_key) {
-            keys.push(el.image_key);
-          }
-        }
-      }
-    }
-    return keys;
-  } catch {
-    return [];
-  }
-}
+// Image/post parsing uses shared utilities from message-parsers.ts
 
 /**
  * Download a single image by key using the im/images API.
@@ -204,7 +170,7 @@ async function downloadImagesFromMessage(params: {
     }
 
     case "image": {
-      const imageKey = parseImageContent(msgInfo.content);
+      const { imageKey } = parseMediaKeys(msgInfo.content, "image");
       if (imageKey) {
         const img = await downloadOneImage({ cfg, imageKey, log });
         if (img) images.push(img);
@@ -213,7 +179,7 @@ async function downloadImagesFromMessage(params: {
     }
 
     case "post": {
-      const imageKeys = parsePostImageKeys(msgInfo.content);
+      const { imageKeys } = parsePostContent(msgInfo.content);
       log?.(`virtual-vote: found ${imageKeys.length} images in post message`);
       for (const key of imageKeys) {
         const img = await downloadOneImage({ cfg, imageKey: key, log });
