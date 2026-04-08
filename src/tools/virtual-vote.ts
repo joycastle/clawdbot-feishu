@@ -349,11 +349,19 @@ export function registerVirtualVoteTool(api: OpenClawPluginApi) {
                   completedCount: 0,
                   status: "running",
                 });
-                const cardResult = await sendCardFeishu({
-                  cfg,
-                  to: params.chat_id,
-                  card: progressCard,
-                });
+                log(`sending progress card to chat_id=${params.chat_id}`);
+                let cardResult: { messageId: string };
+                try {
+                  cardResult = await sendCardFeishu({
+                    cfg,
+                    to: params.chat_id,
+                    card: progressCard,
+                  });
+                  log(`progress card sent, messageId=${cardResult.messageId}`);
+                } catch (cardErr) {
+                  log(`failed to send progress card: ${String(cardErr)}`);
+                  return json({ error: `发送进度卡片失败: ${String(cardErr)}`, chat_id: params.chat_id });
+                }
 
                 // Fire-and-forget background execution
                 runVoteInBackground({
@@ -413,11 +421,19 @@ export function registerVirtualVoteTool(api: OpenClawPluginApi) {
                   completedCount: 0,
                   status: "running",
                 });
-                const cardResult = await sendCardFeishu({
-                  cfg,
-                  to: params.chat_id,
-                  card: progressCard,
-                });
+                log(`sending progress card to chat_id=${params.chat_id}`);
+                let cardResult: { messageId: string };
+                try {
+                  cardResult = await sendCardFeishu({
+                    cfg,
+                    to: params.chat_id,
+                    card: progressCard,
+                  });
+                  log(`progress card sent, messageId=${cardResult.messageId}`);
+                } catch (cardErr) {
+                  log(`failed to send progress card: ${String(cardErr)}`);
+                  return json({ error: `发送进度卡片失败: ${String(cardErr)}`, chat_id: params.chat_id });
+                }
 
                 // Fire-and-forget
                 runVoteInBackground({
