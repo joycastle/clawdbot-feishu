@@ -389,11 +389,12 @@ export type SendFeishuMessageParams = {
   to: string;
   text: string;
   replyToMessageId?: string;
+  replyInThread?: boolean;
   mentions?: MentionTarget[];
 };
 
 export async function sendMessageFeishu(params: SendFeishuMessageParams): Promise<FeishuSendResult> {
-  const { cfg, to, text, replyToMessageId, mentions } = params;
+  const { cfg, to, text, replyToMessageId, replyInThread, mentions } = params;
   const feishuCfg = cfg.channels?.feishu as FeishuConfig | undefined;
   if (!feishuCfg) {
     throw new Error("Feishu channel not configured");
@@ -421,12 +422,16 @@ export async function sendMessageFeishu(params: SendFeishuMessageParams): Promis
   const content = JSON.stringify({ text: messageText });
 
   if (replyToMessageId) {
+    const replyData: Record<string, unknown> = {
+      content,
+      msg_type: "text",
+    };
+    if (replyInThread) {
+      replyData.reply_in_thread = true;
+    }
     const response = await client.im.message.reply({
       path: { message_id: replyToMessageId },
-      data: {
-        content,
-        msg_type: "text",
-      },
+      data: replyData as any,
     });
 
     if (response.code !== 0) {

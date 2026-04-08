@@ -11,7 +11,7 @@ import type { VirtualVoteLLMConfig, VirtualVoteLLMRuntime, LLMMessage, LLMConten
 import type { VoteChoice, VoteResultData } from "./result-card.js";
 import { callLLM } from "./llm-client.js";
 import { buildProgressCard, buildResultCard } from "./result-card.js";
-import { updateCardFeishu } from "../../api/send.js";
+import { updateCardFeishu, sendMessageFeishu } from "../../api/send.js";
 
 // ─── Types ──────────────────────────────────────────────────────────────────
 
@@ -238,6 +238,17 @@ export async function runVoteInBackground(params: VoteRunnerParams): Promise<voi
             choice: parsed.choice,
             reason: parsed.reason,
           });
+
+          // Send persona comment as thread reply under the card
+          const choiceLabel = options[parsed.choice] ?? `选项${parsed.choice + 1}`;
+          const commentText = `**${persona.name}** (${persona.summary})\n选择：${choiceLabel}\n理由：${parsed.reason}`;
+          sendMessageFeishu({
+            cfg,
+            to: "",
+            text: commentText,
+            replyToMessageId: cardMessageId,
+            replyInThread: true,
+          }).catch((err) => log?.(`virtual-vote: failed to send comment for ${persona.name}: ${String(err)}`));
         } else {
           log?.(`virtual-vote: [${persona.name}] PARSE FAILED, raw: ${result.text.slice(0, 300)}`);
         }

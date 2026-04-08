@@ -115,28 +115,6 @@ export function buildResultCard(data: VoteResultData): Record<string, unknown> {
     });
   }
 
-  elements.push({ tag: "hr" });
-
-  // Per-persona details (grouped by choice)
-  elements.push({
-    tag: "markdown",
-    content: "**投票详情**",
-  });
-
-  for (let i = 0; i < options.length; i++) {
-    const voters = choices.filter((c) => c.choice === i);
-    if (voters.length === 0) continue;
-
-    const voterLines = voters
-      .map((v) => `• **${v.personaName}** (${v.personaSummary})\n  _${v.reason}_`)
-      .join("\n");
-
-    elements.push({
-      tag: "markdown",
-      content: `**选项${i + 1}. ${options[i]}** (${voters.length}票)\n${voterLines}`,
-    });
-  }
-
   // Footer
   elements.push({ tag: "hr" });
   const footerParts: string[] = [];
