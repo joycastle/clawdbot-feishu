@@ -9,7 +9,7 @@
  */
 
 import { getModel, complete } from "@mariozechner/pi-ai";
-import type { Context, UserMessage, ImageContent, TextContent, AssistantMessage } from "@mariozechner/pi-ai";
+import type { Context, UserMessage, ImageContent, TextContent, AssistantMessage, Model, Api } from "@mariozechner/pi-ai";
 import type { PluginRuntime } from "openclaw/plugin-sdk";
 import type { OpenClawConfig } from "openclaw/plugin-sdk";
 
@@ -122,6 +122,38 @@ function extractResult(response: AssistantMessage): LLMResult {
 /**
  * Call the LLM using openclaw's provider infrastructure.
  */
+/**
+ * Resolve a pi-ai Model object. For built-in providers (anthropic, openai, google, etc.)
+ * uses getModel() from the registry. For proxy providers like litellm, constructs a
+ * custom Model with OpenAI-compatible API since litellm exposes an OpenAI-compatible endpoint.
+ */
+function resolveModel(provider: string, modelId: string, cfg: OpenClawConfig): Model<Api> {
+  // Try built-in registry first
+  const builtinModel = getModel(provider as any, modelId as any);
+  if (builtinModel) return builtinModel;
+
+  // For proxy providers (litellm, etc.), construct an OpenAI-compatible model.
+  // Resolve baseUrl from openclaw config: models.providers.<provider>.baseUrl
+  const providerCfg = (cfg as any)?.models?.providers?.[provider];
+  const baseUrl = providerCfg?.baseUrl || `http://localhost:4000`;
+
+  return {
+    id: modelId,
+    name: modelId,
+    api: (providerCfg?.api as Api) || "openai-completions",
+    provider,
+    baseUrl,
+    reasoning: false,
+    input: ["text", "image"],
+    cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 },
+    contextWindow: 200000,
+    maxTokens: 64000,
+  } as Model<Api>;
+}
+
+/**
+ * Call the LLM using openclaw's provider infrastructure.
+ */
 export async function callLLM(
   cfg: VirtualVoteLLMConfig,
   rt: VirtualVoteLLMRuntime,
@@ -129,20 +161,10 @@ export async function callLLM(
 ): Promise<LLMResult> {
   const { provider, modelId } = parseModelRef(cfg.model);
 
-  // Get the pi-ai model object
-  const model = getModel(provider as any, modelId as any);
-  if (!model) {
-    throw new Error(`virtualVote: model not found — provider="${provider}", modelId="${modelId}"`);
-  }
+  // Resolve model (built-in or proxy)
+  const model = resolveModel(provider, modelId, rt.config);
 
   // Resolve API key via openclaw's auth system
-  if (!rt.runtime) {
-    throw new Error(`virtualVote: runtime is null/undefined`);
-  }
-  if (!rt.runtime.modelAuth) {
-    throw new Error(`virtualVote: runtime.modelAuth is undefined — runtime keys: ${Object.keys(rt.runtime).join(", ")}`);
-  }
-
   const auth = await rt.runtime.modelAuth.resolveApiKeyForProvider({
     provider,
     cfg: rt.config,
@@ -151,7 +173,7 @@ export async function callLLM(
   if (!auth.apiKey) {
     throw new Error(
       `virtualVote: no API key resolved for provider "${provider}". ` +
-        `auth.mode="${auth.mode}", Check openclaw auth profiles or environment variables.`,
+        `Check openclaw auth profiles or environment variables.`,
     );
   }
 
