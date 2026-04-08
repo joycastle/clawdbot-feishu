@@ -73,6 +73,10 @@ export const feishuPlugin: ChannelPlugin<ResolvedFeishuAccount> = {
       `  - \`curl -X POST http://127.0.0.1:18797/add -H "Content-Type: application/json" -d '{"job":{"schedule":"in 5 minutes","text":"提醒内容"}}'\` - 添加延时任务（支持 "in 5 minutes", "at 14:00" 等）`,
       `  - \`curl http://127.0.0.1:18797/list\` - 查看当前所有定时任务`,
       `  - \`curl -X POST http://127.0.0.1:18797/remove -H "Content-Type: application/json" -d '{"id":"job_id"}'\` - 删除任务`,
+      `  - **重要：定时任务发送目标规则**：`,
+      `    - 如果任务需要通过 message 工具发给**特定用户或群**（prompt 中包含 target/to），必须在 payload 中设置 \`"deliver": false\`，否则消息会被自动投递给创建者而不是目标用户`,
+      `    - 示例：\`{"job":{"schedule":"0 10 * * *","message":"用 message 工具发给 user:ou_xxx：提醒内容","deliver":false}}\``,
+      `    - 只有当任务的输出文本本身就是要发给创建者的回复时，才省略 deliver 字段（默认自动投递给创建者）`,
     ];
     },
   },
