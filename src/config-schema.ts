@@ -107,6 +107,20 @@ export const FeishuConfigSchema = z
     projectPluginId: z.string().optional(), // 飞书项目插件 ID
     projectPluginSecret: z.string().optional(), // 飞书项目插件 Secret
     projectUserKey: z.string().optional(), // 默认用户 Key（用于 API 调用）
+    // ── 虚拟用户投票 ──
+    virtualVote: z
+      .object({
+        model: z.string().optional().default("anthropic/claude-opus-4-6"), // openclaw 格式: "provider/model-id"
+        maxConcurrent: z.number().int().min(1).max(20).optional().default(6),
+        temperature: z.number().min(0).max(2).optional().default(0.7),
+        maxTokens: z.number().int().positive().optional().default(1024),
+        personaBaseDir: z.string().optional(), // 画像文件根目录，默认为 workspace 下的 虚拟用户/
+        gameMapping: z
+          .record(z.string(), z.string())
+          .optional(), // 游戏 → 画像目录映射，如 { "BV": "BF" }
+      })
+      .strict()
+      .optional(),
   })
   .strict()
   .superRefine((value, ctx) => {

@@ -18,6 +18,7 @@ import { registerFeishuProjectTool } from "./feishu-project.js";
 import { registerMemoryWriteTool } from "./memory-write.js";
 import { registerMemoryReadTool } from "./memory-read.js";
 import { registerMemoryGraphTool } from "./memory-graph.js";
+import { registerVirtualVoteTool } from "./virtual-vote.js";
 
 export function registerAllFeishuTools(api: OpenClawPluginApi) {
   // Feishu tools
@@ -34,4 +35,6 @@ export function registerAllFeishuTools(api: OpenClawPluginApi) {
   registerMemoryWriteTool(api);
   registerMemoryReadTool(api);
   registerMemoryGraphTool(api);
+  // Virtual vote
+  registerVirtualVoteTool(api);
 }
