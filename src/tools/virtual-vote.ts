@@ -266,8 +266,11 @@ export function registerVirtualVoteTool(api: OpenClawPluginApi) {
           "- MS (Matching Story): 三消游戏用户群(Match-3品类)，20个画像\n" +
           "- BV (Bingo Voyage): 与BF共享同一套画像\n" +
           "当用户提到Bingo Frenzy/BF/休闲/Bingo/Coin相关 → BF；三消/消除/match/Matching Story → MS；Bingo Voyage/BV → BV。\n" +
-          "支持 help 查看使用方法、list_groups 查看可用用户群、vote_text 文字投票、vote_image 图片投票。\n" +
-          "图片投票支持多种来源：合并转发消息、单条消息内多张图片(post/富文本)、单张图片消息、引用含图消息。传入包含图片的 message_id 即可。",
+          "支持 help/list_groups/vote_text/vote_image 四种 action。\n" +
+          "**重要：当消息中包含图片（或引用了包含图片的消息）时，必须使用 vote_image action 并传入 source_message_id，" +
+          "让虚拟用户直接看到原图来投票。绝对不要自己描述图片内容后用 vote_text——虚拟用户必须看到原始图片才能做出准确判断。**\n" +
+          "vote_text 仅用于纯文字选项（如功能方案、活动主题等无图片的场景）。\n" +
+          "图片投票的 source_message_id 支持：合并转发消息、富文本(post)多图消息、单张图片消息、引用含图消息的 message_id。",
         parameters: VirtualVoteSchema,
         async execute(_id: string, params: VirtualVoteParams) {
           log(`execute called — action=${params.action}, params=${JSON.stringify(params)}`);
@@ -313,6 +316,22 @@ export function registerVirtualVoteTool(api: OpenClawPluginApi) {
 
               // ── Vote Text ─────────────────────────────────────────────
               case "vote_text": {
+                // Guard: if the user's message contains images, agent should use vote_image instead
+                if (ctx.messageChannel === "feishu") {
+                  const messageSid = ctx.sessionKey?.split(":").pop() || "";
+                  // Check if options look like image descriptions (agent tried to describe images as text)
+                  const looksLikeImageDesc = params.options.some((opt) =>
+                    /图片|图[A-Z0-9]|卡片|边框|颜色|风格|设计图|截图|封面/i.test(opt),
+                  );
+                  if (looksLikeImageDesc) {
+                    log("vote_text rejected — options look like image descriptions, should use vote_image");
+                    return json({
+                      error: "检测到选项是对图片的描述。请改用 vote_image action 并传入 source_message_id，让虚拟用户直接看到原图投票，而不是看文字描述。",
+                      hint: "使用 action=vote_image, source_message_id=当前消息或被引用消息的 message_id",
+                    });
+                  }
+                }
+
                 const personaIndex = await loadPersonas(loaderCfg, params.game);
                 if (!personaIndex || personaIndex.count === 0) {
                   return json({
