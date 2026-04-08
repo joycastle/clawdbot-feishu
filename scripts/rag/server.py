@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 RAG 知识库检索服务
-端口: 18800
+端口: 18805
 
 ⚠️ 安全注意事项（防止 2026-02-13 事故重演）：
 1. 所有操作都有 try-catch，错误返回友好消息，绝不 raise
@@ -19,7 +19,7 @@ from urllib.parse import urlparse, parse_qs
 from pathlib import Path
 
 # 配置
-PORT = 18800
+PORT = 18805
 VERTEX_PROJECT = os.environ.get("VERTEX_PROJECT", "larkbot-485707")
 VERTEX_LOCATION = os.environ.get("VERTEX_LOCATION", "us-central1")
 EXPANSION_MODEL = "gemini-2.0-flash-001"  # 便宜快速

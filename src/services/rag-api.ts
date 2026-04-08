@@ -18,7 +18,7 @@ import * as path from "node:path";
 import { spawn, ChildProcess } from "node:child_process";
 import { fileURLToPath } from "node:url";
 
-const PORT = 18800;
+const PORT = 18805;
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const SCRIPTS_DIR = path.resolve(__dirname, "../../scripts/rag");
 
@@ -129,15 +129,25 @@ let server: http.Server | null = null;
 export async function startRagApi(log?: (...args: unknown[]) => void) {
   log?.("[RAG] Starting RAG API service...");
 
-  // 先检查 Python 服务是否已经在运行
+  // 先检查端口是否被占用（可能是之前的 Python 服务还在跑）
   try {
-    const response = await fetch(`http://127.0.0.1:${PORT}/health`);
+    const response = await fetch(`http://127.0.0.1:${PORT}/health`, { signal: AbortSignal.timeout(2000) });
     if (response.ok) {
-      log?.(`[RAG] Python server already running on port ${PORT}`);
+      log?.(`[RAG] Python server already running on port ${PORT}, skip starting`);
       return;
     }
   } catch {
-    // 没运行，需要启动
+    // 检查端口是否被其他进程占用
+    const { execSync } = await import("node:child_process");
+    try {
+      const result = execSync(`lsof -i :${PORT} -t 2>/dev/null || true`, { encoding: "utf8" }).trim();
+      if (result) {
+        log?.(`[RAG] Port ${PORT} already in use by PID ${result}, skip starting`);
+        return;
+      }
+    } catch {
+      // lsof 失败，继续尝试启动
+    }
   }
 
   // 启动 Python 服务
