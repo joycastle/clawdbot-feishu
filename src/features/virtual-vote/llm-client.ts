@@ -131,8 +131,18 @@ export async function callLLM(
 
   // Get the pi-ai model object
   const model = getModel(provider as any, modelId as any);
+  if (!model) {
+    throw new Error(`virtualVote: model not found — provider="${provider}", modelId="${modelId}"`);
+  }
 
   // Resolve API key via openclaw's auth system
+  if (!rt.runtime) {
+    throw new Error(`virtualVote: runtime is null/undefined`);
+  }
+  if (!rt.runtime.modelAuth) {
+    throw new Error(`virtualVote: runtime.modelAuth is undefined — runtime keys: ${Object.keys(rt.runtime).join(", ")}`);
+  }
+
   const auth = await rt.runtime.modelAuth.resolveApiKeyForProvider({
     provider,
     cfg: rt.config,
@@ -141,7 +151,7 @@ export async function callLLM(
   if (!auth.apiKey) {
     throw new Error(
       `virtualVote: no API key resolved for provider "${provider}". ` +
-        `Check openclaw auth profiles or environment variables.`,
+        `auth.mode="${auth.mode}", Check openclaw auth profiles or environment variables.`,
     );
   }
 
