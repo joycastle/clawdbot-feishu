@@ -26,6 +26,7 @@ import {
 } from "../features/virtual-vote/llm-client.js";
 import { buildProgressCard } from "../features/virtual-vote/result-card.js";
 import { runVoteInBackground } from "../features/virtual-vote/vote-runner.js";
+import { getFeishuRuntime } from "../runtime.js";
 
 // ─── Schema ─────────────────────────────────────────────────────────────────
 
@@ -143,9 +144,6 @@ async function downloadMergeForwardImages(params: {
 // ─── Tool Registration ──────────────────────────────────────────────────────
 
 export function registerVirtualVoteTool(api: OpenClawPluginApi) {
-  // Capture runtime for model auth — available at registration time
-  const pluginRuntime = (api as any).runtime;
-
   api.registerTool(
     (ctx) => {
       const feishuCfg = ctx.config?.channels?.feishu as FeishuConfig | undefined;
@@ -162,7 +160,7 @@ export function registerVirtualVoteTool(api: OpenClawPluginApi) {
       // Build runtime context for LLM calls (reuses openclaw's provider auth)
       const llmRuntime: VirtualVoteLLMRuntime = {
         config: cfg as any,
-        runtime: pluginRuntime,
+        runtime: getFeishuRuntime(),
       };
 
       return {
