@@ -224,27 +224,11 @@ export async function runVoteInBackground(params: VoteRunnerParams): Promise<voi
         const votePrompt = buildVotePrompt({ topic, options, images });
         const messages: LLMMessage[] = [systemPrompt, votePrompt];
 
-        // Log input for first persona only (to avoid flooding logs with base64)
-        if (completedCount === 0) {
-          const promptContent = votePrompt.content;
-          if (Array.isArray(promptContent)) {
-            const parts = promptContent.map((p) => {
-              if (p.type === "text") return `[text: ${p.text.slice(0, 200)}...]`;
-              return `[image: ${p.mediaType}, base64_len=${p.data.length}]`;
-            });
-            log?.(`virtual-vote: first persona prompt parts: ${parts.join(", ")}`);
-          } else {
-            log?.(`virtual-vote: first persona prompt: ${String(promptContent).slice(0, 200)}`);
-          }
-        }
-
         const result = await callLLM(llmCfg, params.llmRuntime, messages);
-        log?.(`virtual-vote: [${persona.name}] raw response: ${result.text.slice(0, 300)}`);
 
         const parsed = parseVoteResponse(result.text, options.length);
 
         if (parsed) {
-          log?.(`virtual-vote: [${persona.name}] choice=${parsed.choice + 1}, reason=${parsed.reason}`);
           results.push({
             personaId: persona.id,
             personaName: persona.name,
@@ -415,12 +399,10 @@ export async function runEvalInBackground(params: EvalRunnerParams): Promise<voi
         const messages: LLMMessage[] = [systemPrompt, evalPrompt];
 
         const result = await callLLM(llmCfg, params.llmRuntime, messages);
-        log?.(`virtual-eval: [${persona.name}] raw response: ${result.text.slice(0, 300)}`);
 
         const parsed = parseEvalResponse(result.text);
 
         if (parsed) {
-          log?.(`virtual-eval: [${persona.name}] verdict=${parsed.attractive ? "吸引" : "不吸引"}`);
           results.push({
             personaId: persona.id,
             personaName: persona.name,

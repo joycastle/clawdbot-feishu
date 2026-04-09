@@ -60,7 +60,14 @@ export function parsePostContent(content: string): {
           if (element.tag === "text") {
             textContent += element.text || "";
           } else if (element.tag === "a") {
-            textContent += element.text || element.href || "";
+            // Preserve both display text and href so doc URLs are not lost
+            const linkText = element.text || "";
+            const linkHref = element.href || "";
+            if (linkHref && linkText && linkHref !== linkText && !linkText.includes(linkHref)) {
+              textContent += `${linkText}( ${linkHref} )`;
+            } else {
+              textContent += linkText || linkHref;
+            }
           } else if (element.tag === "at") {
             textContent += `@${element.user_name || element.user_id || ""}`;
           } else if (element.tag === "img" && element.image_key) {

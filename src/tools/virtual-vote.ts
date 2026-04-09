@@ -71,7 +71,7 @@ const VirtualVoteSchema = Type.Union([
   Type.Object({
     action: Type.Literal("evaluate_doc"),
     game: GameEnum,
-    topic: Type.String({ description: "评估主题，如：新活动方案评估" }),
+    topic: Type.Optional(Type.String({ description: "评估主题（可选，不填则自动使用文档标题）" })),
     doc_url: Type.String({
       description: "飞书文档 URL，支持 wiki/docx/docs 格式，如 https://xxx.feishu.cn/wiki/xxx 或 https://xxx.feishu.cn/docx/xxx",
     }),
@@ -315,10 +315,11 @@ export function registerVirtualVoteTool(api: OpenClawPluginApi) {
           "- BV (Bingo Voyage): 与BF共享同一套画像\n" +
           "当用户提到Bingo Frenzy/BF/休闲/Bingo/Coin相关 → BF；三消/消除/match/Matching Story → MS；Bingo Voyage/BV → BV。\n" +
           "支持 help/list_groups/vote_text/vote_image/evaluate_doc 五种 action。\n" +
-          "evaluate_doc: 给定一个飞书文档URL，让虚拟用户根据文档内容评价是否吸引，给出吸引和不吸引的理由。\n" +
+          "evaluate_doc: 当消息中包含飞书文档链接或「--- 飞书文档: xxx ---」格式的文档内容时，使用 evaluate_doc，" +
+          "传入 doc_url（飞书文档URL）让虚拟用户评价文档是否吸引。topic 可不填，自动取文档标题。\n" +
           "**重要：当消息中包含图片（或引用了包含图片的消息）时，必须使用 vote_image action 并传入 source_message_id，" +
           "让虚拟用户直接看到原图来投票。绝对不要自己描述图片内容后用 vote_text——虚拟用户必须看到原始图片才能做出准确判断。**\n" +
-          "vote_text 仅用于纯文字选项（如功能方案、活动主题等无图片的场景）。\n" +
+          "vote_text 仅用于纯文字选项（如功能方案、活动主题等无图片无文档的场景）。\n" +
           "图片投票的 source_message_id 支持：合并转发消息、富文本(post)多图消息、单张图片消息、引用含图消息的 message_id。",
         parameters: VirtualVoteSchema,
         async execute(_id: string, params: VirtualVoteParams) {
@@ -543,7 +544,8 @@ export function registerVirtualVoteTool(api: OpenClawPluginApi) {
                   });
                 }
 
-                log?.(`evaluate_doc: fetched doc "${docResult.title}", content ${docResult.content.length} chars`);
+                const evalTopic = params.topic || docResult.title;
+                log?.(`evaluate_doc: fetched doc "${docResult.title}", topic="${evalTopic}", content ${docResult.content.length} chars`);
 
                 const personaIndex = await loadPersonas(loaderCfg, params.game);
                 if (!personaIndex || personaIndex.count === 0) {
@@ -558,7 +560,7 @@ export function registerVirtualVoteTool(api: OpenClawPluginApi) {
                 // Send progress card
                 const evalProgressCard = buildEvalProgressCard({
                   game: params.game,
-                  topic: params.topic,
+                  topic: evalTopic,
                   docTitle: docResult.title,
                   totalPersonas: personaIndex.count,
                   completedCount: 0,
@@ -586,7 +588,7 @@ export function registerVirtualVoteTool(api: OpenClawPluginApi) {
                   cardMessageId: evalCardResult.messageId,
                   chatId: chatTarget,
                   game: params.game,
-                  topic: params.topic,
+                  topic: evalTopic,
                   docTitle: docResult.title,
                   docContent: docResult.content,
                   personas: personaIndex.personas,
