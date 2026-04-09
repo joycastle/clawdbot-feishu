@@ -242,13 +242,17 @@ export async function runVoteInBackground(params: VoteRunnerParams): Promise<voi
           // Send persona comment as thread reply under the card
           const choiceLabel = options[parsed.choice] ?? `选项${parsed.choice + 1}`;
           const commentText = `**${persona.name}** (${persona.summary})\n选择：${choiceLabel}\n理由：${parsed.reason}`;
-          sendMessageFeishu({
-            cfg,
-            to: chatId,
-            text: commentText,
-            replyToMessageId: cardMessageId,
-            replyInThread: true,
-          }).catch((err) => log?.(`virtual-vote: failed to send comment for ${persona.name}: ${String(err)}`));
+          try {
+            await sendMessageFeishu({
+              cfg,
+              to: chatId,
+              text: commentText,
+              replyToMessageId: cardMessageId,
+              replyInThread: true,
+            });
+          } catch (e) {
+            log?.(`virtual-vote: failed to send comment for ${persona.name}: ${String(e)}`);
+          }
         } else {
           log?.(`virtual-vote: [${persona.name}] PARSE FAILED, raw: ${result.text.slice(0, 300)}`);
         }
@@ -258,7 +262,7 @@ export async function runVoteInBackground(params: VoteRunnerParams): Promise<voi
         // Periodic progress update
         if (completedCount - lastProgressUpdate >= PROGRESS_UPDATE_INTERVAL) {
           lastProgressUpdate = completedCount;
-          updateProgress().catch(() => {}); // fire-and-forget
+          await updateProgress();
         }
       } catch (err) {
         completedCount++;
