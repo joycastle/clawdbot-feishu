@@ -24,6 +24,30 @@ export interface VoteResultData {
   model?: string;
 }
 
+// ─── Evaluate Types ────────────────────────────────────────────────────────
+
+export interface EvalChoice {
+  personaId: string;
+  personaName: string;
+  personaSummary: string;
+  /** true = 吸引, false = 不吸引 */
+  attractive: boolean;
+  /** 吸引的理由 */
+  attractReasons: string;
+  /** 不吸引的理由 */
+  notAttractReasons: string;
+}
+
+export interface EvalResultData {
+  game: string;
+  topic: string;
+  docTitle: string;
+  choices: EvalChoice[];
+  totalPersonas: number;
+  durationMs?: number;
+  model?: string;
+}
+
 // ─── Progress Card ──────────────────────────────────────────────────────────
 
 export function buildProgressCard(params: {
@@ -132,6 +156,138 @@ export function buildResultCard(data: VoteResultData): Record<string, unknown> {
     header: {
       title: { tag: "plain_text", content: `🗳️ 虚拟投票结果 — ${topic}` },
       template: "green",
+    },
+    elements,
+  };
+}
+
+// ─── Evaluate Progress Card ────────────────────────────────────────────────
+
+export function buildEvalProgressCard(params: {
+  game: string;
+  topic: string;
+  docTitle: string;
+  totalPersonas: number;
+  completedCount: number;
+  status: "running" | "error";
+  errorMsg?: string;
+}): Record<string, unknown> {
+  const { game, topic, docTitle, totalPersonas, completedCount, status } = params;
+  const pct = totalPersonas > 0 ? Math.round((completedCount / totalPersonas) * 100) : 0;
+  const barWidth = 20;
+  const filled = Math.round((pct / 100) * barWidth);
+  const bar = "█".repeat(filled) + "░".repeat(barWidth - filled);
+
+  const elements: Record<string, unknown>[] = [];
+
+  if (status === "error") {
+    elements.push({
+      tag: "markdown",
+      content: `❌ **评估出错**\n${params.errorMsg ?? "未知错误"}`,
+    });
+  } else {
+    elements.push({
+      tag: "markdown",
+      content:
+        `📋 **虚拟用户文档评估进行中**\n\n` +
+        `**用户群：** ${game}\n` +
+        `**主题：** ${topic}\n` +
+        `**文档：** ${docTitle}\n\n` +
+        `${bar}  ${completedCount}/${totalPersonas} (${pct}%)`,
+    });
+  }
+
+  return {
+    config: { wide_screen_mode: true, update_multi: true },
+    header: {
+      title: { tag: "plain_text", content: `📋 文档评估 — ${topic}` },
+      template: status === "error" ? "red" : "blue",
+    },
+    elements,
+  };
+}
+
+// ─── Evaluate Result Card ──────────────────────────────────────────────────
+
+export function buildEvalResultCard(data: EvalResultData): Record<string, unknown> {
+  const { game, topic, docTitle, choices, totalPersonas, durationMs, model } = data;
+
+  const attractCount = choices.filter((c) => c.attractive).length;
+  const notAttractCount = choices.filter((c) => !c.attractive).length;
+
+  const elements: Record<string, unknown>[] = [];
+
+  // Summary
+  elements.push({
+    tag: "markdown",
+    content:
+      `📋 **虚拟用户文档评估结果**\n\n` +
+      `**用户群：** ${game} (${totalPersonas}人)\n` +
+      `**主题：** ${topic}\n` +
+      `**文档：** ${docTitle}`,
+  });
+  elements.push({ tag: "hr" });
+
+  // Verdict bars
+  const barWidth = 16;
+  const attractPct = totalPersonas > 0 ? Math.round((attractCount / totalPersonas) * 100) : 0;
+  const notAttractPct = totalPersonas > 0 ? Math.round((notAttractCount / totalPersonas) * 100) : 0;
+  const attractBar = "█".repeat(Math.round((attractPct / 100) * barWidth)) + "░".repeat(barWidth - Math.round((attractPct / 100) * barWidth));
+  const notAttractBar = "█".repeat(Math.round((notAttractPct / 100) * barWidth)) + "░".repeat(barWidth - Math.round((notAttractPct / 100) * barWidth));
+
+  const attractWin = attractCount >= notAttractCount ? " 🏆" : "";
+  const notAttractWin = notAttractCount > attractCount ? " 🏆" : "";
+
+  elements.push({
+    tag: "markdown",
+    content: `**✅ 吸引**${attractWin}\n${attractBar}  ${attractCount}人 (${attractPct}%)`,
+  });
+  elements.push({
+    tag: "markdown",
+    content: `**❌ 不吸引**${notAttractWin}\n${notAttractBar}  ${notAttractCount}人 (${notAttractPct}%)`,
+  });
+
+  elements.push({ tag: "hr" });
+
+  // Aggregated attract reasons (top reasons from personas who said 吸引)
+  const attractReasons = choices
+    .filter((c) => c.attractive && c.attractReasons)
+    .map((c) => `• **${c.personaName}**：${c.attractReasons}`);
+  if (attractReasons.length > 0) {
+    elements.push({
+      tag: "markdown",
+      content: `**✅ 吸引的理由：**\n${attractReasons.join("\n")}`,
+    });
+  }
+
+  // Aggregated not-attract reasons
+  const notAttractReasons = choices
+    .filter((c) => !c.attractive && c.notAttractReasons)
+    .map((c) => `• **${c.personaName}**：${c.notAttractReasons}`);
+  if (notAttractReasons.length > 0) {
+    elements.push({
+      tag: "markdown",
+      content: `**❌ 不吸引的理由：**\n${notAttractReasons.join("\n")}`,
+    });
+  }
+
+  // Footer
+  elements.push({ tag: "hr" });
+  const footerParts: string[] = [];
+  if (durationMs) footerParts.push(`耗时 ${Math.round(durationMs / 1000)}s`);
+  if (model) footerParts.push(`模型 ${model}`);
+  footerParts.push(`${choices.length}/${totalPersonas} 人完成评估`);
+
+  elements.push({
+    tag: "note",
+    elements: [{ tag: "plain_text", content: footerParts.join(" · ") }],
+  });
+
+  return {
+    config: { wide_screen_mode: true, update_multi: true },
+    header: {
+      title: { tag: "plain_text", content: `📋 文档评估结果 — ${topic}` },
+      template: attractCount >= notAttractCount ? "green" : "red",
     },
     elements,
   };

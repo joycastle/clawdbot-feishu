@@ -8,9 +8,9 @@
 import type { ClawdbotConfig } from "openclaw/plugin-sdk";
 import type { Persona } from "./persona-loader.js";
 import type { VirtualVoteLLMConfig, VirtualVoteLLMRuntime, LLMMessage, LLMContentPart } from "./llm-client.js";
-import type { VoteChoice, VoteResultData } from "./result-card.js";
+import type { VoteChoice, VoteResultData, EvalChoice, EvalResultData } from "./result-card.js";
 import { callLLM } from "./llm-client.js";
-import { buildProgressCard, buildResultCard } from "./result-card.js";
+import { buildProgressCard, buildResultCard, buildEvalProgressCard, buildEvalResultCard } from "./result-card.js";
 import { updateCardFeishu, sendMessageFeishu } from "../../api/send.js";
 
 // ─── Types ──────────────────────────────────────────────────────────────────
@@ -27,6 +27,20 @@ export interface VoteRunnerParams {
   options?: string[];
   /** Image buffers with mime types (for vote_image), ordered */
   images?: Array<{ data: string; mediaType: string }>;
+  personas: Persona[];
+  log?: (msg: string) => void;
+}
+
+export interface EvalRunnerParams {
+  cfg: ClawdbotConfig;
+  llmCfg: VirtualVoteLLMConfig;
+  llmRuntime: VirtualVoteLLMRuntime;
+  cardMessageId: string;
+  chatId: string;
+  game: string;
+  topic: string;
+  docTitle: string;
+  docContent: string;
   personas: Persona[];
   log?: (msg: string) => void;
 }
@@ -300,5 +314,183 @@ export async function runVoteInBackground(params: VoteRunnerParams): Promise<voi
     );
   } catch (err) {
     log?.(`virtual-vote: failed to send result card: ${String(err)}`);
+  }
+}
+
+// ─── Evaluate: Prompt Builder ──────────────────────────────────────────────
+
+function buildEvalPrompt(params: {
+  topic: string;
+  docTitle: string;
+  docContent: string;
+}): LLMMessage {
+  const { topic, docTitle, docContent } = params;
+
+  return {
+    role: "user",
+    content:
+      `你正在评估一份飞书文档的内容是否对你有吸引力。\n\n` +
+      `**评估主题：** ${topic}\n` +
+      `**文档标题：** ${docTitle}\n\n` +
+      `**文档内容：**\n${docContent}\n\n` +
+      `请根据你的个人背景、生活经历、审美偏好和游戏习惯，判断这份文档的内容对你来说是"吸引"还是"不吸引"。\n` +
+      `无论你的判断是什么，都请同时给出吸引和不吸引的理由，以便全面分析。\n\n` +
+      `请严格按以下 JSON 格式回复，不要输出其他内容。所有字段必须用中文回答：\n` +
+      `{"verdict": "吸引" 或 "不吸引", "attract_reasons": "<吸引的理由>", "not_attract_reasons": "<不吸引的理由>"}`,
+  };
+}
+
+// ─── Evaluate: Response Parser ─────────────────────────────────────────────
+
+function parseEvalResponse(text: string): {
+  attractive: boolean;
+  attractReasons: string;
+  notAttractReasons: string;
+} | null {
+  try {
+    const jsonMatch = text.match(/\{[\s\S]*?"verdict"[\s\S]*?\}/);
+    if (!jsonMatch) return null;
+
+    const parsed = JSON.parse(jsonMatch[0]);
+    const verdict = String(parsed.verdict || "");
+    const attractive = verdict.includes("吸引") && !verdict.includes("不吸引");
+
+    return {
+      attractive,
+      attractReasons: String(parsed.attract_reasons || "").slice(0, 300),
+      notAttractReasons: String(parsed.not_attract_reasons || "").slice(0, 300),
+    };
+  } catch {
+    return null;
+  }
+}
+
+// ─── Evaluate: Main Runner ─────────────────────────────────────────────────
+
+export async function runEvalInBackground(params: EvalRunnerParams): Promise<void> {
+  const {
+    cfg,
+    llmCfg,
+    cardMessageId,
+    chatId,
+    game,
+    topic,
+    docTitle,
+    docContent,
+    personas,
+    log,
+  } = params;
+
+  const startTime = Date.now();
+  const semaphore = new Semaphore(llmCfg.maxConcurrent);
+  const results: EvalChoice[] = [];
+  let completedCount = 0;
+  let lastProgressUpdate = 0;
+
+  const updateProgress = async () => {
+    try {
+      await updateCardFeishu({
+        cfg,
+        messageId: cardMessageId,
+        card: buildEvalProgressCard({
+          game,
+          topic,
+          docTitle,
+          totalPersonas: personas.length,
+          completedCount,
+          status: "running",
+        }),
+      });
+    } catch (err) {
+      log?.(`virtual-eval: progress update failed: ${String(err)}`);
+    }
+  };
+
+  await Promise.all(
+    personas.map(async (persona) => {
+      const release = await semaphore.acquire();
+      try {
+        const systemPrompt = buildSystemPrompt(persona);
+        const evalPrompt = buildEvalPrompt({ topic, docTitle, docContent });
+        const messages: LLMMessage[] = [systemPrompt, evalPrompt];
+
+        const result = await callLLM(llmCfg, params.llmRuntime, messages);
+        log?.(`virtual-eval: [${persona.name}] raw response: ${result.text.slice(0, 300)}`);
+
+        const parsed = parseEvalResponse(result.text);
+
+        if (parsed) {
+          log?.(`virtual-eval: [${persona.name}] verdict=${parsed.attractive ? "吸引" : "不吸引"}`);
+          results.push({
+            personaId: persona.id,
+            personaName: persona.name,
+            personaSummary: persona.summary,
+            attractive: parsed.attractive,
+            attractReasons: parsed.attractReasons,
+            notAttractReasons: parsed.notAttractReasons,
+          });
+
+          // Send persona comment as thread reply
+          const verdictLabel = parsed.attractive ? "✅ 吸引" : "❌ 不吸引";
+          const commentText =
+            `**${persona.name}** (${persona.summary})\n` +
+            `判断：${verdictLabel}\n` +
+            `吸引理由：${parsed.attractReasons}\n` +
+            `不吸引理由：${parsed.notAttractReasons}`;
+          try {
+            await sendMessageFeishu({
+              cfg,
+              to: chatId,
+              text: commentText,
+              replyToMessageId: cardMessageId,
+              replyInThread: true,
+            });
+          } catch (e) {
+            log?.(`virtual-eval: failed to send comment for ${persona.name}: ${String(e)}`);
+          }
+        } else {
+          log?.(`virtual-eval: [${persona.name}] PARSE FAILED, raw: ${result.text.slice(0, 300)}`);
+        }
+
+        completedCount++;
+
+        if (completedCount - lastProgressUpdate >= PROGRESS_UPDATE_INTERVAL) {
+          lastProgressUpdate = completedCount;
+          await updateProgress();
+        }
+      } catch (err) {
+        completedCount++;
+        log?.(`virtual-eval: LLM call failed for ${persona.name}: ${String(err)}`);
+      } finally {
+        release();
+      }
+    }),
+  );
+
+  // Build and send final result card
+  const durationMs = Date.now() - startTime;
+  const resultData: EvalResultData = {
+    game,
+    topic,
+    docTitle,
+    choices: results,
+    totalPersonas: personas.length,
+    durationMs,
+    model: llmCfg.model,
+  };
+
+  try {
+    const resultCard = buildEvalResultCard(resultData);
+    await updateCardFeishu({
+      cfg,
+      messageId: cardMessageId,
+      card: resultCard,
+    });
+    log?.(
+      `virtual-eval: completed — ${results.length}/${personas.length} evaluated, ` +
+        `took ${Math.round(durationMs / 1000)}s`,
+    );
+  } catch (err) {
+    log?.(`virtual-eval: failed to send result card: ${String(err)}`);
   }
 }
