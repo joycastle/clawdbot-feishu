@@ -247,30 +247,6 @@ export function buildEvalResultCard(data: EvalResultData): Record<string, unknow
     content: `**❌ 不吸引**${notAttractWin}\n${notAttractBar}  ${notAttractCount}人 (${notAttractPct}%)`,
   });
 
-  elements.push({ tag: "hr" });
-
-  // Aggregated attract reasons (top reasons from personas who said 吸引)
-  const attractReasons = choices
-    .filter((c) => c.attractive && c.attractReasons)
-    .map((c) => `• **${c.personaName}**：${c.attractReasons}`);
-  if (attractReasons.length > 0) {
-    elements.push({
-      tag: "markdown",
-      content: `**✅ 吸引的理由：**\n${attractReasons.join("\n")}`,
-    });
-  }
-
-  // Aggregated not-attract reasons
-  const notAttractReasons = choices
-    .filter((c) => !c.attractive && c.notAttractReasons)
-    .map((c) => `• **${c.personaName}**：${c.notAttractReasons}`);
-  if (notAttractReasons.length > 0) {
-    elements.push({
-      tag: "markdown",
-      content: `**❌ 不吸引的理由：**\n${notAttractReasons.join("\n")}`,
-    });
-  }
-
   // Footer
   elements.push({ tag: "hr" });
   const footerParts: string[] = [];
