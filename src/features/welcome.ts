@@ -426,7 +426,7 @@ export async function handleWelcomeImageDetection(params: {
       .filter((c): c is TextContent => c.type === "text")
       .map((c) => c.text)
       .join("");
-    log(`[welcome-image] LLM response: ${resultText.slice(0, 200)}`);
+    log(`[welcome-image] LLM response (len=${resultText.length}): ${resultText.replace(/\n/g, "\\n").slice(0, 400)}`);
 
     // 解析 JSON 响应
     const jsonMatch = resultText.match(/\{[\s\S]*\}/);
