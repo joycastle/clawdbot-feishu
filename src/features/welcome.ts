@@ -408,7 +408,7 @@ export async function handleWelcomeImageDetection(params: {
   try {
     const completeOpts: Record<string, unknown> = {
       temperature: 0.7,
-      maxTokens: 512,
+      maxTokens: 2048,
     };
     if (apiKey) {
       completeOpts.apiKey = apiKey;
@@ -417,32 +417,49 @@ export async function handleWelcomeImageDetection(params: {
       completeOpts.project = process.env.GOOGLE_CLOUD_PROJECT || process.env.GCLOUD_PROJECT;
       completeOpts.location = process.env.GOOGLE_CLOUD_LOCATION || "global";
     }
-    const response = await complete(model, { systemPrompt, messages: piMessages }, completeOpts as any);
-    log(`[welcome-image] stopReason=${(response as any).stopReason} errorMessage=${(response as any).errorMessage || "none"}`);
-    if ((response as any).stopReason === "error") {
-      log(`[welcome-image] LLM error: ${(response as any).errorMessage}`);
-      return false;
+    // 最多重试 2 次（截断时重试）
+    let parsed: { isWelcome: boolean; name?: string; welcome?: string } | null = null;
+    const maxAttempts = 2;
+    for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+      const response = await complete(model, { systemPrompt, messages: piMessages }, completeOpts as any);
+      const stopReason = (response as any).stopReason;
+      log(`[welcome-image] attempt ${attempt}: stopReason=${stopReason}`);
+
+      if (stopReason === "error") {
+        log(`[welcome-image] LLM error: ${(response as any).errorMessage}`);
+        return false;
+      }
+
+      const resultText = response.content
+        .filter((c): c is TextContent => c.type === "text")
+        .map((c) => c.text)
+        .join("");
+      log(`[welcome-image] LLM response (len=${resultText.length}): ${resultText.replace(/\n/g, "\\n").slice(0, 400)}`);
+
+      const jsonMatch = resultText.match(/\{[\s\S]*\}/);
+      if (!jsonMatch) {
+        if (stopReason === "length" && attempt < maxAttempts) {
+          log(`[welcome-image] truncated, retrying...`);
+          continue;
+        }
+        log(`[welcome-image] no valid JSON in response, skipping`);
+        return true;
+      }
+
+      try {
+        parsed = JSON.parse(jsonMatch[0]);
+        break;
+      } catch {
+        if (stopReason === "length" && attempt < maxAttempts) {
+          log(`[welcome-image] JSON parse failed (truncated), retrying...`);
+          continue;
+        }
+        log(`[welcome-image] JSON parse failed, skipping`);
+        return true;
+      }
     }
-    const resultText = response.content
-      .filter((c): c is TextContent => c.type === "text")
-      .map((c) => c.text)
-      .join("");
-    log(`[welcome-image] LLM response (len=${resultText.length}): ${resultText.replace(/\n/g, "\\n").slice(0, 400)}`);
 
-    // 解析 JSON 响应
-    const jsonMatch = resultText.match(/\{[\s\S]*\}/);
-    if (!jsonMatch) {
-      log(`[welcome-image] no JSON in response, skipping`);
-      return true; // 已处理但未识别
-    }
-
-    const parsed = JSON.parse(jsonMatch[0]) as {
-      isWelcome: boolean;
-      name?: string;
-      welcome?: string;
-    };
-
-    if (!parsed.isWelcome) {
+    if (!parsed || !parsed.isWelcome) {
       log(`[welcome-image] not a welcome poster, skipping`);
       return true;
     }
