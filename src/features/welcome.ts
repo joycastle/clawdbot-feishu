@@ -406,12 +406,22 @@ export async function handleWelcomeImageDetection(params: {
   ];
 
   try {
-    const response = await complete(model, { systemPrompt, messages: piMessages }, {
-      apiKey,
+    const completeOpts: Record<string, unknown> = {
       temperature: 0.7,
       maxTokens: 512,
-    });
-    log(`[welcome-image] raw response: role=${response.role} content=${JSON.stringify(response.content).slice(0, 500)} usage=${JSON.stringify(response.usage)}`);
+    };
+    if (apiKey) {
+      completeOpts.apiKey = apiKey;
+    }
+    if (provider === "google-vertex") {
+      completeOpts.project = process.env.GOOGLE_CLOUD_PROJECT || process.env.GCLOUD_PROJECT;
+      completeOpts.location = process.env.GOOGLE_CLOUD_LOCATION || "global";
+    }
+    const response = await complete(model, { systemPrompt, messages: piMessages }, completeOpts as any);
+    if ((response as any).stopReason === "error") {
+      log(`[welcome-image] LLM error: ${(response as any).errorMessage}`);
+      return false;
+    }
     const resultText = response.content
       .filter((c): c is TextContent => c.type === "text")
       .map((c) => c.text)
