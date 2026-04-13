@@ -408,6 +408,7 @@ export async function handleWelcomeImageDetection(params: {
       temperature: 0.7,
       maxTokens: 512,
     });
+    log(`[welcome-image] raw response: role=${response.role} content=${JSON.stringify(response.content).slice(0, 500)} usage=${JSON.stringify(response.usage)}`);
     const resultText = response.content
       .filter((c): c is TextContent => c.type === "text")
       .map((c) => c.text)
