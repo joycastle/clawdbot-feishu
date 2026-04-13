@@ -13,7 +13,7 @@ import type { FeishuConfig } from "../types.js";
 import { createFeishuClient } from "../client.js";
 import { sendMessageFeishu } from "../api/send.js";
 import { getModel, complete } from "@mariozechner/pi-ai";
-import type { Model, Api, TextContent, ImageContent, UserMessage } from "@mariozechner/pi-ai";
+import type { TextContent, ImageContent, UserMessage } from "@mariozechner/pi-ai";
 import { getFeishuRuntime } from "../runtime.js";
 
 // ─── 配置 ─────────────────────────────────────────────────────────────────────
@@ -23,11 +23,6 @@ interface GroupConfig {
   chatId: string;
   name: string;
   docs: { name: string; url: string }[];
-}
-
-/** 岗位文档配置 */
-interface RoleDocsConfig {
-  [role: string]: { name: string; url: string }[];
 }
 
 /** 人设风格 */
@@ -68,12 +63,6 @@ const WELCOME_GROUPS: GroupConfig[] = [
     docs: [],
   },
 ];
-
-// 岗位文档（由各 leader 指定，待补充）
-const ROLE_DOCS: RoleDocsConfig = {
-  // 后端: [{ name: "后端开发指南", url: "..." }],
-  // 前端: [{ name: "前端开发指南", url: "..." }],
-};
 
 // 人设风格
 const PERSONAS: Persona[] = [
@@ -340,8 +329,6 @@ export async function handleWelcomeImageDetection(params: {
   const groupConfig = getGroupConfig(chatId);
   if (!groupConfig) return false;
 
-  log(`[welcome-image] checking image in ${groupConfig.name}`);
-
   // 读取图片为 base64
   let imageBase64: string;
   let contentType: string;
@@ -362,8 +349,6 @@ export async function handleWelcomeImageDetection(params: {
     log(`[welcome-image] no image model configured (agents.defaults.imageModel or agents.defaults.model), skipping`);
     return false;
   }
-  log(`[welcome-image] using model: ${modelRef}`);
-
   const groupPrompt = loadGroupWelcomePrompt(chatId);
   const systemPrompt = groupPrompt || DEFAULT_WELCOME_PROMPT;
 
@@ -417,13 +402,11 @@ export async function handleWelcomeImageDetection(params: {
       completeOpts.project = process.env.GOOGLE_CLOUD_PROJECT || process.env.GCLOUD_PROJECT;
       completeOpts.location = process.env.GOOGLE_CLOUD_LOCATION || "global";
     }
-    // 最多重试 2 次（截断时重试）
+    // 最多 2 次（截断时重试）
     let parsed: { isWelcome: boolean; name?: string; welcome?: string } | null = null;
-    const maxAttempts = 2;
-    for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+    for (let attempt = 1; attempt <= 2; attempt++) {
       const response = await complete(model, { systemPrompt, messages: piMessages }, completeOpts as any);
       const stopReason = (response as any).stopReason;
-      log(`[welcome-image] attempt ${attempt}: stopReason=${stopReason}`);
 
       if (stopReason === "error") {
         log(`[welcome-image] LLM error: ${(response as any).errorMessage}`);
@@ -434,15 +417,11 @@ export async function handleWelcomeImageDetection(params: {
         .filter((c): c is TextContent => c.type === "text")
         .map((c) => c.text)
         .join("");
-      log(`[welcome-image] LLM response (len=${resultText.length}): ${resultText.replace(/\n/g, "\\n").slice(0, 400)}`);
 
       const jsonMatch = resultText.match(/\{[\s\S]*\}/);
       if (!jsonMatch) {
-        if (stopReason === "length" && attempt < maxAttempts) {
-          log(`[welcome-image] truncated, retrying...`);
-          continue;
-        }
-        log(`[welcome-image] no valid JSON in response, skipping`);
+        if (stopReason === "length" && attempt < 2) { log(`[welcome-image] truncated, retrying`); continue; }
+        log(`[welcome-image] no valid JSON, skipping`);
         return true;
       }
 
@@ -450,23 +429,19 @@ export async function handleWelcomeImageDetection(params: {
         parsed = JSON.parse(jsonMatch[0]);
         break;
       } catch {
-        if (stopReason === "length" && attempt < maxAttempts) {
-          log(`[welcome-image] JSON parse failed (truncated), retrying...`);
-          continue;
-        }
+        if (stopReason === "length" && attempt < 2) { log(`[welcome-image] JSON incomplete, retrying`); continue; }
         log(`[welcome-image] JSON parse failed, skipping`);
         return true;
       }
     }
 
     if (!parsed || !parsed.isWelcome) {
-      log(`[welcome-image] not a welcome poster, skipping`);
+      log(`[welcome-image] not a welcome poster`);
       return true;
     }
 
-    // 是入职海报，发送欢迎语
     const welcomeText = parsed.welcome || `欢迎 ${parsed.name || "新同事"} 加入！有问题随时 @ 我～`;
-    log(`[welcome-image] detected welcome poster for ${parsed.name || "unknown"}`);
+    log(`[welcome-image] welcome poster for ${parsed.name || "unknown"}, sending`);
 
     await sendMessageFeishu({
       cfg,
