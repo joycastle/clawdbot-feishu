@@ -981,11 +981,11 @@ export async function handleFeishuMessage(params: {
     // NOTE: "image" is intentionally excluded — users can @mention in rich text posts with images
     const isMediaMessage = ["video", "media", "audio", "file", "merge_forward"].includes(ctx.contentType);
     if (requireMention && !ctx.mentionedBot && !isMediaMessage) {
-      // ── Welcome 图片检测：白名单群中的图片可能是入职海报 ──
-      if (ctx.contentType === "image" && isWelcomeGroup(ctx.chatId)) {
+      // ── Welcome 图片检测：白名单群中的图片/富文本带图可能是入职海报 ──
+      if ((ctx.contentType === "image" || ctx.contentType === "post") && isWelcomeGroup(ctx.chatId)) {
         const mediaMaxBytes = (feishuCfg?.mediaMaxMb ?? 30) * 1024 * 1024;
         const welcomeMediaList = await resolveFeishuMediaList({
-          cfg, messageId: ctx.messageId, messageType: "image",
+          cfg, messageId: ctx.messageId, messageType: event.message.message_type,
           content: event.message.content, maxBytes: mediaMaxBytes, log,
         });
         if (welcomeMediaList.length > 0 && welcomeMediaList[0].path) {
