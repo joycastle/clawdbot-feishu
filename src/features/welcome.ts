@@ -12,8 +12,8 @@ import type { ClawdbotConfig } from "openclaw/plugin-sdk";
 import type { FeishuConfig } from "../types.js";
 import { createFeishuClient } from "../client.js";
 import { sendMessageFeishu } from "../api/send.js";
-import { callLLM } from "./virtual-vote/llm-client.js";
-import type { LLMMessage, LLMContentPart, VirtualVoteLLMConfig, VirtualVoteLLMRuntime } from "./virtual-vote/llm-client.js";
+import { getModel, complete } from "@mariozechner/pi-ai";
+import type { Model, Api, TextContent, ImageContent, UserMessage } from "@mariozechner/pi-ai";
 import { getFeishuRuntime } from "../runtime.js";
 
 // ─── 配置 ─────────────────────────────────────────────────────────────────────
@@ -367,39 +367,55 @@ export async function handleWelcomeImageDetection(params: {
   const groupPrompt = loadGroupWelcomePrompt(chatId);
   const systemPrompt = groupPrompt || DEFAULT_WELCOME_PROMPT;
 
-  const llmCfg: VirtualVoteLLMConfig = {
-    model: modelRef,
-    temperature: 0.7,
-    maxTokens: 512,
-    maxConcurrent: 1,
-  };
+  // 解析 provider/model-id
+  const slashIdx = modelRef.indexOf("/");
+  if (slashIdx <= 0) {
+    log(`[welcome-image] invalid model format: ${modelRef}`);
+    return false;
+  }
+  const provider = modelRef.slice(0, slashIdx);
+  const modelId = modelRef.slice(slashIdx + 1);
 
-  let rt: VirtualVoteLLMRuntime;
-  try {
-    const runtime = getFeishuRuntime();
-    rt = { config: cfg as any, runtime };
-  } catch (err) {
-    log(`[welcome-image] runtime not available: ${String(err)}`);
+  // 解析模型（pi-ai 内置注册表）
+  const model = getModel(provider as any, modelId as any);
+  if (!model) {
+    log(`[welcome-image] model not found in pi-ai registry: ${modelRef}`);
     return false;
   }
 
-  const messages: LLMMessage[] = [
-    { role: "system", content: systemPrompt },
-    {
-      role: "user",
-      content: [
-        { type: "image", mediaType: contentType, data: imageBase64 } as LLMContentPart,
-        { type: "text", text: "请分析这张图片。" } as LLMContentPart,
-      ],
-    },
+  // 解析 API key（google-vertex 可通过 GOOGLE_APPLICATION_CREDENTIALS 环境变量认证，不强制要求 apiKey）
+  let apiKey: string | undefined;
+  try {
+    const runtime = getFeishuRuntime();
+    const auth = await runtime.modelAuth.resolveApiKeyForProvider({ provider, cfg: cfg as any });
+    apiKey = auth.apiKey;
+  } catch {
+    // 忽略 auth 错误，google-vertex 可用 ADC
+  }
+
+  const userContent: (TextContent | ImageContent)[] = [
+    { type: "image", data: imageBase64, mimeType: contentType },
+    { type: "text", text: "请分析这张图片。" },
+  ];
+
+  const piMessages: UserMessage[] = [
+    { role: "user" as const, content: userContent, timestamp: Date.now() },
   ];
 
   try {
-    const result = await callLLM(llmCfg, rt, messages);
-    log(`[welcome-image] LLM response: ${result.text.slice(0, 200)}`);
+    const response = await complete(model, { systemPrompt, messages: piMessages }, {
+      apiKey,
+      temperature: 0.7,
+      maxTokens: 512,
+    });
+    const resultText = response.content
+      .filter((c): c is TextContent => c.type === "text")
+      .map((c) => c.text)
+      .join("");
+    log(`[welcome-image] LLM response: ${resultText.slice(0, 200)}`);
 
     // 解析 JSON 响应
-    const jsonMatch = result.text.match(/\{[\s\S]*\}/);
+    const jsonMatch = resultText.match(/\{[\s\S]*\}/);
     if (!jsonMatch) {
       log(`[welcome-image] no JSON in response, skipping`);
       return true; // 已处理但未识别
