@@ -16,6 +16,7 @@ import { getMessageFeishu, getMergeForwardMessages, getReplyChain, formatReplyCh
 import { registerMedia } from "./media-cache.js";
 import { downloadImageFeishu, downloadMessageResourceFeishu } from "./api/media.js";
 import { sendMediaConfirmCard } from "./features/media-confirm.js";
+import { isWelcomeGroup, handleWelcomeImageDetection } from "./features/welcome.js";
 // Video analysis is now handled by the LLM agent via bitable-video-cli.ts
 // instead of hard-coded regex interception. See bitable-video-cli.ts.
 import fs from "fs";
@@ -977,8 +978,24 @@ export async function handleFeishuMessage(params: {
     });
 
     // Allow video/media/merge_forward messages through without @mention — users can't @mention in these message types
-    const isMediaMessage = ["video", "media", "audio", "image", "file", "merge_forward"].includes(ctx.contentType);
+    // NOTE: "image" is intentionally excluded — users can @mention in rich text posts with images
+    const isMediaMessage = ["video", "media", "audio", "file", "merge_forward"].includes(ctx.contentType);
     if (requireMention && !ctx.mentionedBot && !isMediaMessage) {
+      // ── Welcome 图片检测：白名单群中的图片可能是入职海报 ──
+      if (ctx.contentType === "image" && isWelcomeGroup(ctx.chatId)) {
+        const mediaMaxBytes = (feishuCfg?.mediaMaxMb ?? 30) * 1024 * 1024;
+        const welcomeMediaList = await resolveFeishuMediaList({
+          cfg, messageId: ctx.messageId, messageType: "image",
+          content: event.message.content, maxBytes: mediaMaxBytes, log,
+        });
+        if (welcomeMediaList.length > 0 && welcomeMediaList[0].path) {
+          void handleWelcomeImageDetection({
+            cfg, chatId: ctx.chatId, imagePath: welcomeMediaList[0].path,
+            messageId: ctx.messageId, log,
+          });
+          return;
+        }
+      }
       if (senderIsAdmin && ctx.contentType === "text") {
         const reply = tryHandleAdminCommand({ cfg, senderId: senderIdForAuth, text: ctx.content });
         if (reply) {

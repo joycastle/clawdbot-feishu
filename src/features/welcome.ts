@@ -1,10 +1,9 @@
 /**
  * 群欢迎新人功能
- * 
- * 当新成员加入白名单群时，自动发送欢迎消息。
- * - 根据入职日期判断新人/老员工
- * - 随机选择人设风格
- * - 根据群配置发送相应文档
+ *
+ * 两种触发方式：
+ * 1. im.chat.member.user.added_v1 事件 — 新成员入群时自动发送欢迎消息
+ * 2. 图片检测 — 白名单群中收到图片时，用 LLM 判断是否为入职海报，是则生成欢迎语
  */
 
 import * as fs from "node:fs";
@@ -13,6 +12,9 @@ import type { ClawdbotConfig } from "openclaw/plugin-sdk";
 import type { FeishuConfig } from "../types.js";
 import { createFeishuClient } from "../client.js";
 import { sendMessageFeishu } from "../api/send.js";
+import { callLLM } from "./virtual-vote/llm-client.js";
+import type { LLMMessage, LLMContentPart, VirtualVoteLLMConfig, VirtualVoteLLMRuntime } from "./virtual-vote/llm-client.js";
+import { getFeishuRuntime } from "../runtime.js";
 
 // ─── 配置 ─────────────────────────────────────────────────────────────────────
 
@@ -55,6 +57,16 @@ const WELCOME_GROUPS: GroupConfig[] = [
     name: "BV研发大群",
     docs: [], // 格式塔大群已发，不重复发
   },
+  {
+    chatId: "oc_3a33e2074a803f48ee10d73cbabc79e7",
+    name: "公司大群",
+    docs: [],
+  },
+  {
+    chatId: "oc_2499ac5d01531133e77ed4ecb3ca4833",
+    name: "欢迎预览测试群",
+    docs: [],
+  },
 ];
 
 // 岗位文档（由各 leader 指定，待补充）
@@ -93,6 +105,10 @@ const NEW_HIRE_THRESHOLD_DAYS = 30;
 // ─── 工具函数 ─────────────────────────────────────────────────────────────────
 
 /** 检查是否在白名单群 */
+export function isWelcomeGroup(chatId: string): boolean {
+  return WELCOME_GROUPS.some((g) => g.chatId === chatId);
+}
+
 function getGroupConfig(chatId: string): GroupConfig | undefined {
   return WELCOME_GROUPS.find((g) => g.chatId === chatId);
 }
@@ -251,11 +267,169 @@ export async function handleMemberAdded(params: {
       await sendMessageFeishu({
         cfg,
         to: `chat:${chatId}`,
-        message,
+        text: message,
       });
       log(`[welcome] sent welcome message to ${groupConfig.name}`);
     } catch (err) {
       log(`[welcome] failed to send message: ${String(err)}`);
     }
+  }
+}
+
+// ─── 图片检测欢迎 ─────────────────────────────────────────────────────────────
+
+/** 从配置中解析 LLM model ref（优先 imageModel，回退 model） */
+function resolveImageModelRef(cfg: ClawdbotConfig): string | null {
+  const defaults = (cfg as any)?.agents?.defaults;
+  return defaults?.imageModel?.primary || defaults?.model?.primary || null;
+}
+
+/** 加载 per-group welcome prompt 文件 */
+function loadGroupWelcomePrompt(chatId: string): string | null {
+  const workspace = process.env.CLAWDBOT_WORKSPACE || process.cwd();
+  // 按 chatId 查找对应的 prompt 文件
+  const groupConfig = getGroupConfig(chatId);
+  if (!groupConfig) return null;
+
+  // 尝试多种路径: memory/welcome/groups/{name}/prompt.md 或 memory/welcome/groups/{chatId}.prompt.md
+  const candidates = [
+    path.join(workspace, "memory/welcome/groups", `${chatId}.prompt.md`),
+    path.join(workspace, "memory/welcome/groups", groupConfig.name, "prompt.md"),
+  ];
+
+  for (const p of candidates) {
+    try {
+      return fs.readFileSync(p, "utf-8").trim();
+    } catch {
+      // 文件不存在，继续尝试下一个
+    }
+  }
+  return null;
+}
+
+/** 默认 prompt（当没有 per-group prompt 时使用） */
+const DEFAULT_WELCOME_PROMPT = `你是"王总"，公司飞书群里的 AI 助手。
+看到一张图片，请判断这是否是新员工入职欢迎海报/介绍。
+
+如果**不是**入职海报（例如表情包、截图、工作图片等），只回复 JSON：
+{"isWelcome": false}
+
+如果**是**入职海报，请从图片中提取新人信息，并用热情友好的语气写一段简短的欢迎语。
+回复 JSON（不要包含其他内容）：
+{"isWelcome": true, "name": "姓名", "welcome": "你的欢迎语"}
+
+要求：
+- 欢迎语要简短自然，1-3 句话
+- 可以提到从海报中看到的信息（部门、职位等），让新人感到被关注
+- 语气亲切但不油腻，像一个热心的同事
+- 结尾可以提示有问题随时 @ 你`;
+
+/**
+ * 处理白名单群中的图片消息：判断是否为入职海报，是则生成欢迎语。
+ * 返回 true 表示已处理（不管是否发送了欢迎），false 表示应跳过。
+ */
+export async function handleWelcomeImageDetection(params: {
+  cfg: ClawdbotConfig;
+  chatId: string;
+  imagePath: string;
+  messageId: string;
+  log?: (...args: unknown[]) => void;
+}): Promise<boolean> {
+  const { cfg, chatId, imagePath, messageId, log = console.log } = params;
+
+  const groupConfig = getGroupConfig(chatId);
+  if (!groupConfig) return false;
+
+  log(`[welcome-image] checking image in ${groupConfig.name}`);
+
+  // 读取图片为 base64
+  let imageBase64: string;
+  let contentType: string;
+  try {
+    const buffer = fs.readFileSync(imagePath);
+    imageBase64 = buffer.toString("base64");
+    // 从扩展名推断 mime type
+    const ext = path.extname(imagePath).toLowerCase();
+    contentType = ext === ".png" ? "image/png" : ext === ".webp" ? "image/webp" : "image/jpeg";
+  } catch (err) {
+    log(`[welcome-image] failed to read image: ${String(err)}`);
+    return false;
+  }
+
+  // 构建 LLM 调用
+  const modelRef = resolveImageModelRef(cfg);
+  if (!modelRef) {
+    log(`[welcome-image] no image model configured (agents.defaults.imageModel or agents.defaults.model), skipping`);
+    return false;
+  }
+  log(`[welcome-image] using model: ${modelRef}`);
+
+  const groupPrompt = loadGroupWelcomePrompt(chatId);
+  const systemPrompt = groupPrompt || DEFAULT_WELCOME_PROMPT;
+
+  const llmCfg: VirtualVoteLLMConfig = {
+    model: modelRef,
+    temperature: 0.7,
+    maxTokens: 512,
+    maxConcurrent: 1,
+  };
+
+  let rt: VirtualVoteLLMRuntime;
+  try {
+    const runtime = getFeishuRuntime();
+    rt = { config: cfg as any, runtime };
+  } catch (err) {
+    log(`[welcome-image] runtime not available: ${String(err)}`);
+    return false;
+  }
+
+  const messages: LLMMessage[] = [
+    { role: "system", content: systemPrompt },
+    {
+      role: "user",
+      content: [
+        { type: "image", mediaType: contentType, data: imageBase64 } as LLMContentPart,
+        { type: "text", text: "请分析这张图片。" } as LLMContentPart,
+      ],
+    },
+  ];
+
+  try {
+    const result = await callLLM(llmCfg, rt, messages);
+    log(`[welcome-image] LLM response: ${result.text.slice(0, 200)}`);
+
+    // 解析 JSON 响应
+    const jsonMatch = result.text.match(/\{[\s\S]*\}/);
+    if (!jsonMatch) {
+      log(`[welcome-image] no JSON in response, skipping`);
+      return true; // 已处理但未识别
+    }
+
+    const parsed = JSON.parse(jsonMatch[0]) as {
+      isWelcome: boolean;
+      name?: string;
+      welcome?: string;
+    };
+
+    if (!parsed.isWelcome) {
+      log(`[welcome-image] not a welcome poster, skipping`);
+      return true;
+    }
+
+    // 是入职海报，发送欢迎语
+    const welcomeText = parsed.welcome || `欢迎 ${parsed.name || "新同事"} 加入！有问题随时 @ 我～`;
+    log(`[welcome-image] detected welcome poster for ${parsed.name || "unknown"}`);
+
+    await sendMessageFeishu({
+      cfg,
+      to: `chat:${chatId}`,
+      text: welcomeText,
+      replyToMessageId: messageId,
+    });
+    log(`[welcome-image] sent welcome to ${groupConfig.name}`);
+    return true;
+  } catch (err) {
+    log(`[welcome-image] LLM call failed: ${String(err)}`);
+    return false;
   }
 }
