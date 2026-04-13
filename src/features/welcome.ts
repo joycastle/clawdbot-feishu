@@ -383,14 +383,32 @@ export async function handleWelcomeImageDetection(params: {
     return false;
   }
 
-  // 解析 API key（google-vertex 可通过 GOOGLE_APPLICATION_CREDENTIALS 环境变量认证，不强制要求 apiKey）
+  // 解析 API key
   let apiKey: string | undefined;
   try {
     const runtime = getFeishuRuntime();
     const auth = await runtime.modelAuth.resolveApiKeyForProvider({ provider, cfg: cfg as any });
     apiKey = auth.apiKey;
-  } catch {
-    // 忽略 auth 错误，google-vertex 可用 ADC
+    log(`[welcome-image] auth resolved: apiKey=${apiKey ? `${apiKey.slice(0, 10)}...` : "undefined"}`);
+  } catch (authErr) {
+    log(`[welcome-image] auth error (will try without): ${String(authErr)}`);
+  }
+
+  // google-vertex: 如果没有 apiKey，尝试从服务账号 JSON 获取 access token
+  if (!apiKey && provider === "google-vertex") {
+    try {
+      const credPath = process.env.GOOGLE_APPLICATION_CREDENTIALS;
+      if (credPath) {
+        const { GoogleAuth } = await import("google-auth-library");
+        const auth = new GoogleAuth({ keyFile: credPath, scopes: ["https://www.googleapis.com/auth/cloud-platform"] });
+        const client = await auth.getClient();
+        const tokenRes = await client.getAccessToken();
+        apiKey = tokenRes.token ?? undefined;
+        log(`[welcome-image] got access token from service account: ${apiKey ? "yes" : "no"}`);
+      }
+    } catch (saErr) {
+      log(`[welcome-image] service account auth failed: ${String(saErr)}`);
+    }
   }
 
   const userContent: (TextContent | ImageContent)[] = [
