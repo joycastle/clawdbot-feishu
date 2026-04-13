@@ -418,6 +418,7 @@ export async function handleWelcomeImageDetection(params: {
       completeOpts.location = process.env.GOOGLE_CLOUD_LOCATION || "global";
     }
     const response = await complete(model, { systemPrompt, messages: piMessages }, completeOpts as any);
+    log(`[welcome-image] stopReason=${(response as any).stopReason} errorMessage=${(response as any).errorMessage || "none"}`);
     if ((response as any).stopReason === "error") {
       log(`[welcome-image] LLM error: ${(response as any).errorMessage}`);
       return false;
