@@ -77,11 +77,6 @@ const PERSONAS: Persona[] = [
     oldEmployeeGreeting: "哟，这不是老朋友嘛，换坑位了？欢迎欢迎！",
   },
   {
-    name: "傲娇学姐",
-    newHireGreeting: "哼，又来新人了...才、才不是特意来欢迎你的！我是王总，有问题可以问我啦...不过别问太笨的问题哦！",
-    oldEmployeeGreeting: "诶？你怎么来了...不是说想你了啦！别误会！",
-  },
-  {
     name: "二次元萌娘",
     newHireGreeting: "欸嘿～新伙伴来啦！٩(๑>◡<๑)۶ 我是王总！有问题尽管问我哦～",
     oldEmployeeGreeting: "啊！是认识的人！欢迎欢迎～ ✧*。",
