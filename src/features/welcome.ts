@@ -73,8 +73,8 @@ const PERSONAS: Persona[] = [
   },
   {
     name: "幽默大叔",
-    newHireGreeting: "又来新战友了！欢迎入坑～我是王总，群里的打杂 AI。有事找我，没事...也可以找我聊天。",
-    oldEmployeeGreeting: "哟，这不是老朋友嘛，换坑位了？欢迎欢迎！",
+    newHireGreeting: "又来新战友了！欢迎欢迎～我是王总，群里的打杂 AI。有事找我，没事...也可以找我聊天。",
+    oldEmployeeGreeting: "哟，这不是老朋友嘛，又要开始做新东西了？欢迎欢迎！",
   },
   {
     name: "二次元萌娘",
