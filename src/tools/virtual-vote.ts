@@ -463,9 +463,9 @@ export function registerVirtualVoteTool(api: OpenClawPluginApi) {
                   log,
                 });
 
-                if (images.length < 2) {
+                if (images.length < 1) {
                   return json({
-                    error: `只获取到 ${images.length} 张图片，至少需要 2 张`,
+                    error: `只获取到 ${images.length} 张图片，至少需要 1 张`,
                   });
                 }
 
