@@ -175,7 +175,7 @@ export async function runVoteInBackground(params: VoteRunnerParams): Promise<voi
     textOptions ??
     (images ? images.map((_, i) => `图片 ${i + 1}`) : []);
 
-  if (options.length < 2) {
+  if (options.length < 1) {
     log?.("virtual-vote: less than 2 options, aborting");
     await updateCardFeishu({
       cfg,
@@ -186,7 +186,7 @@ export async function runVoteInBackground(params: VoteRunnerParams): Promise<voi
         totalPersonas: personas.length,
         completedCount: 0,
         status: "error",
-        errorMsg: "选项数量不足（至少需要 2 个）",
+        errorMsg: "选项数量不足（至少需要 1 个）",
       }),
     });
     return;
