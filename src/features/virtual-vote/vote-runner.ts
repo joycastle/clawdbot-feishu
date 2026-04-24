@@ -27,6 +27,8 @@ export interface VoteRunnerParams {
   options?: string[];
   /** Image buffers with mime types (for vote_image), ordered */
   images?: Array<{ data: string; mediaType: string }>;
+  /** Custom labels for image options (matched from topic), overrides default "图片 1" etc. */
+  imageLabels?: string[];
   personas: Persona[];
   log?: (msg: string) => void;
 }
@@ -164,6 +166,7 @@ export async function runVoteInBackground(params: VoteRunnerParams): Promise<voi
     topic,
     options: textOptions,
     images,
+    imageLabels,
     personas,
     log,
   } = params;
@@ -173,6 +176,7 @@ export async function runVoteInBackground(params: VoteRunnerParams): Promise<voi
   // Determine options list
   const options: string[] =
     textOptions ??
+    imageLabels ??
     (images ? images.map((_, i) => `图片 ${i + 1}`) : []);
 
   if (options.length < 1) {

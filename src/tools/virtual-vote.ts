@@ -21,6 +21,7 @@ import {
   resolveGame,
   type PersonaLoaderConfig,
 } from "../features/virtual-vote/persona-loader.js";
+import { parseTopicOptions } from "../features/virtual-vote/topic-parser.js";
 import {
   type VirtualVoteLLMConfig,
   type VirtualVoteLLMRuntime,
@@ -50,10 +51,9 @@ const VirtualVoteSchema = Type.Union([
     action: Type.Literal("vote_text"),
     game: GameEnum,
     topic: Type.String({ description: "投票主题" }),
-    options: Type.Array(Type.String(), {
-      description: "文字选项列表，至少 2 个",
-      minItems: 2,
-    }),
+    options: Type.Optional(Type.Array(Type.String(), {
+      description: "文字选项列表。如果用户在 topic 中已包含选项（如'A vs B vs C'），可省略此字段，系统会自动提取",
+    })),
     chat_id: Type.String({ description: "当前会话的 chat_id，用于发送结果卡片" }),
     source_message_id: Type.Optional(Type.String({
       description: "当前消息的 message_id（MessageSid），用于检测消息是否包含图片",
@@ -389,6 +389,24 @@ export function registerVirtualVoteTool(api: OpenClawPluginApi) {
                   });
                 }
 
+                // Resolve options: use provided options, or parse from topic
+                let voteTopic = params.topic;
+                let voteOptions = params.options;
+                if (!voteOptions || voteOptions.length < 2) {
+                  log(`vote_text: options missing or insufficient, parsing from topic`);
+                  const parsed = await parseTopicOptions(params.topic, llmRuntime, log);
+                  if (parsed.options.length >= 2) {
+                    voteTopic = parsed.topic;
+                    voteOptions = parsed.options;
+                    log(`vote_text: parsed ${voteOptions.length} options from topic`);
+                  } else {
+                    return json({
+                      error: "无法从主题中识别出投票选项（至少需要 2 个），请明确提供 options 参数",
+                      hint: "示例：options=[\"选项A\", \"选项B\", \"选项C\"]",
+                    });
+                  }
+                }
+
                 const personaIndex = await loadPersonas(loaderCfg, params.game);
                 if (!personaIndex || personaIndex.count === 0) {
                   return json({
@@ -402,7 +420,7 @@ export function registerVirtualVoteTool(api: OpenClawPluginApi) {
                 // Send progress card immediately
                 const progressCard = buildProgressCard({
                   game: params.game,
-                  topic: params.topic,
+                  topic: voteTopic,
                   totalPersonas: personaIndex.count,
                   completedCount: 0,
                   status: "running",
@@ -429,8 +447,8 @@ export function registerVirtualVoteTool(api: OpenClawPluginApi) {
                   cardMessageId: cardResult.messageId,
                   chatId: chatTarget,
                   game: params.game,
-                  topic: params.topic,
-                  options: params.options,
+                  topic: voteTopic,
+                  options: voteOptions,
                   personas: personaIndex.personas,
                   log,
                 }).catch((err) => log(`background error: ${String(err)}`));
@@ -439,7 +457,7 @@ export function registerVirtualVoteTool(api: OpenClawPluginApi) {
                   status: "started",
                   game: params.game,
                   personaCount: personaIndex.count,
-                  optionCount: params.options.length,
+                  optionCount: voteOptions.length,
                   model: llmCfg.model,
                   maxConcurrent: llmCfg.maxConcurrent,
                   message: `虚拟投票已启动，${personaIndex.count} 个用户正在投票，结果将更新到卡片中。`,
@@ -469,12 +487,24 @@ export function registerVirtualVoteTool(api: OpenClawPluginApi) {
                   });
                 }
 
+                // Try to extract option labels from topic for image naming
+                let imageTopic = params.topic;
+                let imageLabels: string[] | undefined;
+                const parsedImage = await parseTopicOptions(params.topic, llmRuntime, log);
+                if (parsedImage.options.length > 0 && parsedImage.options.length === images.length) {
+                  imageLabels = parsedImage.options;
+                  imageTopic = parsedImage.topic;
+                  log(`vote_image: matched ${imageLabels.length} labels to ${images.length} images`);
+                } else if (parsedImage.options.length > 0) {
+                  log(`vote_image: option count (${parsedImage.options.length}) != image count (${images.length}), using default labels`);
+                }
+
                 const llmCfg = buildLLMConfig(feishuCfg!);
 
                 // Send progress card
                 const progressCard = buildProgressCard({
                   game: params.game,
-                  topic: params.topic,
+                  topic: imageTopic,
                   totalPersonas: personaIndex.count,
                   completedCount: 0,
                   status: "running",
@@ -501,8 +531,9 @@ export function registerVirtualVoteTool(api: OpenClawPluginApi) {
                   cardMessageId: cardResult.messageId,
                   chatId: chatTarget,
                   game: params.game,
-                  topic: params.topic,
+                  topic: imageTopic,
                   images,
+                  imageLabels,
                   personas: personaIndex.personas,
                   log,
                 }).catch((err) => log(`background error: ${String(err)}`));
