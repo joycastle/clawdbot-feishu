@@ -389,12 +389,14 @@ export function registerVirtualVoteTool(api: OpenClawPluginApi) {
                   });
                 }
 
+                const llmCfg = buildLLMConfig(feishuCfg!);
+
                 // Resolve options: use provided options, or parse from topic
                 let voteTopic = params.topic;
                 let voteOptions = params.options;
                 if (!voteOptions || voteOptions.length < 2) {
                   log(`vote_text: options missing or insufficient, parsing from topic`);
-                  const parsed = await parseTopicOptions(params.topic, llmRuntime, log);
+                  const parsed = await parseTopicOptions(params.topic, llmCfg, llmRuntime, log);
                   if (parsed.options.length >= 2) {
                     voteTopic = parsed.topic;
                     voteOptions = parsed.options;
@@ -408,14 +410,6 @@ export function registerVirtualVoteTool(api: OpenClawPluginApi) {
                 }
 
                 const personaIndex = await loadPersonas(loaderCfg, params.game);
-                if (!personaIndex || personaIndex.count === 0) {
-                  return json({
-                    error: `${params.game} 用户群画像未找到或为空`,
-                    hint: `画像目录: ${loaderCfg.personaBaseDir}/${resolveGame(params.game, loaderCfg.gameMapping)}`,
-                  });
-                }
-
-                const llmCfg = buildLLMConfig(feishuCfg!);
 
                 // Send progress card immediately
                 const progressCard = buildProgressCard({
@@ -487,10 +481,12 @@ export function registerVirtualVoteTool(api: OpenClawPluginApi) {
                   });
                 }
 
+                const llmCfg = buildLLMConfig(feishuCfg!);
+
                 // Try to extract option labels from topic for image naming
                 let imageTopic = params.topic;
                 let imageLabels: string[] | undefined;
-                const parsedImage = await parseTopicOptions(params.topic, llmRuntime, log);
+                const parsedImage = await parseTopicOptions(params.topic, llmCfg, llmRuntime, log);
                 if (parsedImage.options.length > 0 && parsedImage.options.length === images.length) {
                   imageLabels = parsedImage.options;
                   imageTopic = parsedImage.topic;
@@ -498,8 +494,6 @@ export function registerVirtualVoteTool(api: OpenClawPluginApi) {
                 } else if (parsedImage.options.length > 0) {
                   log(`vote_image: option count (${parsedImage.options.length}) != image count (${images.length}), using default labels`);
                 }
-
-                const llmCfg = buildLLMConfig(feishuCfg!);
 
                 // Send progress card
                 const progressCard = buildProgressCard({
