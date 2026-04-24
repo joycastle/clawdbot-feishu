@@ -315,8 +315,9 @@ export function registerVirtualVoteTool(api: OpenClawPluginApi) {
           "- BV (Bingo Voyage): 与BF共享同一套画像\n" +
           "当用户提到Bingo Frenzy/BF/休闲/Bingo/Coin相关 → BF；三消/消除/match/Matching Story → MS；Bingo Voyage/BV → BV。\n" +
           "支持 help/list_groups/vote_text/vote_image/evaluate_doc 五种 action。\n" +
-          "evaluate_doc: 当消息中包含飞书文档链接或「--- 飞书文档: xxx ---」格式的文档内容时，使用 evaluate_doc，" +
-          "传入 doc_url（飞书文档URL）让虚拟用户评价文档是否吸引。topic 可不填，自动取文档标题。\n" +
+          "evaluate_doc: 当用户明确要求评估/投票，且消息中包含飞书文档链接或「--- 飞书文档: xxx ---」格式的文档内容时，使用 evaluate_doc，" +
+          "传入 doc_url（飞书文档URL）让虚拟用户评价文档是否吸引。topic 可不填，自动取文档标题。" +
+          "注意：两个条件缺一不可——既要有文档链接，也要有明确的评估/投票意图才调用。\n" +
           "**重要：当消息中包含图片（或引用了包含图片的消息）时，必须使用 vote_image action 并传入 source_message_id，" +
           "让虚拟用户直接看到原图来投票。绝对不要自己描述图片内容后用 vote_text——虚拟用户必须看到原始图片才能做出准确判断。**\n" +
           "vote_text 仅用于纯文字选项（如功能方案、活动主题等无图片无文档的场景）。\n" +
