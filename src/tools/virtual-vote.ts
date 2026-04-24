@@ -483,16 +483,22 @@ export function registerVirtualVoteTool(api: OpenClawPluginApi) {
 
                 const llmCfg = buildLLMConfig(feishuCfg!);
 
-                // Try to extract option labels from topic for image naming
+                // Try to extract option labels from topic
                 let imageTopic = params.topic;
                 let imageLabels: string[] | undefined;
+                let imageTextOptions: string[] | undefined;
                 const parsedImage = await parseTopicOptions(params.topic, llmCfg, llmRuntime, log);
-                if (parsedImage.options.length > 0 && parsedImage.options.length === images.length) {
-                  imageLabels = parsedImage.options;
+                if (parsedImage.options.length > 0) {
                   imageTopic = parsedImage.topic;
-                  log(`vote_image: matched ${imageLabels.length} labels to ${images.length} images`);
-                } else if (parsedImage.options.length > 0) {
-                  log(`vote_image: option count (${parsedImage.options.length}) != image count (${images.length}), using default labels`);
+                  if (parsedImage.options.length === images.length) {
+                    // Options count matches images → use as image labels
+                    imageLabels = parsedImage.options;
+                    log(`vote_image: matched ${imageLabels.length} labels to ${images.length} images`);
+                  } else {
+                    // Options count doesn't match → use as text vote options (e.g. rating scale + images)
+                    imageTextOptions = parsedImage.options;
+                    log(`vote_image: using ${imageTextOptions.length} extracted options as text vote options alongside ${images.length} images`);
+                  }
                 }
 
                 // Send progress card
@@ -526,6 +532,7 @@ export function registerVirtualVoteTool(api: OpenClawPluginApi) {
                   chatId: chatTarget,
                   game: params.game,
                   topic: imageTopic,
+                  options: imageTextOptions,
                   images,
                   imageLabels,
                   personas: personaIndex.personas,
@@ -537,6 +544,7 @@ export function registerVirtualVoteTool(api: OpenClawPluginApi) {
                   game: params.game,
                   personaCount: personaIndex.count,
                   imageCount: images.length,
+                  optionCount: imageTextOptions?.length,
                   model: llmCfg.model,
                   maxConcurrent: llmCfg.maxConcurrent,
                   message: `图片投票已启动，${images.length} 张图片、${personaIndex.count} 个用户正在投票，结果将更新到卡片中。`,
