@@ -31,6 +31,7 @@ import {
   startInFlightJob,
   endInFlightJob,
 } from "./features/dev-lock.js";
+import { buildPerfSummary, perfMark, type PerfMarks } from "./perf.js";
 
 export type FeishuMessageEvent = {
   sender: {
@@ -845,12 +846,13 @@ export async function handleFeishuMessage(params: {
   botOpenId?: string;
   runtime?: RuntimeEnv;
   chatHistories?: Map<string, HistoryEntry[]>;
+  perf?: PerfMarks;
   /** Skip media cost confirmation (set when resuming after user confirms) */
   skipMediaConfirm?: boolean;
   /** Pre-resolved media list (passed from confirmation flow to avoid re-downloading) */
   preResolvedMediaList?: FeishuMediaInfo[];
 }): Promise<void> {
-  const { cfg, event, botOpenId, runtime, chatHistories, skipMediaConfirm, preResolvedMediaList } = params;
+  const { cfg, event, botOpenId, runtime, chatHistories, perf, skipMediaConfirm, preResolvedMediaList } = params;
   const feishuCfg = cfg.channels?.feishu as FeishuConfig | undefined;
   const log = runtime?.log ?? console.log;
   const error = runtime?.error ?? console.error;
@@ -864,6 +866,8 @@ export async function handleFeishuMessage(params: {
   // mechanism (auto-reply/reply/abort-cutoff), so plugins no longer need to manually
   // detect active sessions and inject abort signals.
 
+  perf?.event_received || perfMark(perf ?? {}, "event_received");
+  perfMark(perf ?? {}, "handle_start");
   log(`feishu: received message from ${ctx.senderOpenId} in ${ctx.chatId} (${ctx.chatType})`);
 
   if (ctx.senderOpenId) {
@@ -875,6 +879,10 @@ export async function handleFeishuMessage(params: {
     if (senderName) {
       ctx = { ...ctx, senderName };
     }
+  }
+  if (perf) {
+    perfMark(perf, "sender_resolved");
+    log(`feishu perf: sender_resolved messageId=${event.message.message_id} ${buildPerfSummary(perf, ["event_received", "handle_start", "sender_resolved"])}`);
   }
 
   // Handle merge_forward messages: fetch sub-messages and combine their content
@@ -1961,6 +1969,11 @@ export async function handleFeishuMessage(params: {
       mentionTargets: ctx.mentionTargets,
     });
 
+    if (perf) {
+      perfMark(perf, "dispatch_start");
+      log(`feishu perf: dispatch_start messageId=${ctx.messageId} session=${isolatedSessionKey} ${buildPerfSummary(perf, ["event_received", "sender_resolved", "dispatch_start"])}`);
+    }
+
     log(`feishu: dispatching to agent (session=${isolatedSessionKey})`);
 
     const { queuedFinal, counts } = await core.channel.reply.dispatchReplyFromConfig({
@@ -1971,6 +1984,11 @@ export async function handleFeishuMessage(params: {
     });
 
     markDispatchIdle();
+
+    if (perf) {
+      perfMark(perf, "dispatch_done");
+      log(`feishu perf: dispatch_done messageId=${ctx.messageId} queuedFinal=${queuedFinal} replies=${counts.final} ${buildPerfSummary(perf, ["event_received", "sender_resolved", "dispatch_start", "dispatch_done"])}`);
+    }
 
     if (isGroup && historyKey && chatHistories) {
       clearHistoryEntriesIfEnabled({

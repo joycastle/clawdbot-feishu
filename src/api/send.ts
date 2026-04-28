@@ -3,6 +3,7 @@ import type { FeishuConfig, FeishuSendResult, MentionTarget } from "../types.js"
 import { createFeishuClient } from "../client.js";
 import { resolveReceiveIdType, normalizeFeishuTarget } from "../targets.js";
 import { tryGetFeishuRuntime } from "../runtime.js";
+import { fmtMs, nowMs } from "../perf.js";
 
 export type FeishuMessageInfo = {
   messageId: string;
@@ -401,6 +402,7 @@ export type SendFeishuMessageParams = {
 };
 
 export async function sendMessageFeishu(params: SendFeishuMessageParams): Promise<FeishuSendResult> {
+  const startedAt = nowMs();
   const { cfg, to, text, replyToMessageId, replyInThread, mentions } = params;
   const feishuCfg = cfg.channels?.feishu as FeishuConfig | undefined;
   if (!feishuCfg) {
@@ -445,6 +447,7 @@ export async function sendMessageFeishu(params: SendFeishuMessageParams): Promis
       throw new Error(`Feishu reply failed: ${response.msg || `code ${response.code}`}`);
     }
 
+    console.log(`feishu perf: api_send_text_reply to=${receiveId} took=${fmtMs(nowMs() - startedAt)}`);
     return {
       messageId: response.data?.message_id ?? "unknown",
       chatId: receiveId,
@@ -464,6 +467,7 @@ export async function sendMessageFeishu(params: SendFeishuMessageParams): Promis
     throw new Error(`Feishu send failed: ${response.msg || `code ${response.code}`}`);
   }
 
+  console.log(`feishu perf: api_send_text_create to=${receiveId} took=${fmtMs(nowMs() - startedAt)}`);
   return {
     messageId: response.data?.message_id ?? "unknown",
     chatId: receiveId,
@@ -478,6 +482,7 @@ export type SendFeishuCardParams = {
 };
 
 export async function sendCardFeishu(params: SendFeishuCardParams): Promise<FeishuSendResult> {
+  const startedAt = nowMs();
   const { cfg, to, card, replyToMessageId } = params;
   const feishuCfg = cfg.channels?.feishu as FeishuConfig | undefined;
   if (!feishuCfg) {
@@ -506,6 +511,7 @@ export async function sendCardFeishu(params: SendFeishuCardParams): Promise<Feis
       throw new Error(`Feishu card reply failed: ${response.msg || `code ${response.code}`}`);
     }
 
+    console.log(`feishu perf: api_send_card_reply to=${receiveId} took=${fmtMs(nowMs() - startedAt)}`);
     return {
       messageId: response.data?.message_id ?? "unknown",
       chatId: receiveId,
@@ -525,6 +531,7 @@ export async function sendCardFeishu(params: SendFeishuCardParams): Promise<Feis
     throw new Error(`Feishu card send failed: ${response.msg || `code ${response.code}`}`);
   }
 
+  console.log(`feishu perf: api_send_card_create to=${receiveId} took=${fmtMs(nowMs() - startedAt)}`);
   return {
     messageId: response.data?.message_id ?? "unknown",
     chatId: receiveId,

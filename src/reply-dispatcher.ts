@@ -17,6 +17,7 @@ import {
   type TypingIndicatorState,
 } from "./features/typing.js";
 import { FeishuStreamingSession, mergeStreamingText } from "./streaming-card.js";
+import { fmtMs, nowMs } from "./perf.js";
 
 /**
  * Detect if text contains markdown elements that benefit from card rendering.
@@ -97,6 +98,8 @@ export function createFeishuReplyDispatcher(params: CreateFeishuReplyDispatcherP
   });
 
   // Streaming state
+  let firstDeliverAt: number | null = null;
+  let finalDeliverAt: number | null = null;
   let streaming: FeishuStreamingSession | null = null;
   let streamText = "";
   let lastPartial = "";
@@ -192,6 +195,11 @@ export function createFeishuReplyDispatcher(params: CreateFeishuReplyDispatcherP
         void typingCallbacks.onReplyStart?.();
       },
       deliver: async (payload: ReplyPayload, info: { kind: "tool" | "block" | "final" }) => {
+        const deliverStartedAt = nowMs();
+        if (firstDeliverAt == null) {
+          firstDeliverAt = deliverStartedAt;
+          params.runtime.log?.(`feishu perf: first_deliver chatId=${chatId} kind=${info?.kind}`);
+        }
         params.runtime.log?.(`[DEDUP-DEBUG] deliver called: kind=${info?.kind} len=${payload.text?.length ?? 0} text="${payload.text?.slice(0, 80)}..."`);
         const text = payload.text ?? "";
         if (!text.trim()) {
@@ -204,12 +212,14 @@ export function createFeishuReplyDispatcher(params: CreateFeishuReplyDispatcherP
           const tableCard = textToTableCard(text);
           if (tableCard) {
             params.runtime.log?.(`feishu deliver: sending table card to ${chatId}`);
+            const sendStartedAt = nowMs();
             await sendCardFeishu({
               cfg,
               to: chatId,
               card: tableCard,
               replyToMessageId,
             });
+            params.runtime.log?.(`feishu perf: outbound_table_card chatId=${chatId} took=${fmtMs(nowMs() - sendStartedAt)}`);
             return;
           }
         }
@@ -275,6 +285,7 @@ export function createFeishuReplyDispatcher(params: CreateFeishuReplyDispatcherP
           const chunks = core.channel.text.chunkTextWithMode(deliverText, textChunkLimit, chunkMode);
           params.runtime.log?.(`feishu deliver: sending ${chunks.length} card chunks to ${chatId}`);
           for (const chunk of chunks) {
+            const sendStartedAt = nowMs();
             await sendMarkdownCardFeishu({
               cfg,
               to: chatId,
@@ -282,6 +293,7 @@ export function createFeishuReplyDispatcher(params: CreateFeishuReplyDispatcherP
               replyToMessageId,
               mentions: isFirstChunk ? mentionTargets : undefined,
             });
+            params.runtime.log?.(`feishu perf: outbound_card_chunk chatId=${chatId} took=${fmtMs(nowMs() - sendStartedAt)} size=${chunk.length}`);
             isFirstChunk = false;
           }
         } else {
@@ -290,6 +302,7 @@ export function createFeishuReplyDispatcher(params: CreateFeishuReplyDispatcherP
           const chunks = core.channel.text.chunkTextWithMode(converted, textChunkLimit, chunkMode);
           params.runtime.log?.(`feishu deliver: sending ${chunks.length} text chunks to ${chatId}`);
           for (const chunk of chunks) {
+            const sendStartedAt = nowMs();
             await sendMessageFeishu({
               cfg,
               to: chatId,
@@ -297,6 +310,7 @@ export function createFeishuReplyDispatcher(params: CreateFeishuReplyDispatcherP
               replyToMessageId,
               mentions: isFirstChunk ? mentionTargets : undefined,
             });
+            params.runtime.log?.(`feishu perf: outbound_text_chunk chatId=${chatId} took=${fmtMs(nowMs() - sendStartedAt)} size=${chunk.length}`);
             isFirstChunk = false;
           }
         }
@@ -304,6 +318,8 @@ export function createFeishuReplyDispatcher(params: CreateFeishuReplyDispatcherP
         // Safety: ensure droppedBlockText is cleared after any successful final delivery
         // to prevent duplicate sends in onIdle
         if (info?.kind === "final") {
+          finalDeliverAt = nowMs();
+          params.runtime.log?.(`feishu perf: final_deliver chatId=${chatId} totalFromFirstDeliver=${firstDeliverAt != null ? fmtMs(finalDeliverAt - firstDeliverAt) : "n/a"} totalHandler=${fmtMs(finalDeliverAt - deliverStartedAt)}`);
           droppedBlockText = "";
         }
       },
@@ -333,12 +349,14 @@ export function createFeishuReplyDispatcher(params: CreateFeishuReplyDispatcherP
             const chunks = core.channel.text.chunkTextWithMode(converted, textChunkLimit, chunkMode);
             params.runtime.log?.(`feishu onIdle: sending ${chunks.length} chunks to ${chatId}`);
             for (const chunk of chunks) {
+              const sendStartedAt = nowMs();
               await sendMessageFeishu({
                 cfg,
                 to: chatId,
                 text: chunk,
                 replyToMessageId,
               });
+              params.runtime.log?.(`feishu perf: onIdle_flush_chunk chatId=${chatId} took=${fmtMs(nowMs() - sendStartedAt)} size=${chunk.length}`);
             }
             params.runtime.log?.(`feishu onIdle: done sending to ${chatId}`);
           }

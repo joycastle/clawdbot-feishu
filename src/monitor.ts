@@ -24,6 +24,7 @@ import { startDocsRouter } from "./services/docs-router.js";
 import { startBroadcastApi } from "./services/broadcast-api.js";
 import { startRagApi } from "./services/rag-api.js";
 import { isDuplicateMessage, warmupDedupFromDisk } from "./dedup.js";
+import { perfStart, perfMark } from "./perf.js";
 import {
   FixedWindowRateLimiter,
   applyBasicWebhookRequestGuards,
@@ -138,10 +139,14 @@ async function buildEventDispatcher({
     "im.message.receive_v1": async (data) => {
       const event = data as unknown as FeishuMessageEvent;
       const messageId = event.message?.message_id;
+      const perf = perfStart();
+      perfMark(perf, "event_received");
       if (messageId && isDuplicateMessage(messageId)) {
+        log(`feishu perf: duplicate_skip messageId=${messageId}`);
         log(`feishu: skipping duplicate message (id=${messageId})`);
         return;
       }
+      log(`feishu perf: inbound_received messageId=${messageId ?? "unknown"} chatId=${event.message?.chat_id ?? "unknown"} chatType=${event.message?.chat_type ?? "unknown"}`);
       // Fire-and-forget: return immediately so SDK sends ACK to Feishu,
       // avoiding timeout-triggered re-delivery of the same message.
       void (async () => {
@@ -152,6 +157,7 @@ async function buildEventDispatcher({
             botOpenId,
             runtime,
             chatHistories,
+            perf,
           });
         } catch (err) {
           error(`feishu: error handling message event: ${String(err)}`);
