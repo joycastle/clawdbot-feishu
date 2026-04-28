@@ -247,15 +247,20 @@ export function createFeishuReplyDispatcher(params: CreateFeishuReplyDispatcherP
 
         // For final delivery with streaming enabled + card mode: ensure streaming is active
         if (info?.kind === "final" && streamingEnabled && useCard) {
+          const streamStartAt = nowMs();
           startStreaming();
           if (streamingStartPromise) await streamingStartPromise;
+          params.runtime.log?.(`feishu perf: final_stream_ready chatId=${chatId} waited=${fmtMs(nowMs() - streamStartAt)}`);
         }
 
         // If streaming session is active, close it with the final text
         if (streaming?.isActive()) {
           if (info?.kind === "final") {
+            const closeStartedAt = nowMs();
             streamText = mergeStreamingText(streamText, text);
+            const finalSize = streamText.length;
             await closeStreaming();
+            params.runtime.log?.(`feishu perf: final_stream_close chatId=${chatId} took=${fmtMs(nowMs() - closeStartedAt)} finalSize=${finalSize}`);
           }
           return;
         }
@@ -284,6 +289,7 @@ export function createFeishuReplyDispatcher(params: CreateFeishuReplyDispatcherP
           // Card mode: send as interactive card with markdown rendering
           const chunks = core.channel.text.chunkTextWithMode(deliverText, textChunkLimit, chunkMode);
           params.runtime.log?.(`feishu deliver: sending ${chunks.length} card chunks to ${chatId}`);
+          params.runtime.log?.(`feishu perf: final_chunk_plan chatId=${chatId} mode=card chunks=${chunks.length} size=${deliverText.length}`);
           for (const chunk of chunks) {
             const sendStartedAt = nowMs();
             await sendMarkdownCardFeishu({
@@ -301,6 +307,7 @@ export function createFeishuReplyDispatcher(params: CreateFeishuReplyDispatcherP
           const converted = core.channel.text.convertMarkdownTables(deliverText, tableMode);
           const chunks = core.channel.text.chunkTextWithMode(converted, textChunkLimit, chunkMode);
           params.runtime.log?.(`feishu deliver: sending ${chunks.length} text chunks to ${chatId}`);
+          params.runtime.log?.(`feishu perf: final_chunk_plan chatId=${chatId} mode=text chunks=${chunks.length} size=${converted.length}`);
           for (const chunk of chunks) {
             const sendStartedAt = nowMs();
             await sendMessageFeishu({

@@ -871,11 +871,16 @@ export async function handleFeishuMessage(params: {
   log(`feishu: received message from ${ctx.senderOpenId} in ${ctx.chatId} (${ctx.chatType})`);
 
   if (ctx.senderOpenId) {
+    if (perf) perfMark(perf, "sender_lookup_start");
     const senderName = await resolveFeishuSenderName({
       cfg,
       senderOpenId: ctx.senderOpenId,
       log,
     });
+    if (perf) {
+      perfMark(perf, "sender_lookup_done");
+      log(`feishu perf: sender_lookup messageId=${ctx.messageId} ${buildPerfSummary(perf, ["handle_start", "sender_lookup_start", "sender_lookup_done"])}`);
+    }
     if (senderName) {
       ctx = { ...ctx, senderName };
     }
@@ -1134,6 +1139,7 @@ export async function handleFeishuMessage(params: {
 
     // Resolve media from message (use pre-resolved list if resuming from cost confirmation)
     const mediaMaxBytes = (feishuCfg?.mediaMaxMb ?? 30) * 1024 * 1024; // 30MB default
+    if (perf) perfMark(perf, "media_resolve_start");
     const mediaList = (skipMediaConfirm && preResolvedMediaList)
       ? preResolvedMediaList
       : await resolveFeishuMediaList({
@@ -1144,6 +1150,10 @@ export async function handleFeishuMessage(params: {
           maxBytes: mediaMaxBytes,
           log,
         });
+    if (perf) {
+      perfMark(perf, "media_resolve_done");
+      log(`feishu perf: media_resolve messageId=${ctx.messageId} type=${event.message.message_type} count=${mediaList.length} ${buildPerfSummary(perf, ["sender_resolved", "media_resolve_start", "media_resolve_done"])}`);
+    }
     log(`feishu: resolveFeishuMediaList returned ${mediaList.length} items for type=${event.message.message_type}`);
 
     // Download media from merge_forward message if any
@@ -1766,6 +1776,7 @@ export async function handleFeishuMessage(params: {
     const feishuCfgForDoc = cfg.channels?.feishu as FeishuConfig | undefined;
     try {
       if (feishuCfgForDoc) {
+        if (perf) perfMark(perf, "doc_enrich_start");
         const enriched = await enrichMessageWithDocs(feishuCfgForDoc, ctx.content, log);
         enrichedContent = enriched.text;
         docImageUrls.push(...enriched.docImageUrls);
@@ -1774,6 +1785,10 @@ export async function handleFeishuMessage(params: {
           const enrichedQuoted = await enrichMessageWithDocs(feishuCfgForDoc, quotedContent, log);
           quotedContent = enrichedQuoted.text;
           docImageUrls.push(...enrichedQuoted.docImageUrls);
+        }
+        if (perf) {
+          perfMark(perf, "doc_enrich_done");
+          log(`feishu perf: doc_enrich messageId=${ctx.messageId} docImages=${docImageUrls.length} ${buildPerfSummary(perf, ["media_resolve_done", "doc_enrich_start", "doc_enrich_done"])}`);
         }
       }
     } catch (err) {
@@ -1857,6 +1872,7 @@ export async function handleFeishuMessage(params: {
     const perUserHistoryLimit = 15; // Per-user conversation history
     
     if (isGroup && groupHistoryContextEnabled && feishuCfg) {
+      if (perf) perfMark(perf, "group_history_start");
       // Layer 1: Global recent messages (for group context awareness)
       const recentHistory = await fetchRecentChatHistory({
         feishuCfg,
@@ -1876,6 +1892,10 @@ export async function handleFeishuMessage(params: {
         includeBotReplies: true,
         log,
       });
+      if (perf) {
+        perfMark(perf, "group_history_done");
+        log(`feishu perf: group_history messageId=${ctx.messageId} recent=${recentHistory.length} user=${userHistory.length} ${buildPerfSummary(perf, ["doc_enrich_done", "group_history_start", "group_history_done"])}`);
+      }
       
       let historyContext = "";
       
@@ -1937,6 +1957,7 @@ export async function handleFeishuMessage(params: {
     }
 
     const commandBody = ctx.mentionMessageBody ?? ctx.content;
+    if (perf) perfMark(perf, "ctx_payload_start");
     const ctxPayload = core.channel.reply.finalizeInboundContext({
       Body: combinedBody,
       RawBody: ctx.content,
@@ -1960,6 +1981,11 @@ export async function handleFeishuMessage(params: {
       ...mediaPayload,
     });
 
+    if (perf) {
+      perfMark(perf, "ctx_payload_done");
+      log(`feishu perf: ctx_payload_ready messageId=${ctx.messageId} bodyChars=${combinedBody.length} ${buildPerfSummary(perf, ["sender_resolved", "ctx_payload_start", "ctx_payload_done"])}`);
+      perfMark(perf, "reply_dispatcher_create_start");
+    }
     const { dispatcher, replyOptions, markDispatchIdle } = createFeishuReplyDispatcher({
       cfg,
       agentId: route.agentId,
@@ -1970,12 +1996,15 @@ export async function handleFeishuMessage(params: {
     });
 
     if (perf) {
+      perfMark(perf, "reply_dispatcher_create_done");
+      log(`feishu perf: reply_dispatcher_ready messageId=${ctx.messageId} ${buildPerfSummary(perf, ["ctx_payload_done", "reply_dispatcher_create_start", "reply_dispatcher_create_done"])}`);
       perfMark(perf, "dispatch_start");
       log(`feishu perf: dispatch_start messageId=${ctx.messageId} session=${isolatedSessionKey} ${buildPerfSummary(perf, ["event_received", "sender_resolved", "dispatch_start"])}`);
     }
 
     log(`feishu: dispatching to agent (session=${isolatedSessionKey})`);
 
+    if (perf) perfMark(perf, "dispatch_call_start");
     const { queuedFinal, counts } = await core.channel.reply.dispatchReplyFromConfig({
       ctx: ctxPayload,
       cfg,
@@ -1983,7 +2012,16 @@ export async function handleFeishuMessage(params: {
       replyOptions,
     });
 
+    if (perf) {
+      perfMark(perf, "dispatch_call_done");
+      log(`feishu perf: dispatch_call_done messageId=${ctx.messageId} ${buildPerfSummary(perf, ["dispatch_start", "dispatch_call_start", "dispatch_call_done"])}`);
+      perfMark(perf, "mark_idle_start");
+    }
     markDispatchIdle();
+    if (perf) {
+      perfMark(perf, "mark_idle_done");
+      log(`feishu perf: mark_idle_done messageId=${ctx.messageId} ${buildPerfSummary(perf, ["dispatch_call_done", "mark_idle_start", "mark_idle_done"])}`);
+    }
 
     if (perf) {
       perfMark(perf, "dispatch_done");
