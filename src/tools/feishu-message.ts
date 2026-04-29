@@ -7,6 +7,7 @@
  *   reply       — 回复消息
  *   edit        — 编辑消息
  *   get         — 获取消息详情
+ *   recall      — 撤回消息
  */
 
 import { Type, type Static } from "@sinclair/typebox";
@@ -19,6 +20,7 @@ import {
   editMessageFeishu,
   getMessageFeishu,
 } from "../api/send.js";
+import { createFeishuClient } from "../client.js";
 
 // ─── Schema ──────────────────────────────────────────────────────────────────
 
@@ -51,6 +53,10 @@ const FeishuMessageSchema = Type.Union([
     action: Type.Literal("get"),
     message_id: Type.String({ description: "消息 ID" }),
   }),
+  Type.Object({
+    action: Type.Literal("recall"),
+    message_id: Type.String({ description: "要撤回的消息 ID" }),
+  }),
 ]);
 
 type FeishuMessageParams = Static<typeof FeishuMessageSchema>;
@@ -74,13 +80,14 @@ export function registerFeishuMessageTool(api: OpenClawPluginApi) {
       if (!creds) return null;
 
       const cfg = ctx.config!;
+      const client = createFeishuClient(feishuCfg!);
 
       return {
         name: "joycastle_feishu_message",
         label: "Feishu Message",
         description:
-          "发送、回复、编辑飞书消息。" +
-          "Actions: send（发送文本）、send_card（发送卡片）、reply（回复消息）、edit（编辑消息）、get（获取消息详情）",
+          "发送、回复、编辑、查询、撤回飞书消息。" +
+          "Actions: send（发送文本）、send_card（发送卡片）、reply（回复消息）、edit（编辑消息）、get（获取消息详情）、recall（撤回消息）",
         parameters: FeishuMessageSchema,
         async execute(_id, params: FeishuMessageParams) {
           try {
@@ -142,6 +149,16 @@ export function registerFeishuMessageTool(api: OpenClawPluginApi) {
                   return json({ error: "Message not found" });
                 }
                 return json(message);
+              }
+
+              case "recall": {
+                const resp = (await client.im.message.delete({
+                  path: { message_id: params.message_id },
+                })) as any;
+                if (resp.code !== 0) {
+                  return json({ ok: false, error: resp.msg || `code ${resp.code}`, code: resp.code, message_id: params.message_id });
+                }
+                return json({ ok: true, message_id: params.message_id });
               }
 
               default:

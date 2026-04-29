@@ -29,7 +29,7 @@ function parseArgs(argv: string[]) {
   let chatId: string | undefined;
   let limit = 500;
   let execute = false;
-  let pageSize = 100;
+  let pageSize = 50;
   let sleepMs = 150;
 
   for (let i = 0; i < argv.length; i++) {
@@ -37,9 +37,9 @@ function parseArgs(argv: string[]) {
     if (arg === '--chat' || arg === '-c') {
       chatId = argv[++i];
     } else if (arg === '--limit' || arg === '-n') {
-      limit = Math.min(Math.max(parseInt(argv[++i] || '500', 10) || 500, 1), 500);
+      limit = Math.max(parseInt(argv[++i] || '500', 10) || 500, 1);
     } else if (arg === '--page-size') {
-      pageSize = Math.min(Math.max(parseInt(argv[++i] || '100', 10) || 100, 1), 200);
+      pageSize = Math.min(Math.max(parseInt(argv[++i] || '50', 10) || 50, 1), 50);
     } else if (arg === '--sleep-ms') {
       sleepMs = Math.max(parseInt(argv[++i] || '150', 10) || 150, 0);
     } else if (arg === '--execute') {
@@ -60,7 +60,7 @@ function parseArgs(argv: string[]) {
 
 function printHelp() {
   console.error(`Usage:
-  npx tsx recall-chat-self-messages.ts --chat <chat_id> [--limit 500] [--execute] [--page-size 100] [--sleep-ms 150]
+  npx tsx recall-chat-self-messages.ts --chat <chat_id> [--limit 500] [--execute] [--page-size 50] [--sleep-ms 150]
 
 Description:
   Scan recent messages in a Feishu chat, find messages sent by this bot/app itself,
@@ -71,7 +71,7 @@ Safe default:
 
 Examples:
   npx tsx recall-chat-self-messages.ts --chat oc_xxx
-  npx tsx recall-chat-self-messages.ts --chat oc_xxx --limit 500 --execute
+  npx tsx recall-chat-self-messages.ts --chat oc_xxx --limit 2000 --execute
 `);
 }
 
@@ -180,12 +180,23 @@ async function main() {
     }
   }
 
+  const failedResults = results.filter((r) => !r.ok);
+  const failureSummary = Object.entries(
+    failedResults.reduce((acc, item) => {
+      const key = `${item.code ?? 'unknown'}:${item.msg ?? 'unknown'}`;
+      acc[key] = (acc[key] || 0) + 1;
+      return acc;
+    }, {} as Record<string, number>)
+  ).map(([error, count]) => ({ error, count }));
+
   console.log(JSON.stringify({
     ok: true,
     mode: 'execute',
     chat_id: chatId,
     recalled: results.filter((r) => r.ok).length,
-    failed: results.filter((r) => !r.ok).length,
+    failed: failedResults.length,
+    failure_summary: failureSummary,
+    note: failedResults.length > 0 ? 'Some recalls may fail due to Feishu recall time-window or permission limits.' : undefined,
     results,
   }, null, 2));
 }
